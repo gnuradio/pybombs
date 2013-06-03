@@ -1,9 +1,9 @@
-import sys,os;
+import sys, os, errno
 from inventory import *
-import ConfigParser;
+import ConfigParser
 from cfg import *
 from vars import *
-from env import *;
+from env import *
 
 # needed for 2.4 support
 try:
@@ -40,9 +40,17 @@ pathcheck = [topdir + "src", config.get("config","prefix"), config.get("config",
     config.get("config", "prefix") + "/lib64/python2.6/", config.get("config", "prefix") + "/lib64/python2.6/site-packages",
     config.get("config", "prefix") + "/lib/python2.7/site-packages", config.get("config", "prefix") + "/share/", 
     config.get("config", "prefix") + "/share/sip/"];
-for path in pathcheck:
-    if(not os.path.exists(path)):
-        os.mkdir(path);
+
+try:
+    for path in pathcheck:
+        if(not os.path.exists(path)):
+            os.mkdir(path);
+except OSError, error:
+    if error.errno == errno.EACCES:
+        print "\n" + str(error)
+        print("Error! Provided install prefix requires root privileges. Please re-run as sudo!")
+        exit(error.errno)
+
 
 vars = vars_init(config);
 vars = vars_defaults(vars);
