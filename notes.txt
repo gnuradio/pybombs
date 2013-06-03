@@ -1,0 +1,12 @@
+
+satisfy order:
+    deb,rpm,src
+
+src package status levels:
+    fetch,unpack,configure,make,installed
+
+
+
+
+
+

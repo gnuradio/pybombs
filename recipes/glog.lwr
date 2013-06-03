@@ -1,0 +1,5 @@
+category: baseline
+depends: wget
+satisfy_deb: libgoogle-glog-dev
+source: wget://http://google-glog.googlecode.com/files/glog-0.3.3.tar.gz
+inherit: autoconf

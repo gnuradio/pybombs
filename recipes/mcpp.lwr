@@ -1,0 +1,16 @@
+depends: curl wget
+category: baseline
+satisfy_deb: (libmcpp-dev >= 2.7.2) && (mcpp >= 2.7.2)
+satisfy_rpm: mcpp-devel >= 2.7.2
+source: file://dist/mcpp_2.7.2.orig.tar.gz, wget://http://aptproxy.willowgarage.com/archive.ubuntu.com/ubuntu/pool/universe/m/mcpp/mcpp_2.7.2.orig.tar.gz
+#source: file://dist/mcpp_2.7.2.orig.tar.gz
+#source: wget://http://aptproxy.willowgarage.com/archive.ubuntu.com/ubuntu/pool/universe/m/mcpp/mcpp_2.7.2.orig.tar.gz
+
+var config_opt = " --enable-mcpplib "
+
+inherit: autoconf
+install {
+    make install
+    rm $prefix/lib64/libmcpp.so
+    ln -s $prefix/lib/libmcpp.so $prefix/lib64/libmcpp.so
+}

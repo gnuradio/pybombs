@@ -1,0 +1,6 @@
+var config_opt = ""
+inherit: autoconf
+configure { 
+    ./bootstrap
+    ./configure --prefix=$prefix $config_opt
+}

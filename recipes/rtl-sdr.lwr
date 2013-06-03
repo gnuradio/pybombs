@@ -1,0 +1,6 @@
+category: common
+depends: gnuradio 
+source: git://git://git.osmocom.org/rtl-sdr
+gitbranch: master
+inherit: cmake
+

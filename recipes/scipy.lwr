@@ -1,0 +1,6 @@
+depends: python lapack numpy
+category: baseline
+satisfy_deb: python-scipy >= 0.8
+satisfy_rpm: scipy >= 0.8
+source: wget://http://downloads.sourceforge.net/project/scipy/scipy/0.8.0/scipy-0.8.0.tar.gz
+inherit: distutils

@@ -1,0 +1,10 @@
+category: common
+depends: gnuradio uhd git cmake
+source: git://git://git.osmocom.org/osmo-sdr.git
+gitbranch: master
+inherit: cmake
+
+configuredir: software/libosmosdr/build
+makedir: software/libosmosdr/build
+installdir: software/libosmosdr/build
+

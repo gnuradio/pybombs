@@ -1,0 +1,6 @@
+depends: wget
+category: baseline
+satisfy_deb: libxslt1-dev >= 1.1
+satisfy_rpm: libxslt-devel >= 1.1
+source: wget://ftp://xmlsoft.org/libxml2/libxslt-1.1.20.tar.gz
+inherit: autoconf

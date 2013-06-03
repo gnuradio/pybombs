@@ -1,0 +1,6 @@
+depends: python setuptools wget
+category: baseline
+satisfy_deb: python-tornado >= 2.4
+satisfy_rpm: python-tornado >= 2.4
+source: wget://https://github.com/downloads/facebook/tornado/tornado-2.4.tar.gz
+inherit: setuptools

@@ -1,0 +1,5 @@
+category: common
+depends: gnuradio
+source: svn://http://svn.code.sf.net/p/openlte/code/trunk/
+gitbranch: master
+inherit: empty

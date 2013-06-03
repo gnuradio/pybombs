@@ -1,0 +1,6 @@
+category: common
+depends: gnuradio uhd
+source: git://git://svn.berlin.ccc.de/airprobe
+gitbranch: master
+inherit: empty
+

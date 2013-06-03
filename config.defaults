@@ -1,0 +1,14 @@
+[defaults]
+gituser=
+prefix=/usr/local/
+satisfy_order=deb,src
+forcepkgs=
+timeout=30
+
+[descriptions]
+gituser=Username for GIT access
+testkey=useless test key
+prefix=Install Prefix
+satisfy_order=Order in which to attempt installations when available, options are: src, rpm, deb
+forcepkgs=Comma seperated list of package names to assume are already installed
+timeout=Time the monitor thread waits (in seconds) before retrying downloads

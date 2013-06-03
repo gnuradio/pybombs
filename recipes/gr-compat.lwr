@@ -1,0 +1,9 @@
+category: common
+depends: gnuradio
+source: git://https://github.com/osh/grcompat.git
+gitbranch: master
+inherit: cmake
+install {
+    make install
+    cd $prefix/include/grcompat/ && ln -sf ../pmt && ln -sf ../gnuradio
+}

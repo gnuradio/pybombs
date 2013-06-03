@@ -1,0 +1,7 @@
+category: baseline
+depends: wget cmake gmp mpfr gfortran
+satisfy_deb: liblapack-dev >= 3.3.0
+satisfy_rpm: lapack-devel >= 3.3.0 || lapack >= 3.3.0
+source: wget://http://www.netlib.org/lapack/lapack-3.3.0.tgz
+var config_opt = " -DCMAKE_Fortran_COMPILER=$prefix/bin/fortran-gfortran -DBUILD_SHARED_LIBS=ON "
+inherit: cmake

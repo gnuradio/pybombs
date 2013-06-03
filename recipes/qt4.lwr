@@ -1,0 +1,8 @@
+category: baseline 
+depends: wget
+#source: wget://ftp://ftp.qt.nokia.com/qt/source/qt-everywhere-opensource-src-4.7.2.tar.gz
+source: wget://ftp://ftp.qt.nokia.com/qt/source/qt-everywhere-opensource-src-4.6.2.tar.gz
+satisfy_deb: libqt4-dev >= 4.6.2
+satisfy_rpm: qt-devel >= 4.6.2 || qt4-devel >= 4.6.2
+var config_opt = "-opensource --confirm-license -L$prefix/lib -L$prefix/lib64"
+inherit: autoconf

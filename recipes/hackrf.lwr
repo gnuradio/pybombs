@@ -1,0 +1,10 @@
+depends: gnuradio git cmake libusb 
+category: common
+source: git://https://github.com/Hoernchen/hackrf.git
+#gitbranch: master
+gitbranch: siclock
+inherit: cmake
+configuredir: host/build
+makedir: host/build
+installdir: host/build
+

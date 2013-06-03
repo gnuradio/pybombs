@@ -1,0 +1,9 @@
+category: common
+depends: gnuradio uhd faad gr-compat
+source: git://https://github.com/kit-cel/gr-drm.git
+gitbranch: master
+inherit: cmake
+configuredir: gr-drm/build
+makedir: gr-drm/build
+installdir: gr-drm/build
+

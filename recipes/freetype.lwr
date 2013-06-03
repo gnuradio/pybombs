@@ -1,0 +1,6 @@
+category: baseline 
+depends: wget
+source: wget://download.savannah.gnu.org/releases/freetype/freetype-2.4.0.tar.bz2
+satisfy_deb: libfreetype6-dev
+satisfy_rpm: freetype-devel
+inherit: autoconf

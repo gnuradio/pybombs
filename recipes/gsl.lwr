@@ -1,0 +1,6 @@
+category: baseline
+depends: wget
+source: wget://http://mirror.nexcess.net/gnu/gsl/gsl-1.13.tar.gz
+satisfy_deb: (libgsl0-dev >= 1.13) && (libgsl0ldbl >= 1.13)
+satisfy_rpm: gsl-devel >= 1.13
+inherit: autoconf

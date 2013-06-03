@@ -1,0 +1,12 @@
+category: baseline
+depends: wget mpc
+satisfy_deb: gfortran >= 4.5.2
+satisfy_rpm: gcc-gfortran >= 4.5.2
+source: wget://http://www.netgull.com/gcc/releases/gcc-4.5.2/gcc-4.5.2.tar.bz2
+var config_opt = " --with-gmp=$prefix --with-mpfr=$prefix --disable-multilib --with-mpc=$prefix --enable-languages=fortran --disable-checking --disable-bootstrap --enable-threads --enable-shared --program-prefix=fortran- "
+inherit: autoconf
+
+install {
+    make install
+    ln -s $prefix/bin/fortran-gfortran $prefix/bin/gfortran
+}    

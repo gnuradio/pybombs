@@ -1,0 +1,5 @@
+category: common
+depends: gnuradio gr-compat
+source: git://https://github.com/chgans/gr-ais.git
+gitbranch: master
+inherit: cmake

@@ -1,0 +1,17 @@
+var config_opt = ""
+
+configure { 
+    ./configure --prefix=$prefix $config_opt
+}
+
+make {
+    make -j4
+}
+
+install {
+    make install
+}
+
+uninstall {
+    make uninstall
+}

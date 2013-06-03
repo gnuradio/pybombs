@@ -1,0 +1,11 @@
+category: baseline
+depends: python libbzip wget
+source: wget://http://downloads.sourceforge.net/project/boost/boost/1.53.0/boost_1_53_0.tar.bz2
+satisfy_deb:  (libboost1.53-dev && libboost-date-time1.53-dev && libboost-filesystem1.53-dev && libboost-program-options1.53-dev && libboost-regex1.53-dev && libboost-thread1.53-dev && libboost-test1.53-dev) || ((libboost-dev >= 1.53) && (libboost-date-time-dev >= 1.53) && (libboost-filesystem-dev >= 1.53) && (libboost-program-options-dev >= 1.53) && (libboost-regex-dev >= 1.53) && (libboost-thread-dev >= 1.53) && (libboost-test-dev >=1.53)) 
+satisfy_rpm: boost-devel >= 1.53
+configure {
+    ./bootstrap.sh --prefix=$prefix --libdir=$prefix/lib/
+}
+install {
+    ./bjam --threading=multi --layout=tagged link=shared install
+}

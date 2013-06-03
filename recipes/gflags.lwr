@@ -1,0 +1,5 @@
+category: baseline
+depends: wget
+satisfy_deb: libgflags-dev
+source: wget://https://gflags.googlecode.com/files/gflags-2.0.tar.gz
+inherit: autoconf

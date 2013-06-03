@@ -1,0 +1,2 @@
+depends: boost
+#var boostflags = "boost.satisfier==src?{-DBOOST_ROOT=$prefix -DBoost_NO_SYSTEM_PATHS=1}:{}"

@@ -1,0 +1,6 @@
+category: baseline
+depends: wget curl
+satisfy_deb: git-core
+satisfy_rpm: git
+source: file://dist/git-1.7.9.6.tar.gz wget://http://git-core.googlecode.com/files/git-1.7.9.6.tar.gz
+inherit: autoconf

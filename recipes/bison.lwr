@@ -1,0 +1,6 @@
+depends: wget
+category: baseline
+satisfy_deb: bison >= 2.3
+satisfy_rpm: bison >= 2.3
+source: wget://http://ftp.gnu.org/gnu/bison/bison-2.3.tar.gz
+inherit: autoconf

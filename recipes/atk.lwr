@@ -1,0 +1,6 @@
+category: baseline 
+depends: wget
+source: wget://http://ftp.gnome.org/pub/gnome/sources/atk/1.30/atk-1.30.0.tar.bz2
+satisfy_deb: libatk1.0-0 >= 1.29.2
+satisfy_rpm: atk-devel >= 1.29.2
+inherit: autoconf

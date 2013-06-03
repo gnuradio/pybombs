@@ -1,0 +1,21 @@
+configuredir: build
+makedir: build
+installdir: build
+depends: cmake
+
+var config_opt = ""
+
+configure { 
+    cmake .. -DCMAKE_INSTALL_PREFIX=$prefix $config_opt
+}
+make {
+    make -j4
+}
+
+install {
+    make install
+}
+
+uninstall {
+    make uninstall
+}

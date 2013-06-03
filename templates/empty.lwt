@@ -1,0 +1,13 @@
+var config_opt = ""
+
+configure { 
+}
+
+make {
+}
+
+install {
+}
+
+uninstall {
+}

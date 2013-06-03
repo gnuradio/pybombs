@@ -1,0 +1,11 @@
+# Ice-3.4.2 src compile does not work with ubuntu 12.04, however, deb install should
+
+category: baseline
+depends: swig mcpp db48 libbzip expat python wget
+satisfy_deb: python-zeroc-ice >= 3.4.2 && libzeroc-ice34-dev && libzeroc-ice34 && ice34-services
+satisfy_rpm: (ice-devel && ice-python-devel) || (ice-python-devel >= 3.4.2 && ice-libs >= 3.4.2 && ice-utils >= 3.4.2)
+source: wget://http://www.zeroc.com/download/Ice/3.4/Ice-3.4.2.tar.gz
+make {
+    cd cpp && prefix=$prefix DB_HOME=$prefix MCPP_HOME=$prefix EXPAT_HOME=$prefix make -j8 prefix=$prefix && prefix=$prefix make install &&
+    cd ../py && prefix=$prefix DB_HOME=$prefix MCPP_HOME=$prefix EXPAT_HOME=$prefix make -j8 prefix=$prefix && prefix=$prefix make install
+}

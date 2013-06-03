@@ -1,0 +1,5 @@
+category: common
+depends: gnuradio uhd gr-osmosdr osmo-sdr
+source: git://git://git.osmocom.org/gr-iqbal
+gitbranch: master
+inherit: cmake

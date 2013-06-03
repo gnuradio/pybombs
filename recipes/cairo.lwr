@@ -1,0 +1,6 @@
+category: baseline 
+depends: fontconfig libpng pixman x11 wget
+source: wget://http://cairographics.org/releases/cairo-1.8.10.tar.gz
+satisfy_deb: libcairo2 >= 1.8.10
+satisfy_rpm: cairo-devel >= 1.8.10
+inherit: autoconf

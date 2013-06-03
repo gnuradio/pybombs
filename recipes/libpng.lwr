@@ -1,0 +1,6 @@
+category: baseline 
+depends: wget
+source: wget://https://launchpad.net/ubuntu/+archive/primary/+files/libpng_1.2.42.orig.tar.bz2
+satisfy_deb: libpng12-dev >= 1.2.41
+satisfy_rpm: libpng-devel >= 1.2.41
+inherit: autoconf

@@ -1,0 +1,4 @@
+category: baseline
+depends:
+satisfy_deb: libX11-dev && libXrender-dev
+satisfy_rpm: libX11-devel && libXrender-devel && libXext-devel

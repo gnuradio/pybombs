@@ -1,0 +1,7 @@
+depends: python wget gcc
+category: baseline
+satisfy_deb: swig2.0
+satisfy_rpm: swig == 2.0
+source: wget://http://prdownloads.sourceforge.net/swig/swig-2.0.4.tar.gz
+var config_opt = "--without-pcre"
+inherit: autoconf

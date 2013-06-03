@@ -1,0 +1,7 @@
+depends: libpng freetype python wget
+category: baseline
+satisfy_deb: graphviz
+satisfy_rpm: graphviz-devel
+source: wget://http://www.graphviz.org/pub/graphviz/stable/SOURCES/graphviz-2.28.0.tar.gz
+#var config_opt = ""
+inherit: autoconf

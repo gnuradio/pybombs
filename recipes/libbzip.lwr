@@ -1,0 +1,14 @@
+category: baseline 
+depends: wget
+source: wget://https://launchpad.net/ubuntu/+archive/primary/+files/bzip2_1.0.6.orig.tar.bz2
+satisfy_deb: libbz2-dev
+satisfy_rpm: bzip2-devel
+inherit: autoconf
+
+configure {
+
+}
+
+install {
+make install PREFIX=$prefix
+}

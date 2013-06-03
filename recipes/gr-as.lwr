@@ -1,0 +1,15 @@
+category: common
+depends: boost theron pmc
+source: git://https://github.com/guruofquality/gras.git
+gitbranch: master
+inherit: cmake
+configure {
+    rmdir ../Theron
+    ln -s ../theron/ ../Theron
+    rmdir ../PMC
+    ln -s ../pmc/ ../PMC
+    rmdir ../gnuradio
+    ln -s ../gnuradio/ ../gnuradio
+    cmake .. -DCMAKE_INSTALL_PREFIX=$prefix $config_opt
+}
+

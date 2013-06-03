@@ -1,0 +1,5 @@
+category: common
+depends: gnuradio 
+source: svn://https://www.cgran.org/cgran/projects/simple_ra/trunk
+gitbranch: master
+inherit: empty

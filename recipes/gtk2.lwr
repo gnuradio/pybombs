@@ -1,0 +1,7 @@
+category: baseline 
+depends: glib gdk-pixbuf atk pango cairo libtiff libjpeg wget
+source: wget://http://ftp.gnome.org/pub/gnome/sources/gtk+/2.21/gtk+-2.21.8.tar.bz2
+satisfy_deb: libgtk2.0-dev >= 2.21.8
+satisfy_rpm: gtk2-devel >= 2.21.8
+var config_opt = " GDK_PIXBUF_CSOURCE=$prefix/bin/gdk-pixbuf-csource-2.0 "
+inherit: autoconf

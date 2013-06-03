@@ -1,0 +1,5 @@
+depends: gnuradio curl git cmake
+category: common
+source: git://https://github.com/osh/gr-eventstream.git
+gitbranch: master
+inherit: cmake

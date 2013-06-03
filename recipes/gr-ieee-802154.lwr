@@ -1,0 +1,7 @@
+category: common
+depends: gnuradio uhd
+#source: git://git://wiesel.ece.utah.edu/gr-ieee802-15-4.git
+source: git://https://github.com/bastibl/gr-ieee802-15-4.git
+gitbranch: master
+inherit: cmake
+

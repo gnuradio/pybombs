@@ -1,0 +1,4 @@
+category: baseline 
+depends: 
+satisfy_deb: subversion
+satisfy_rpm: subversion

@@ -1,0 +1,5 @@
+category: baseline
+depends: wget
+source: wget://http://gperftools.googlecode.com/files/gperftools-2.0.tar.gz
+var config_opt = " --enable-frame-pointers "
+inherit: autoconf

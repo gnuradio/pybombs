@@ -1,0 +1,3 @@
+category: baseline
+satisfy_deb: libblas-dev >= 1.2
+satisfy_rpm: blas >= 3.0

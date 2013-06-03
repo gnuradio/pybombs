@@ -1,0 +1,15 @@
+category: baseline 
+depends: qt4 wget
+source: wget://http://prdownloads.sourceforge.net/qwt/qwt-5.2.0.tar.bz2
+satisfy_deb: libqwt5-qt4 && libqwt5-qt4-dev
+satisfy_rpm: qwt-devel >= 5.2
+inherit: autoconf
+configure {
+    cp qwtconfig.pri qwtconfig.pri.orig && \
+    sed 's/\/usr\/local\/qwt-5.2.0/$reprefix/' qwtconfig.pri  > qwtconfig.pri.tmp && \
+    cp qwtconfig.pri.tmp qwtconfig.pri && \
+    qmake 
+}
+make {
+    make
+}    

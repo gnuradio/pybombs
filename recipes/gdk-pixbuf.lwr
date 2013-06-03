@@ -1,0 +1,7 @@
+category: baseline 
+depends: wget libtiff libpng libjpeg glib
+source: wget://http://ftp.gnome.org/pub/gnome/sources/gdk-pixbuf/2.24/gdk-pixbuf-2.24.0.tar.bz2
+#satisfy_deb: libgdk-pixbuf2.0-dev >= 2.21.0
+#satisfy_rpm: gdk-pixbuf-devel >= 2.21.0
+inherit: autoconf
+

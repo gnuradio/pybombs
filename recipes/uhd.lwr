@@ -1,0 +1,8 @@
+category: common
+depends: swig python libusb git cmake cheetah boost gsl numpy cppunit fftw
+source: git://git://code.ettus.com/ettus/uhd.git
+gitbranch: master
+inherit: cmake
+configuredir: host/build
+makedir: host/build
+installdir: host/build

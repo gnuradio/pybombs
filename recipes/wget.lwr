@@ -1,0 +1,4 @@
+category: baseline
+depends:
+satisfy_deb: wget
+satisfy_rpm: wget

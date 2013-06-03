@@ -1,0 +1,21 @@
+category: baseline 
+depends: gtk2 python swig wget
+#source: wget://http://prdownloads.sourceforge.net/wxwindows/wxWidgets-2.8.12.tar.bz2
+#source: wget://http://prdownloads.sourceforge.net/wxpython/wxPython-src-2.8.10.1.tar.bz2
+source: wget://http://prdownloads.sourceforge.net/wxpython/wxPython-src-2.8.11.0.tar.bz2
+satisfy_deb: python-wxgtk2.8 
+satisfy_rpm: wxPython
+var config_opt = " --disable-unicode "
+inherit: autoconf
+make {
+    make && \
+    make -C contrib/src/gizmos && \
+    make -C contrib/src/stc
+}
+install {
+    make install && \
+    make -C contrib/src/gizmos install && \
+    make -C contrib/src/stc install && \
+    cd wxPython && python setup.py install --prefix=$prefix WXPORT=gtk2 UNICODE=0 BUILD_GLCANVAS=0
+}
+

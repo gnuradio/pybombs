@@ -1,0 +1,3 @@
+category: baseline
+satisfy_deb: perl
+satisfy_rpm: perl

@@ -1,0 +1,6 @@
+depends: python swig wget
+category: baseline
+satisfy_deb: python-numpy >= 1.5
+satisfy_rpm: numpy >= 1.5
+source: wget://http://prdownloads.sourceforge.net/numpy/numpy-1.6.2.tar.gz
+inherit: distutils

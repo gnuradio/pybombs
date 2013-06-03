@@ -1,0 +1,5 @@
+depends: 
+category: baseline
+satisfy_deb: libapr1-dev
+satisfy_rpm: apr-devel
+inherit: autoconf

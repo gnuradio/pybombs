@@ -1,0 +1,6 @@
+category: baseline
+depends: wget gmp mpfr
+satisfy_deb: libmpc-dev >= 0.9
+source: wget://http://www.multiprecision.org/mpc/download/mpc-0.9.tar.gz
+var config_opt = " --with-gmp=$prefix "
+inherit: autoconf

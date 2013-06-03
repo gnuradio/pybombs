@@ -1,0 +1,6 @@
+category: baseline 
+depends: freetype wget
+source: wget://http://fontconfig.org/release/fontconfig-2.9.0.tar.gz
+satisfy_deb: libfontconfig1-dev >= 2.4.2
+satisfy_rpm: fontconfig-devel >= 2.4.2
+inherit: autoconf

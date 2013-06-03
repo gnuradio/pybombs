@@ -1,0 +1,5 @@
+category: baseline
+depends: python wget
+source: wget://https://pypi.python.org/packages/source/s/setuptools/setuptools-0.6c11.tar.gz
+satisfy_deb: python-setuptools >= 0.6
+satisfy_rpm: python-setuptools >= 0.6

@@ -1,0 +1,8 @@
+category: baseline
+depends: wget gmp
+satisfy_deb: libmpfr-dev >= 3.0.0
+satisfy_rpm: mpfr-devel >= 3.0.0
+source: wget://http://www.mpfr.org/mpfr-3.0.0/mpfr-3.0.0.tar.gz
+var config_opt = " --with-gmp-include=$prefix/include/ --with-gmp-lib=$prefix/lib/ "
+inherit: autoconf
+

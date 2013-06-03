@@ -1,0 +1,7 @@
+depends: wget
+category: baseline
+satisfy_deb: (python2.7 || python2.6) && python-dev
+satisfy_rpm: (python-devel >= 2.6) && (python-devel <= 2.7)
+source: wget://http://www.python.org/ftp/python/2.6.4/Python-2.6.4.tar.bz2
+var config_opt = "--enable-shared"
+inherit: autoconf

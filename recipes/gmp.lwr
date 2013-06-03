@@ -1,0 +1,4 @@
+category: baseline
+depends: wget
+source: wget://http://archive.ubuntu.com/ubuntu/pool/main/g/gmp/gmp_4.3.2+dfsg.orig.tar.gz
+inherit: autoconf

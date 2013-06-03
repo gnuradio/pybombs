@@ -1,0 +1,17 @@
+category: baseline
+depends: wget
+source: wget://http://www.fftw.org/fftw-3.3.2.tar.gz
+satisfy_deb: libfftw3-3 && libfftw3-dev
+satisfy_rpm: fftw-devel
+
+var config_opt = "--enable-single --enable-shared"
+
+inherit: autoconf
+
+#satisfy_rpm: 
+#
+#source: git://code.ettus.com/ettus/uhd.git
+#gitbranch: master
+#make: cmake(host)
+#install: install(host)
+#

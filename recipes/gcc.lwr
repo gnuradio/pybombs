@@ -1,0 +1,5 @@
+category: baseline
+depends: 
+satisfy_deb: gcc && g++
+satisfy_rpm: gcc-c++
+

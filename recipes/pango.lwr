@@ -1,0 +1,6 @@
+category: baseline 
+depends: cairo wget
+source: wget://http://ftp.gnome.org/pub/gnome/sources/pango/1.28/pango-1.28.4.tar.bz2
+satisfy_deb: libpango1.0-0 >= 1.28
+satisfy_rpm: pango-devel >= 1.28
+inherit: autoconf

@@ -1,0 +1,5 @@
+category: common
+depends: subversion gnuradio uhd gr-osmosdr boost curl gtest gflags glog armadillo gfortran cmake gr-compat
+source: svn://http://svn.code.sf.net/p/gnss-sdr/code/trunk/
+gitbranch: master
+inherit: cmake

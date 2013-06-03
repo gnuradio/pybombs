@@ -1,0 +1,6 @@
+depends: python swig wget
+category: baseline
+satisfy_deb: libffi6
+satisfy_rpm: libffi-devel
+source: wget://ftp://sourceware.org/pub/libffi/libffi-3.0.9.tar.gz
+inherit: autoconf

@@ -1,0 +1,7 @@
+depends: python swig gtk2 pygobject pango cairo wget
+category: baseline
+satisfy_deb: python-gtk2 >= 2.17
+satisfy_rpm: pygtk2-devel >= 2.17
+source: wget://http://ftp.gnome.org/pub/GNOME/sources/pygtk/2.17/pygtk-2.17.0.patched.tar.bz2
+install_like: gtk2
+inherit: autoconf

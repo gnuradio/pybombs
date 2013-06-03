@@ -1,0 +1,6 @@
+depends: python libxml libxslt setuptools wget
+category: baseline
+satisfy_deb: python-lxml >= 2.3.2
+satisfy_rpm: python-lxml >= 2.3.2
+source: wget://http://lxml.de/files/lxml-2.3.3.tgz
+inherit: distutils

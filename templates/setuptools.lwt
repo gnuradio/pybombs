@@ -1,0 +1,18 @@
+var config_opt = ""
+var install_opt = "setuptools.satisfier==deb?{--install-layout=deb}:{}"
+depends: python
+
+configure { 
+}
+
+make {
+    python setup.py build_ext --library-dirs=$prefix/lib:$prefix/lib64
+}
+
+install {
+    python setup.py install --prefix=$prefix $install_opt
+}
+
+uninstall {
+    echo "WARNING: no uninstall mechanism provided by python setuptools"
+}

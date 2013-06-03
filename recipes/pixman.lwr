@@ -1,0 +1,6 @@
+category: baseline 
+depends: wget
+source: wget://https://launchpad.net/ubuntu/+archive/primary/+files/pixman_0.18.4.orig.tar.gz
+satisfy_deb: (libpixman-1-0 >= 0.18.4) || (libpixman-1-dev >= 0.18.4)
+satisfy_rpm: pixman-devel >= 0.18.4
+inherit: autoconf

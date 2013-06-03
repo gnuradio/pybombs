@@ -1,0 +1,15 @@
+category: baseline 
+depends: cairo python wget
+source: wget://http://cairographics.org/releases/py2cairo-1.8.10.tar.gz
+satisfy_deb: python-cairo-dev >= 1.8
+satisfy_rpm: pycairo-devel >= 1.8
+install_like: cairo
+configure {
+    ./waf configure --prefix=$prefix
+}
+make {
+    ./waf build
+}
+install {
+    ./waf install
+}

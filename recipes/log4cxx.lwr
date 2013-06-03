@@ -1,0 +1,8 @@
+depends: apr aprutil wget
+category: baseline
+satisfy_deb: liblog4cxx10-dev && liblog4cxx10
+satisfy_rpm: apache-log4cxx-devel
+source: wget://http://mirror.cc.columbia.edu/pub/software/apache/logging/log4cxx/0.10.0/apache-log4cxx-0.10.0.patched.tar.gz
+var config_opt = "LDFLAGS='-L/usr/lib64'"
+inherit: autoconf
+

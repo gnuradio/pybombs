@@ -1,0 +1,16 @@
+var config_opt = ""
+
+configure { 
+    bjam --prefix=$prefix $config_opt
+}
+
+make {
+    bjam release
+}
+
+install {
+    bjam install
+}
+
+uninstall {
+}

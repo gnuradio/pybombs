@@ -1,0 +1,6 @@
+depends: apr
+category: baseline
+satisfy_deb: libaprutil1-dev
+satisfy_rpm: apr-util-devel
+var config_opt = "--with-apr=$prefix"
+inherit: autoconf

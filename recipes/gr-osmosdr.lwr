@@ -1,0 +1,5 @@
+category: common
+depends: gnuradio uhd
+source: git://git://git.osmocom.org/gr-osmosdr
+gitbranch: master
+inherit: cmake

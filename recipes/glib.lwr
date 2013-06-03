@@ -1,0 +1,6 @@
+category: baseline 
+depends: wget
+source: wget://http://ftp.gnome.org/pub/gnome/sources/glib/2.27/glib-2.27.2.tar.bz2
+satisfy_deb: libglib2.0-dev >= 2.27.2
+satisfy_rpm: glib2-devel >= 2.27.2
+inherit: autoconf

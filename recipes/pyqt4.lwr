@@ -1,0 +1,11 @@
+category: baseline 
+depends: python sip qt4 wget
+satisfy_deb: python-qt4 >= 4.6.2
+satisfy_rpm: PyQt4-devel >= 4.6.2
+#source: wget://http://pkgs.fedoraproject.org/repo/pkgs/PyQt4/PyQt-x11-gpl-4.6.2.tar.gz/b7aba1b0e41d674b0ebcb64844f442f7/PyQt-x11-gpl-4.6.2.tar.gz
+source: wget://http://pkgs.fedoraproject.org/repo/pkgs/PyQt4/PyQt-x11-gpl-4.7.2.tar.gz/e7782e9146ec8aa0e76bcdb0ca5b9491/PyQt-x11-gpl-4.7.2.tar.gz
+install_like: qt4
+inherit: autoconf
+configure {
+    python configure.py --confirm-license -b $prefix/bin -d $prefix/lib/python2.6/site-packages/ -v $prefix/share/sip/
+}

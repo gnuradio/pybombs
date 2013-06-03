@@ -1,0 +1,20 @@
+depends: wget
+category: baseline
+satisfy_deb: (libdb++-dev >= 4.8 && libdb++-dev <= 5.1.9) || libdb4.8++-dev || libdb5.1++-dev
+satisfy_rpm: (db4-devel >= 4.8 && db4-devel <= 5.1.9)
+source: wget://http://download.oracle.com/berkeley-db/db-4.8.30.tar.gz
+
+inherit: autoconf
+
+configure {
+    cd build_unix/
+    ../dist/configure --enable-cxx --prefix=$prefix --libdir=$prefix/lib64
+}
+make {
+    cd build_unix/
+    make -j4
+}
+install {
+    cd build_unix/
+    make install
+}
