@@ -1,0 +1,30 @@
+#
+# This file is part of PyBOMBS
+#
+# PyBOMBS is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# PyBOMBS is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PyBOMBS; see the file COPYING.  If not, write to
+# the Free Software Foundation, Inc., 51 Franklin Street,
+# Boston, MA 02110-1301, USA.
+#
+
+category: baseline
+depends: python libbzip wget
+source: wget://http://downloads.sourceforge.net/project/boost/boost/1.53.0/boost_1_53_0.tar.bz2
+satisfy_deb:  (libboost1.53-dev && libboost-date-time1.53-dev && libboost-filesystem1.53-dev && libboost-program-options1.53-dev && libboost-regex1.53-dev && libboost-thread1.53-dev && libboost-test1.53-dev) || ((libboost-dev >= 1.53) && (libboost-date-time-dev >= 1.53) && (libboost-filesystem-dev >= 1.53) && (libboost-program-options-dev >= 1.53) && (libboost-regex-dev >= 1.53) && (libboost-thread-dev >= 1.53) && (libboost-test-dev >=1.53)) 
+satisfy_rpm: boost-devel >= 1.53
+configure {
+    ./bootstrap.sh --prefix=$prefix --libdir=$prefix/lib/
+}
+install {
+    ./bjam --threading=multi --layout=tagged link=shared install
+}

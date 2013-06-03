@@ -1,0 +1,44 @@
+#
+# This file is part of PyBOMBS
+#
+# PyBOMBS is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# PyBOMBS is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PyBOMBS; see the file COPYING.  If not, write to
+# the Free Software Foundation, Inc., 51 Franklin Street,
+# Boston, MA 02110-1301, USA.
+#
+
+category: baseline 
+depends: qwt5 pyqt4 sip wget
+satisfy_deb: python-qwt5-qt4 >= 5.2
+satisfy_rpm: PyQwt-devel >= 5.2
+source: wget://http://prdownloads.sourceforge.net/pyqwt/PyQwt-5.2.0.tar.gz
+install_like: qwt5
+inherit: autoconf
+
+configuredir: configure/
+makedir: configure/
+installdir: configure/
+configure {
+    sed 's/-lqwt/-lqwt-qt4/' ../qwt-5.2/qwt.prf > ../qwt-5.2/qwt.prf.tmp && \
+    cp ../qwt-5.2/qwt.prf.tmp ../qwt-5.2/qwt.prf && \
+    #python configure.py -I$prefix/include/qwt5/ -L$prefix/lib/ -L$prefix/lib64/ && \
+    python configure.py -Q ../qwt-5.2 --module-install-path=$prefix/lib/python2.6/site-packages/ -I$prefix/include/qwt5/ -L$prefix/lib/ -L$prefix/lib64
+    sed 's/-lqwt/-lqwt-qt4/' qwt5qt4/Makefile > qwt5qt4/Makefile.tmp && \
+    cp qwt5qt4/Makefile.tmp qwt5qt4/Makefile
+    sed 's/\/usr\/share\/sip\//$reprefix\/share\/sip\//' qwt5qt4/Makefile > qwt5qt4/Makefile.tmp && \
+    cp qwt5qt4/Makefile.tmp qwt5qt4/Makefile
+    mkdir -p $prefix/share/sip/PyQt4/Qwt5
+    sed 's/\/usr\/lib64\/python2.6\/site-packages\/PyQt4\//$reprefix\/lib\/python2.6\/site-packages\/PyQt4\//' qwt5qt4/Makefile > qwt5qt4/Makefile.tmp && \
+    cp qwt5qt4/Makefile.tmp qwt5qt4/Makefile
+    mkdir -p $prefix/lib/python2.6/site-packages/PyQt4/uic/widget-plugins
+}

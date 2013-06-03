@@ -1,0 +1,29 @@
+#
+# This file is part of PyBOMBS
+#
+# PyBOMBS is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# PyBOMBS is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PyBOMBS; see the file COPYING.  If not, write to
+# the Free Software Foundation, Inc., 51 Franklin Street,
+# Boston, MA 02110-1301, USA.
+#
+
+depends: make mcpp boost fftw cppunit swig gsl uhd git python cheetah wxpython numpy lxml pygtk pycairo cmake pyqt4 pyqwt5 gcc ice
+category: common
+source: git://http://www.gnuradio.org/git/gnuradio.git
+gitbranch: master
+var config_opt = " -DENABLE_GR_FCD=ON -DENABLE_DOXYGEN=OFF -DENABLE_GR_LOG=ON -DENABLE_PERFORMANCE_COUNTERS=ON -DCMAKE_CXX_FLAGS=-fpermissive "
+inherit: cmake
+install {
+    make install
+    make install
+}

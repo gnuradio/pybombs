@@ -1,0 +1,27 @@
+#
+# This file is part of PyBOMBS
+#
+# PyBOMBS is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# PyBOMBS is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PyBOMBS; see the file COPYING.  If not, write to
+# the Free Software Foundation, Inc., 51 Franklin Street,
+# Boston, MA 02110-1301, USA.
+#
+
+category: baseline 
+depends: wget
+#source: wget://ftp://ftp.qt.nokia.com/qt/source/qt-everywhere-opensource-src-4.7.2.tar.gz
+source: wget://ftp://ftp.qt.nokia.com/qt/source/qt-everywhere-opensource-src-4.6.2.tar.gz
+satisfy_deb: libqt4-dev >= 4.6.2
+satisfy_rpm: qt-devel >= 4.6.2 || qt4-devel >= 4.6.2
+var config_opt = "-opensource --confirm-license -L$prefix/lib -L$prefix/lib64"
+inherit: autoconf

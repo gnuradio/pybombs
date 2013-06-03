@@ -1,0 +1,30 @@
+#
+# This file is part of PyBOMBS
+#
+# PyBOMBS is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# PyBOMBS is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PyBOMBS; see the file COPYING.  If not, write to
+# the Free Software Foundation, Inc., 51 Franklin Street,
+# Boston, MA 02110-1301, USA.
+#
+
+category: baseline 
+depends: python sip qt4 wget
+satisfy_deb: python-qt4 >= 4.6.2
+satisfy_rpm: PyQt4-devel >= 4.6.2
+#source: wget://http://pkgs.fedoraproject.org/repo/pkgs/PyQt4/PyQt-x11-gpl-4.6.2.tar.gz/b7aba1b0e41d674b0ebcb64844f442f7/PyQt-x11-gpl-4.6.2.tar.gz
+source: wget://http://pkgs.fedoraproject.org/repo/pkgs/PyQt4/PyQt-x11-gpl-4.7.2.tar.gz/e7782e9146ec8aa0e76bcdb0ca5b9491/PyQt-x11-gpl-4.7.2.tar.gz
+install_like: qt4
+inherit: autoconf
+configure {
+    python configure.py --confirm-license -b $prefix/bin -d $prefix/lib/python2.6/site-packages/ -v $prefix/share/sip/
+}
