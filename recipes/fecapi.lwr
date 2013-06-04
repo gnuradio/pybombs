@@ -1,0 +1,5 @@
+depends: gnuradio git cmake
+category: common
+source: git://https://github.com/namccart/fecapi
+gitbranch: master
+inherit: cmake
