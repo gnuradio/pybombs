@@ -384,11 +384,12 @@ def have_deb(name, comparator=None, version=None):
     comparatorDict = {'<=':operator.le, '==':operator.eq, '>=':operator.ge, '!=':operator.ne}
     cmp = lambda x, y, z: z(StrictVersion(x),StrictVersion(y))
     #print "have_deb: %s , %s, %s" % (name, comparator, version)
+    devnull = open(os.devnull,"w")
+    notfound = subprocess.call(["dpkg","-s",name],stdout=devnull,stderr=subprocess.STDOUT)
+    devnull.close()
+    if notfound:
+        return False;
     a = shellexec(["dpkg","-s",name]);
-    if(re.search(r'is not installed', a)):
-        return False;
-    if(re.search(r'not-installed', a)):
-        return False;
     m = re.search(r'Version: (\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+).*\n', a);
 #    print "MATCH:" + "1" + str( m.group(1) )  + "2" + str( m.group(2) )
     if(m):
