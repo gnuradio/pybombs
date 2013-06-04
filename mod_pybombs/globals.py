@@ -34,12 +34,14 @@ except:
     pass
 
 # make sure a few directories exist
-pathcheck = [topdir + "src", config.get("config","prefix"), config.get("config", "prefix") + "/lib64",
-    config.get("config", "prefix") + "/lib/", config.get("config", "prefix") + "/lib/python2.7/", 
-    config.get("config", "prefix") + "/lib/python2.6/", config.get("config", "prefix") + "/lib/python2.6/site-packages",
-    config.get("config", "prefix") + "/lib64/python2.6/", config.get("config", "prefix") + "/lib64/python2.6/site-packages",
-    config.get("config", "prefix") + "/lib/python2.7/site-packages", config.get("config", "prefix") + "/share/", 
-    config.get("config", "prefix") + "/share/sip/"];
+prefix = config.get("config", "prefix").rstrip('/')
+print "Settled on prefix: " + prefix
+pathcheck = [topdir + "src", prefix, prefix + "/lib64",
+                prefix + "/lib/", prefix + "/lib/python2.7/",
+                prefix + "/lib/python2.6/", prefix + "/lib/python2.6/site-packages",
+                prefix + "/lib64/python2.6/", prefix + "/lib64/python2.6/site-packages",
+                prefix + "/lib/python2.7/site-packages", prefix + "/share/", 
+                prefix + "/share/sip/"]
 
 try:
     for path in pathcheck:
@@ -48,7 +50,7 @@ try:
 except OSError, error:
     if error.errno == errno.EACCES:
         print "\n" + str(error)
-        print("Error! Provided install prefix requires root privileges. Please re-run as sudo!")
+        print("Error! Configured install prefix requires root privileges. Please re-run as sudo!")
         exit(error.errno)
 
 
