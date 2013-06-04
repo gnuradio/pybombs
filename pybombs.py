@@ -21,6 +21,7 @@ if(sys.argv[1] == "help" or sys.argv[1] == "--help"):
     print "     config          - show all local config settings"
     print "     config <k>      - show one local config setting"
     print "     config <k> <v>  - set a local config setting"
+    print "     reconfig        - reconfigure all local settings"
     print "     inv             - show inventory values"
     print "     inv <k>         - clear inventory value for k"
     print "     inv <k> <v>     - update local package k inventory value to v"
@@ -143,6 +144,12 @@ if(sys.argv[1] == "config"):
         config_set(sys.argv[2], sys.argv[3])
     else:
         sys.argv[1] = "help"
+
+if(sys.argv[1] == "reconfig"):
+    config = ConfigParser.RawConfigParser()
+    config_init(config, True)
+    config_write(config)
+    sys.exit(0)
 
 if(sys.argv[1] == "inv"):
     if(len(sys.argv) == 2):
