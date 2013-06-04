@@ -44,7 +44,6 @@ def config_init(cfg, reconfig=False):
             print desc[kn];
         rv = raw_input("%s [%s]:"%(kn,vals[kn]));
         if not rv:
-        #if rv == "":
             rv = vals[kn];
         cfg.set("config", kn, rv);
 
@@ -52,6 +51,7 @@ def config_init(cfg, reconfig=False):
 
 
 def config_write(config):
+    # Need to use 'w' so that we overwrite any old config.
     a = open('config.dat','wb');
     config.write(a);
     a.close();
