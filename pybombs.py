@@ -2,6 +2,13 @@
 
 import os,re,sys;
 
+
+"""
+Catch-all in case pybombs was invoked with no argument / command
+"""
+if(len(sys.argv) < 2):
+    sys.argv.append("help")
+
 """
 Handle commands that don't require loading the PyBombs modules & subsystem.
 """
@@ -61,9 +68,6 @@ from mod_pybombs import *
 print "---------- loading recipes -------------------"
 recipe_loader.load_all()
 print "---------- loading recipes finished ----------\n"
-
-if(len(sys.argv) < 2):
-    sys.argv.append("help")
 
 if(sys.argv[1] == "search"):
     st = " ".join(sys.argv[2:])
