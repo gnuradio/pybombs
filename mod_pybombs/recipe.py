@@ -501,7 +501,7 @@ class recipe:
             copyFrom = vars["install_like"]
             types.remove(global_recipes[copyFrom].satisfier)
             types.insert(0, global_recipes[copyFrom].satisfier)
-	if self.name == 'all':
+        if self.name == 'all':
             print "pseudo installation ok"
             return True;
         print "install type priority: " + str(types);
@@ -622,9 +622,14 @@ class recipe:
     # run package specific make uninstall
     def uninstall(self):
         try:
-            mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-            st = bashexec(self.scanner.var_replace_all(self.scr_uninstall));
-            print "bash return val = %d"%(st);
+            if(self.satisfier == "inventory"):
+                mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
+                st = bashexec(self.scanner.var_replace_all(self.scr_uninstall));
+                print "bash return val = %d"%(st);
+                self.satisfier = None;
+                del vars["%s.satisfier"%(self.name)]
+            else:
+                print "pkg not installed from source, ignoring"
         except:
             print "local build dir does not exist"   
 
