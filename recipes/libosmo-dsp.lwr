@@ -1,0 +1,13 @@
+# FIXME: recommends: doxygen
+
+category: common
+depends: fftw
+source: git://git://git.osmocom.org/libosmo-dsp
+gitbranch: master
+inherit: autoconf
+
+configure {
+    autoreconf -i
+    ./configure --prefix=$prefix $config_opt
+}
+
