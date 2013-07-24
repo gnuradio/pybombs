@@ -1,6 +1,7 @@
 category: common
-depends: gnuradio 
+depends: libusb
 source: git://git://git.osmocom.org/rtl-sdr
 gitbranch: master
+var config_opt = " -DDETACH_KERNEL_DRIVER=ON "
 inherit: cmake
 
