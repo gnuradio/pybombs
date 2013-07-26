@@ -1,0 +1,53 @@
+
+_pybombs()
+{
+
+    local cur prev special i
+    local config_file=/home/nathan/code/pybombs/config.dat
+
+    COMPREPLY=()
+    cur=${COMP_WORDS[COMP_CWORD]}
+
+    for (( i=0; i< ${#COMP_WORDS[@]}-1; i++ )); do
+        # match special to the last command on the line
+        if [[ ${COMP_WORDS[i]} == @(help|info|install|remove|rnd|clean|config|reconfig|inv|digraph|digraphi|update|rb|search) ]]; then
+            special=${COMP_WORDS[i]}
+        fi
+    done
+
+    if [ -n "$special" ]; then
+        case $special in
+            remove|rnd|clean|rb|digraphi|inv) # list installed packages
+                # the following works, but is *way* too slow
+                # _installed_packages=`pybombs list 2>/dev/null | gawk '/installed/{print $1}'`
+                # so instead we'll list all of the packages
+                _installed_packages=`ls recipes | sed 's/.lwr//'`
+                COMPREPLY=( $(compgen -W "$_installed_packages" -- $cur ) )
+                return 0
+                ;;
+            config|reconfig) # list config options
+                _config_options=`gawk '/^\w/{print $1}' $config_file` 
+                # echo $_config_options
+                COMPREPLY=( $(compgen -W "$_config_options" -- $cur) )
+                return 0
+                ;;
+            install|digraph|search) # list all packages
+                # this works, but is incredibly slow (same as list installed)
+                # _all_packages=`pybombs list 2>/dev/null | gawk '/^ /{print $1}'`
+                _all_packages=`ls recipes | sed 's/.lwr//'`
+                COMPREPLY=( $(compgen -W "$_all_packages" -- $cur ) )
+
+                return 0
+                ;;
+            help) # list all commands
+                COMPREPLY=( $( compgen -W 'list info install remove rnd clean config reconfig inv digraph digraphi env update rb search' -- $cur ) )
+                return 0
+                ;;
+        esac
+    fi
+
+    COMPREPLY=( $( compgen -W 'help list info install remove rnd clean config reconfig inv digraph digraphi env update rb search' -- $cur ) )
+
+    return 0
+}
+complete -F _pybombs pybombs
