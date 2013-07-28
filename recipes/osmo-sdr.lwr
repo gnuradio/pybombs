@@ -1,5 +1,5 @@
 category: common
-depends: gnuradio uhd git cmake
+depends: git cmake libusb
 source: git://git://git.osmocom.org/osmo-sdr.git
 gitbranch: master
 inherit: cmake
