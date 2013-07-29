@@ -1,0 +1,22 @@
+category: common
+depends: gnuradio gr-osmosdr pulseaudio qt4
+source: git://https://github.com/csete/gqrx.git
+gitbranch: master
+inherit: empty
+
+configure {
+    qmake
+}
+
+make {
+    make -j4
+}
+
+install {
+    cp gqrx $prefix/bin/
+}
+
+uninstall {
+    rm $prefix/bin/gqrx
+}
+
