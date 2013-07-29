@@ -1,0 +1,5 @@
+category: common
+depends: gnuradio libusb
+source: git://https://github.com/dl1ksv/gr-fcdproplus.git
+gitbranch: master
+inherit: cmake
