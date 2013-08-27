@@ -76,6 +76,8 @@ def install(pkgname, die_if_already=False):
     if die_if_already and check_installed(pkgname):
         print pkgname + " already installed";
         return;
+    validate_write_perm(vars["prefix"])
+
     print "installing "+pkgname;
 
     rc = global_recipes[pkgname];
@@ -270,6 +272,7 @@ def remove_nd(k):
 # Update packages with PyBOMBS ;-D
 def update(pkglist=None):
     outofdate = [];
+    validate_write_perm(vars["prefix"])
 
     # check all packages, or specified packages for up-to-date-ness
     if(pkglist == None):

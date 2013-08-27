@@ -21,7 +21,7 @@
 
 from threading import Thread,Event
 #from subprocess import call;
-import os,re,shutil,time,glob,copy,signal,operator,re
+import os,re,shutil,time,glob,copy,signal,operator,re,sys
 import subprocess;
 import globals;
 import logging
@@ -581,4 +581,14 @@ def filemd5(path):
     return hashval;
 
 
-
+def validate_write_perm(d):
+    try:
+        tmpfile = os.tempnam(d);
+        print "TMPFILE = %s"%(tmpfile)
+        f1 = open(tmpfile,"w")
+        f1.close()
+        os.unlink(tmpfile);
+        print "WRITE PERMS OK %s"%(tmpfile)
+    except:
+        logger.error("Can not write to prefix (%s)! please fix your permissions or choose another prefix!"%(d));
+        sys.exit(-10)
