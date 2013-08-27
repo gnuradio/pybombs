@@ -23,7 +23,7 @@
 from globals import *;
 from plex import *;
 from sysutils import *;
-from fetch import fetch;
+import fetch
 from update import update;
 
 import pybombs_ops;
@@ -611,12 +611,26 @@ class recipe:
             step = step + 1;
 
         return True;
-        
+     
+    def fetched(self):
+        fetcher = fetch.fetcher(self.source, self);
+        return fetcher.fetched();
+   
     def fetch(self):
-        fetcher = fetch(self.source, self);
+        fetcher = fetch.fetcher(self.source, self);
+        fetcher.fetch();
         if(not fetcher.success):
-            raise Exception("Failed to Fetch package!");
+            if(len(self.source) == 0):
+                raise Exception("Failed to Fetch package '%s' no sources were provided! '%s'!"%(self.name, self.source));
+            else:
+                raise Exception("Failed to Fetch package '%s' sources were '%s'!"%(self.name, self.source));
+
+        # update value in inventory
+        inv.set_state(self.name, "fetch");
         self.last_fetcher = fetcher;
+        print "Setting fetched version info (%s,%s)"%(fetcher.used_source, fetcher.version)
+        inv.set_prop(self.name, "source", fetcher.used_source);
+        inv.set_prop(self.name, "version", fetcher.version);
         
     def configure(self):
         print "configure"

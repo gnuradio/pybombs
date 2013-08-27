@@ -65,6 +65,29 @@ def shellexec(cmd):
     [pin,pout] = os.popen4( " ".join(cmd) );
     return pout.read();
     
+def confirm(msg, default="N"):
+    # Remove the quesiton mark
+    if msg[-1] == "?":
+        msg = msg[:-1]
+    if default.upper() == "Y":
+        msg = msg + "[Y]/N? "
+    elif default.upper() == "N":
+        msg = msg + "Y/[N]? "
+    else:
+        raise ValueError("default must be either 'Y' or 'N'")
+
+    while True:
+        inp = raw_input(msg)
+        ans = inp.strip().upper()[0:1] # use 0:1 to avoid index error even on empty response
+        if ans == "":
+            ans = default
+        if ans == "Y":
+            return True;
+        elif ans == "N":
+            return False;
+        else:
+            print "'%s' is not a valid response" % inp
+
 def monitor(cmd,event):                
     
     def kill_process_tree(process, pid):
@@ -102,7 +125,8 @@ def monitor(cmd,event):
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, env=globals.env)
         pid = p.pid
         parentPid = pid
-        event.wait(10)
+        while p.poll() == None:
+            event.wait(1)
         if event.isSet():
             logger.info("monitor: Caught the quit Event. Killing Subprocess...")
             kill_process_tree(p, pid)
@@ -272,11 +296,13 @@ def shellexec_getout(cmd, throw_ex):
             return -1;
 
 def bashexec(cmd):
+    if cmd.strip() == "": return 0
     print "bash exec (%s):: %s"%(os.getcwd(),cmd);
-    #print "bash exec env: %s" %(globals.env)
     from subprocess import Popen, PIPE
     p = subprocess.Popen(["bash"], stdin=subprocess.PIPE, shell=True, env=globals.env)
-    p.stdin.write(cmd+"\n")
+    p.stdin.write(cmd)
+    if(cmd[-1] != "\n"):
+        p.stdin.write("\n")
     p.stdin.close()
     st = p.wait() # unless background execution preferred
     return st;

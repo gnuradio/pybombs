@@ -24,17 +24,42 @@ from globals import *
 import re,sys;
 from sysutils import *;
 
-class fetch:
+class fetcher:
     def __init__(self, source, recipe):
+        self.source = source;
         self.recipe = recipe;
         self.success = False;
 
+    def fetch(self):
         # try all the sources until one works?
-        for s in source:
+        for s in self.source:
             if(self.try_fetch(s)):
                 self.success = True;
                 self.used_source = s;
                 break;
+
+    def fetched(self):
+        for s in self.source:
+            if(self.check_fetched(s)):
+                return True
+        return False
+
+    def check_fetched(self, s):
+        r = re.search(r'(\w+)://',s);
+        ft = r.group(1); # fetch type
+        if(ft == "wget"):
+            url = s[7:];
+            fdir,fname = os.path.split(url);
+            return os.path.exists(os.path.join(topdir, "src", fname))
+        elif(ft == "file"):
+            path = s[7:]
+            fdir,fname = os.path.split(path);
+            return os.path.exists(os.path.join(topdir, "src", fname))
+        elif(ft == "git"):
+            return os.path.exists(os.path.join(topdir, "src", self.recipe.name))
+        elif(ft == "svn"):
+            return os.path.exists(os.path.join(topdir, "src", self.recipe.name))
+        die("unknown source type: %s"%(s))
 
     def try_fetch(self, s):
         r = re.search(r'(\w+)://',s);

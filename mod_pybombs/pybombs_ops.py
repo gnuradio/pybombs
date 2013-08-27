@@ -46,6 +46,30 @@ def check_installed(pkgname):
     print global_recipes[pkgname].satisfy()
     return global_recipes[pkgname].satisfy();
 
+def check_fetched(pkgname):
+    print "checking if fetched"+pkgname
+    print global_recipes[pkgname].fetched()
+    return global_recipes[pkgname].fetched()
+
+def fetch(pkgname, die_if_already=False):
+    if not check_recipe(pkgname):
+        die("unknown package "+pkgname)
+    if die_if_already and check_fetched(pkgname):
+        print pkgname + " already fetched"
+        return
+    print "fetch "+pkgname
+    
+    rc = global_recipes[pkgname];
+    pkg_missing = rc.recursive_satisfy();
+
+    # remove duplicates while preserviing list order (lowest nodes first)
+    pkg_missing = list_unique_ord(pkg_missing)
+
+    print "packages to fetch: " + str(pkg_missing);
+
+    for pkg in pkg_missing:
+        global_recipes[pkg].fetch()
+
 def install(pkgname, die_if_already=False):
     if not check_recipe(pkgname):
         die("unknown package "+pkgname);
@@ -166,13 +190,14 @@ def config_set(k,v):
     config_write(config);
     print "value updated"
 
-def clean(k):
-    try:
-        pkg = global_recipes[k];
-    except:
-        die("package not found: %s"%(k));
-    pkg.clean();
-    print "cleaned local "+k;
+def clean(kl):
+    for k in kl:
+        try:
+            pkg = global_recipes[k];
+        except:
+            die("package not found: %s"%(k));
+        pkg.clean();
+        print "cleaned local "+k;
 
 # remove packages in list k and all of their dependents
 def remove(pkglist=None):
