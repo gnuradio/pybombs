@@ -34,7 +34,10 @@ def load_all():
 
     for r in recipes:
         if not global_recipes.has_key(r):
-            global_recipes[r] = recipe(r);
+            try:
+                global_recipes[r] = recipe(r);
+            except:
+                print "Failed to load recipe", r
             
     global_recipes['all'] = recipe('all')
     global_recipes['all'].category = "pseudo"

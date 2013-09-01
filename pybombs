@@ -52,6 +52,7 @@ Operations:"
 """
 
 parser = OptionParser(USAGE)
+parser.add_option("-c", "--continue", dest="_continue", default=False, action="store_true", help="Attempt to continue in-spite of failures")
 parser.add_option("-f", "--force", default=False, action="store_true", help="Force operation to occur")
 parser.add_option("-a", "--all", default=False, action="store_true", help="Apply operation to all packages")
 opts,args = parser.parse_args()
@@ -198,7 +199,7 @@ elif(cmd == "fetch"):
         parser.error("Command 'fetch' requires at least one package")
     else:
         for p in args:
-            fetch(p, not opts.force);
+            fetch(p, not opts.force, opts._continue);
 
 else:
     parser.error("Command '%s' is not a valid command" % cmd )

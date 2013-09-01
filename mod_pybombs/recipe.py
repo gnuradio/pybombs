@@ -274,7 +274,7 @@ class recipescanner(Scanner):
     revtype = Rep(letter | digit | Any("_-."))
     name = letter + Rep(letter | digit | Any("-"))
     var_name = letter + Rep(letter | digit | Any("_"));
-    pkgname = letter + Rep(letter | digit | Any("-.+"))
+    pkgname = letter + Rep(letter | digit | Any("-.+_"))
     uri = letter + Rep(letter | digit | Any("+@$-._:/"))
     number = Rep1(digit)
     space = Any(" \t\n")
@@ -389,6 +389,10 @@ class recipescanner(Scanner):
             print "init scanner with lvars = %s"%(lvars)
         self.recipe = recipe;
         self.recipe.scanner = self
+
+        if not os.path.exists(filename):
+            print "Missing file %s"%(filename)
+            raise RuntimeError
 
         f = open(filename,"r");
         Scanner.__init__(self, self.lexicon, f, filename);
@@ -584,11 +588,6 @@ class recipe:
             except:
                 return False;
 
-        # this is not possible if we do not have sources
-        if(len(self.source) == 0):
-            print "no sources available"
-            return False;
-
         state = inv.state(self.name);
         print "state = %s"%(state)
         step = 0;
@@ -617,6 +616,10 @@ class recipe:
         return fetcher.fetched();
    
     def fetch(self):
+        # this is not possible if we do not have sources
+        if(len(self.source) == 0):
+            print "WARNING: no sources available for package %s!"%(self.name)
+            return True
         fetcher = fetch.fetcher(self.source, self);
         fetcher.fetch();
         if(not fetcher.success):

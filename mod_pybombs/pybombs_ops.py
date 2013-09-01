@@ -51,7 +51,7 @@ def check_fetched(pkgname):
     print global_recipes[pkgname].fetched()
     return global_recipes[pkgname].fetched()
 
-def fetch(pkgname, die_if_already=False):
+def fetch(pkgname, die_if_already=False, continue_on_failure=False):
     if not check_recipe(pkgname):
         die("unknown package "+pkgname)
     if die_if_already and check_fetched(pkgname):
@@ -68,7 +68,13 @@ def fetch(pkgname, die_if_already=False):
     print "packages to fetch: " + str(pkg_missing);
 
     for pkg in pkg_missing:
-        global_recipes[pkg].fetch()
+        try:
+            global_recipes[pkg].fetch()
+        except Exception, e:
+            if continue_on_failure == False:
+                raise
+            else:
+                print "Failed to fetch due to: ", e
 
 def install(pkgname, die_if_already=False):
     if not check_recipe(pkgname):
