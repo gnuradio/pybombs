@@ -21,7 +21,7 @@
 
 from threading import Thread,Event
 #from subprocess import call;
-import os,re,shutil,time,glob,copy,signal,operator,re
+import os,re,shutil,time,glob,copy,signal,operator,re,sys
 import subprocess;
 import globals;
 import logging
@@ -65,6 +65,29 @@ def shellexec(cmd):
     [pin,pout] = os.popen4( " ".join(cmd) );
     return pout.read();
     
+def confirm(msg, default="N"):
+    # Remove the quesiton mark
+    if msg[-1] == "?":
+        msg = msg[:-1]
+    if default.upper() == "Y":
+        msg = msg + "[Y]/N? "
+    elif default.upper() == "N":
+        msg = msg + "Y/[N]? "
+    else:
+        raise ValueError("default must be either 'Y' or 'N'")
+
+    while True:
+        inp = raw_input(msg)
+        ans = inp.strip().upper()[0:1] # use 0:1 to avoid index error even on empty response
+        if ans == "":
+            ans = default
+        if ans == "Y":
+            return True;
+        elif ans == "N":
+            return False;
+        else:
+            print "'%s' is not a valid response" % inp
+
 def monitor(cmd,event):                
     
     def kill_process_tree(process, pid):
@@ -102,7 +125,8 @@ def monitor(cmd,event):
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, env=globals.env)
         pid = p.pid
         parentPid = pid
-        event.wait(10)
+        while p.poll() == None:
+            event.wait(1)
         if event.isSet():
             logger.info("monitor: Caught the quit Event. Killing Subprocess...")
             kill_process_tree(p, pid)
@@ -272,11 +296,13 @@ def shellexec_getout(cmd, throw_ex):
             return -1;
 
 def bashexec(cmd):
+    if cmd.strip() == "": return 0
     print "bash exec (%s):: %s"%(os.getcwd(),cmd);
-    #print "bash exec env: %s" %(globals.env)
     from subprocess import Popen, PIPE
     p = subprocess.Popen(["bash"], stdin=subprocess.PIPE, shell=True, env=globals.env)
-    p.stdin.write(cmd+"\n")
+    p.stdin.write(cmd)
+    if(cmd[-1] != "\n"):
+        p.stdin.write("\n")
     p.stdin.close()
     st = p.wait() # unless background execution preferred
     return st;
@@ -555,4 +581,14 @@ def filemd5(path):
     return hashval;
 
 
-
+def validate_write_perm(d):
+    try:
+        tmpfile = os.tempnam(d);
+        print "TMPFILE = %s"%(tmpfile)
+        f1 = open(tmpfile,"w")
+        f1.close()
+        os.unlink(tmpfile);
+        print "WRITE PERMS OK %s"%(tmpfile)
+    except:
+        logger.error("Can not write to prefix (%s)! please fix your permissions or choose another prefix!"%(d));
+        sys.exit(-10)

@@ -62,6 +62,14 @@ def config_init(cfg, reconfig=False):
     for kn in kl:
         if(desc.has_key(kn)):
             print desc[kn];
+        if kn == "gituser":
+            if os.environ.get("USER"):
+                vals[kn] = os.environ.get("USER");
+        if kn == "prefix":
+            pwd = os.environ.get("PWD");
+            if os.path.basename(pwd)=="pybombs":
+                vals[kn] = os.path.join(os.path.dirname(pwd), "target")
+
         rv = raw_input("%s [%s]:"%(kn,vals[kn]));
         if not rv:
             rv = vals[kn];

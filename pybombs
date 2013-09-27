@@ -21,48 +21,62 @@
 #
 
 import os,re,sys;
+from optparse import OptionParser
 
+USAGE="""Python Build Overlay Managed Bundle Systems - CLI
+%prog [options] COMMAND [args]
+
+Operations:"
+    help            - show this screen
+    list            - show installed & available packages
+    info <pkg>      - display package info
+    install <pkg>   - install a package
+    remove          - cleanly remove all fully installed packages and dependents
+    remove <pkg>    - cleanly remove a fully installed package and dependents
+    rnd <pkg>       - cleanly remove a fully installed package (*DANGER* can break dependees!)
+    clean <pkg>     - ensure a package is in the uninstalled state
+    config          - show all local config settings
+    config <k>      - show one local config setting
+    config <k> <v>  - set a local config setting
+    reconfig        - reconfigure all local settings
+    inv             - show inventory values
+    inv <k>         - clear inventory value for k
+    inv <k> <v>     - update local package k inventory value to v
+    digraph         - write out package.dot digraph for graphviz (accepts --all to include all pkgs)
+    env             - write out env
+    update          - update all packages
+    update <pkg>    - update a specific package
+    rb <pkg>        - rebuild without re-fetch (equivalent to [inv pkg fetch && install pkg])
+    fetch <pkg>     - fetch a package without building or checking dependencies
+    search <expr>   - search for a package recipe matching <expr>
+"""
+
+parser = OptionParser(USAGE)
+parser.add_option("-c", "--continue", dest="_continue", default=False, action="store_true", help="Attempt to continue in-spite of failures")
+parser.add_option("-f", "--force", default=False, action="store_true", help="Force operation to occur")
+parser.add_option("-a", "--all", default=False, action="store_true", help="Apply operation to all packages")
+opts,args = parser.parse_args()
 
 """
 Catch-all in case pybombs was invoked with no argument / command
 """
-if(len(sys.argv) < 2):
-    sys.argv.append("help")
+if(len(args) == 0):
+    parser.print_help()
+    print "error: You must provide a command."
+    sys.exit(-1)
+
+cmd = args.pop(0)
 
 """
-Handle commands that don't require loading the PyBombs modules & subsystem.
+Handle commands the con't require loading the PyBombs modules & subsytem.
 """
-if(sys.argv[1] == "help" or sys.argv[1] == "--help"):
-    print "Python Build Overlay Managed Bundle Systems - CLI"
-    print "Usage: %s <op> <args...>"%(sys.argv[0])
-    print ""
-    print " Operations:"
-    print "     help            - show this screen"
-    print "     list            - show installed & available packages"
-    print "     info <pkg>      - display package info"
-    print "     install <pkg>   - install a package"
-    print "     remove          - cleanly remove all fully installed packages and dependents"
-    print "     remove <pkg>    - cleanly remove a fully installed package and dependents"
-    print "     rnd <pkg>       - cleanly remove a fully installed package (*DANGER* can break dependees!)"
-    print "     clean <pkg>     - ensure a package is in the uninstalled state"
-    print "     config          - show all local config settings"
-    print "     config <k>      - show one local config setting"
-    print "     config <k> <v>  - set a local config setting"
-    print "     reconfig        - reconfigure all local settings"
-    print "     inv             - show inventory values"
-    print "     inv <k>         - clear inventory value for k"
-    print "     inv <k> <v>     - update local package k inventory value to v"
-    print "     digraph         - write out package.dot digraph for graphviz (all pkgs)"
-    print "     digraphi        - write out package.dot digraph for graphviz (installed pkgs)"
-    print "     env             - write out env"
-    print "     update          - update all packages"
-    print "     update <pkg>    - update a specific package"
-    print "     rb <pkg>        - rebuild without re-fetch (equivalent to [inv pkg fetch && install pkg])"
-    print "     search <expr>   - search for a package recipe matching <expr>"
-    print ""
-    exit(0)
+if(cmd == "help"):
+    parser.print_help()
+    sys.exit(0)
+    print "error: You must provide a command."
+    sys.exit(-1)
 
-if(sys.argv[1] == "moo"):
+elif(cmd == "moo"):
     print "         (__)    "
     print "         (oo)    "
     print "   /------\/     "
@@ -70,13 +84,12 @@ if(sys.argv[1] == "moo"):
     print " *  /\---/\      "
     print "    ~~   ~~      "
     print "....\"Have you mooed today?\"..."
-    exit(0)
+    sys.exit(0)
 
 
 """
-Load the PyBomb modules & subsystem. Prepare for awesome.
+Load the PyBomb modules & subsystem. 
 """
-
 # remove this for deployment
 files = os.listdir("mod_pybombs");
 for f in files:
@@ -89,107 +102,106 @@ print "---------- loading recipes -------------------"
 recipe_loader.load_all()
 print "---------- loading recipes finished ----------\n"
 
-if(sys.argv[1] == "search"):
-    st = " ".join(sys.argv[2:])
+if(cmd == "search"):
+    st = " ".join(args)
     print "Searching for packages matching: " + st;
     pkg_search(st);
 
-if(sys.argv[1] == "list"):
+elif(cmd == "list"):
     print "Printing recipe status list:"
     pkglist()
     print ""
 
-if(sys.argv[1] == "env"):
+elif(cmd == "env"):
     print "Writing out env...:"
     writeenv()
 
-if(sys.argv[1] == "install"):
-    if(len(sys.argv) < 3):
-        sys.argv[1] = "help"
+elif(cmd == "install"):
+    if(len(args) == 0):
+        parser.error("Command 'install' requires at least one package")
     else:
-        for p in sys.argv[2:]:
-            install(p,True);
+        for p in args:
+            install(p, not opts.force);
 
-if(sys.argv[1] == "update"):
-    if(len(sys.argv) == 2):
+elif(cmd == "update"):
+    if(len(args) == 0):
         update();
     else:
-        update(sys.argv[2:])
+        update(args)
 
-if(sys.argv[1] == "rb"):
-    if(len(sys.argv) != 3):
-        sys.argv[1] = "help"
+elif(cmd == "rb"):
+    if(len(args) == 0):
+        parser.error("Command 'rb' requires at least one package")
     else:
-        inventory_set(sys.argv[2], "fetch")
-        install(sys.argv[2],True)
+        for x in args: inventory_set(x, "fetch")
+        for x in args: install(x,True)
 
-if(sys.argv[1] == "remove" or sys.argv[1] == "rm" or sys.argv[1] == "uninstall"):
-    if(len(sys.argv) < 2):
-        sys.argv[1] = "help"
-    elif(len(sys.argv) == 2):
-        confirm = raw_input("Really remove all installed packages? (y or n) ")
-        if(confirm=="y" or confirm=='Y'):
+elif(cmd == "remove" or cmd == "rm" or cmd == "uninstall"):
+    if(len(args) == 0):
+        confirm = sysutils.confirm("Really remove all installed packages?", default="N")
+        if(confirm):
             remove()
         else:
             print "Operation cancelled!"
+            sys.exit(0)
     else:
-        remove(sys.argv[2:])
+        remove(args)
 
-if(sys.argv[1] == "rnd"):
-    if(len(sys.argv) < 3):
-        sys.argv[1] = "help"
+elif(cmd == "rnd"):
+    if(len(args) == 0):
+        parser.error("Command 'rnd' requires at least one package")
     else:
-        remove_nd(sys.argv[2:])
+        remove_nd(args)
 
-if(sys.argv[1] == "clean" or sys.argv[1] == "reset"):
-    if(len(sys.argv) != 3):
-        sys.argv[1] = "help"
+elif(cmd == "clean" or cmd== "reset"):
+    if(len(args) == 0):
+        parser.error("Command 'clean' requires at least one package")
     else:
-        clean(sys.argv[2])
+        clean(args)
 
-if(sys.argv[1] == "digraph"):
-    graphviz(False)
+elif(cmd == "digraph"):
+    graphviz(not opts.all)
 
-if(sys.argv[1] == "digraphi"):
-    graphviz(True)
-
-if(sys.argv[1] == "info"):
-    if(len(sys.argv) != 3):
-        sys.argv[1] = "help"
+elif(cmd == "info"):
+    if(len(args) == 0):
+        parser.error("Command 'info' requires at least one package")
     else:
-        pkginfo(sys.argv[2])
+        for a in args: pkginfo(a) 
 
-if(sys.argv[1] == "config"):
-    if(len(sys.argv) == 2):
+elif(cmd == "config"):
+    if(len(args) == 0):
         config_print()
-    elif(len(sys.argv) == 3):
-        config_get(sys.argv[2])
-    elif(len(sys.argv) == 4):
-        config_set(sys.argv[2], sys.argv[3])
+    elif(len(args) == 1):
+        config_get(args[0])
+    elif(len(args) == 2):
+        config_set(args[0], args[1])
     else:
-        sys.argv[1] = "help"
+        parser.error("Command 'config' accepts at most 2 arguments")
 
-if(sys.argv[1] == "reconfig"):
+elif(cmd == "reconfig"):
     config = ConfigParser.RawConfigParser()
     config_init(config, True)
     config_write(config)
     sys.exit(0)
 
-if(sys.argv[1] == "inv"):
-    if(len(sys.argv) == 2):
+elif(cmd == "inv"):
+    if(len(args) == 0):
         inv.show()
-    elif(len(sys.argv) == 3):
-        inventory_set(sys.argv[2], None)
-    elif(len(sys.argv) == 4):
-        inventory_set(sys.argv[2], sys.argv[3])
+    elif(len(args) == 1):
+        inventory_set(args[0], None)
+    elif(len(args) == 2):
+        inventory_set(args[0], args[1])
     else:
-        sys.argv[1] = "help"
+        parser.error("Command 'inv' accepts at most 2 arguments")
 
-#if(sys.argv
-#op = sys.argv[1];
+elif(cmd == "fetch"):
+    if(len(args) == 0):
+        parser.error("Command 'fetch' requires at least one package")
+    else:
+        for p in args:
+            fetch(p, not opts.force, opts._continue);
 
-#a = check_installed("uhd");
-#install("uhd",True);
-#install("gnuradio",True);
+else:
+    parser.error("Command '%s' is not a valid command" % cmd )
 
-#print global_recipes
+
