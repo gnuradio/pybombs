@@ -281,6 +281,9 @@ def remove_nd(k):
 
 # Update packages with PyBOMBS ;-D
 def update(pkglist=None):
+    if(type(pkglist) == str):
+        pkglist = [pkglist];
+
     outofdate = [];
     validate_write_perm(vars["prefix"])
 
