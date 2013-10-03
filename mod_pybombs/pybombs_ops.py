@@ -199,6 +199,8 @@ def config_set(k,v):
     print "value updated"
 
 def clean(kl):
+    if(type(kl) == str):
+        kl = [kl];
     for k in kl:
         try:
             pkg = global_recipes[k];
@@ -211,7 +213,9 @@ def clean(kl):
 def remove(pkglist=None):
     nk = [];
     inv = inventory()
-    
+    if(type(pkglist) == str):
+        pkglist = [pkglist];
+
     if(pkglist == None):
         cats = get_catpkgs();
         catss = cats.keys();
