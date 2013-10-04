@@ -76,6 +76,24 @@ def fetch(pkgname, die_if_already=False, continue_on_failure=False):
             else:
                 print "Failed to fetch due to: ", e
 
+def run_volk_profile():
+    sub = confirm("Submit anonymous VOLK performance statistics to stats.gnuradio.org? ","N",10);
+    print "please wait ... running volk profile, this will take several minutes... ";
+    perf = shellexec_getout("volk_profile");
+    print perf;
+    if(sub):
+        submit_performance(perf);
+
+def submit_performance(perf_out):
+    import urllib;
+    ci = open("/proc/cpuinfo", "r");
+    ci = ci.read();
+    kn = open("/proc/version", "r");
+    kn = kn.read();
+    uo = urllib.URLopener();
+    uo.open("http://ec2-54-227-201-37.compute-1.amazonaws.com/submit",urllib.urlencode({"k":kn,"ci":ci, "perf":perf_out}));
+        
+
 def install(pkgname, die_if_already=False):
     if not check_recipe(pkgname):
         die("unknown package "+pkgname);
@@ -99,6 +117,9 @@ def install(pkgname, die_if_already=False):
 
     for pkg in pkg_missing:
         global_recipes[pkg].install();
+        if(pkg == "gnuradio"):
+            if(confirm("Run VOLK Profile to choose fastest kernels?","Y",5)):
+                run_volk_profile();
 
 #    global_recipes[pkgname].install();
 
@@ -354,5 +375,4 @@ def writeenv():
     f.write("export %s=\"%s\"\n"%("LD_LIBRARY_PATH",env["LD_LIBRARY_PATH"]));
     f.write("export %s=\"%s\"\n"%("PKG_CONFIG_PATH",env["PKG_CONFIG_PATH"]));
     f.close();
-    
-
+ 

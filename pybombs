@@ -49,6 +49,7 @@ Operations:"
     rb <pkg>        - rebuild without re-fetch (equivalent to [inv pkg fetch && install pkg])
     fetch <pkg>     - fetch a package without building or checking dependencies
     search <expr>   - search for a package recipe matching <expr>
+    profile         - run volk profile
 """
 
 parser = OptionParser(USAGE)
@@ -200,6 +201,10 @@ elif(cmd == "fetch"):
     else:
         for p in args:
             fetch(p, not opts.force, opts._continue);
+
+elif(cmd == "profile"):
+
+    run_volk_profile();
 
 else:
     parser.error("Command '%s' is not a valid command" % cmd )
