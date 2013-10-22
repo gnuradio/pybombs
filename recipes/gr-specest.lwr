@@ -18,7 +18,7 @@
 #
 
 category: common
-depends: gnuradio uhd gr-compat
+depends: gnuradio uhd 
 source: git://https://github.com/kit-cel/gr-specest.git
 gitbranch: master
 inherit: cmake

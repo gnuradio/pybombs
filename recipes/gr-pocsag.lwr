@@ -18,7 +18,7 @@
 #
 
 category: common
-depends: gnuradio gr-compat
+depends: gnuradio 
 source: svn://https://www.cgran.org/cgran/projects/gr-pocsag/trunk
 gitbranch: master
 inherit: cmake
