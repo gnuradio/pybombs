@@ -76,6 +76,8 @@ class recipescanner(Scanner):
             s = s.replace("$%s"%(k), self.lvars[k]);
         for k in self.lvars.keys():
             s = s.replace("$%s"%(k), self.lvars[k]);
+        for k in vars.keys():
+            s = s.replace("$%s"%(k), vars[k]);
         return s;
 
     def fancy_var_replace(self,s,d):

@@ -21,7 +21,7 @@ depends: make mcpp boost fftw cppunit swig gsl uhd git python cheetah wxpython n
 category: common
 source: git://http://www.gnuradio.org/git/gnuradio.git
 gitbranch: master
-var config_opt = " -DENABLE_GR_FCD=ON -DENABLE_DOXYGEN=OFF -DENABLE_GR_LOG=ON -DENABLE_PERFORMANCE_COUNTERS=ON -DCMAKE_CXX_FLAGS=-fpermissive "
+var config_opt = " -DENABLE_GR_FCD=ON -DENABLE_DOXYGEN=$builddocs -DENABLE_GR_LOG=ON -DENABLE_PERFORMANCE_COUNTERS=ON -DCMAKE_CXX_FLAGS=-fpermissive "
 inherit: cmake
 install {
     make install
