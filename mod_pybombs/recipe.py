@@ -27,7 +27,7 @@ import fetch
 from update import update;
 
 import pybombs_ops;
-import logging
+import logging,sys
 
 logger = logging.getLogger('PyBombs.recipe')
 
@@ -646,27 +646,31 @@ class recipe:
         inv.set_prop(self.name, "source", fetcher.used_source);
         inv.set_prop(self.name, "version", fetcher.version);
         
+
+    def check_stat(self, stat, step):
+        if(stat == 0):
+            return;
+        logging.error('\x1b[31m' + "PyBOMBS %s step failed for package (%s) please see bash output above for a reason (hint: look for the word Error)"%(step, self.name) + '\x1b[0m');
+        sys.exit(-1);
+
     def configure(self):
         print "configure"
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
         st = bashexec(self.scanner.var_replace_all(self.scr_configure));
-        print "bash return val = %d"%(st);
-        assert(st == 0);
+        self.check_stat(st, "Configure");
 
     def make(self):
         print "make"
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
         st = bashexec(self.scanner.var_replace_all(self.scr_make));
-        print "bash return val = %d"%(st);
-        assert(st == 0);
+        self.check_stat(st, "Make");
 
     def installed(self):
         # perform installation, file copy
         print "installed"
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
         st = bashexec(self.scanner.var_replace_all(self.scr_install));
-        print "bash return val = %d"%(st);
-        assert(st == 0);
+        self.check_stat(st, "Install");
 
     # run package specific make uninstall
     def uninstall(self):
