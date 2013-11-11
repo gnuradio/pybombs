@@ -526,6 +526,8 @@ class recipe:
             types = order.split(",");
         elif order.find('-') > 0:
             types = order.split("-") # needed for Jenkins bug https://issues.jenkins-ci.org/browse/JENKINS-12439
+        else:
+            types = order.split(","); # needed for single item case
         if vars.has_key("install_like"):
             copyFrom = vars["install_like"]
             types.remove(global_recipes[copyFrom].satisfier)
