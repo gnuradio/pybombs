@@ -27,6 +27,9 @@ import fetch
 from update import update;
 
 import pybombs_ops;
+import logging
+
+logger = logging.getLogger('PyBombs.recipe')
 
 debug_en = False;
 
@@ -518,6 +521,7 @@ class recipe:
         print "install called (%s)"%(self.name)
         order =  vars["satisfy_order"];
         order = order.replace(" ","").lower();
+        types = None;
         if order.find(',') > 0:            
             types = order.split(",");
         elif order.find('-') > 0:
@@ -529,6 +533,9 @@ class recipe:
         if self.name == 'all':
             print "pseudo installation ok"
             return True;
+        if(types==None):
+            logging.error('\x1b[31m' + "Your satisfy order (%s) provides no way to satisfy the dependency (%s) - please consider changing your satisfy order to \"deb,src\" or \"deb,rpm\" in config.dat!!!"%(order,self.name)+ '\x1b[0m');
+            sys.exit(-1);
         print "install type priority: " + str(types);
         
         for type in types:
