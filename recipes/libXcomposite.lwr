@@ -17,13 +17,9 @@
 # Boston, MA 02110-1301, USA.
 #
 
-depends: python swig gobject-introspection gtk2 wget
 category: baseline
-satisfy_deb: python-gobject-dev
-satisfy_rpm: pygobject2-devel
-#source: wget://http://ftp.gnome.org/pub/GNOME/sources/pygobject/2.21/pygobject-2.21.5.tar.bz2
-#source: wget://http://ftp.gnome.org/pub/GNOME/sources/pygobject/2.27/pygobject-2.27.91.patched.tar.gz
-source:
-var config_opt = " --enable-introspection "
-install_like: gobject-introspection
+depends: wget
+source: wget://http://www.x.org/releases/X11R7.7/src/lib/libXcomposite-0.4.3.tar.bz2
+satisfy_deb: libxcomposite-dev
+satisfy_rpm: libXcomposite-devel
 inherit: autoconf
