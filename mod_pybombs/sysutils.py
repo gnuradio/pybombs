@@ -65,7 +65,7 @@ def shellexec(cmd):
     [pin,pout] = os.popen4( " ".join(cmd) );
     return pout.read();
     
-def confirm(msg, default="N"):
+def confirm(msg, default="N", timeout=0):
     # Remove the quesiton mark
     if msg[-1] == "?":
         msg = msg[:-1]
@@ -77,7 +77,18 @@ def confirm(msg, default="N"):
         raise ValueError("default must be either 'Y' or 'N'")
 
     while True:
-        inp = raw_input(msg)
+        inp = None
+        if(timeout == 0):
+            inp = raw_input(msg)
+        else:
+            import select
+            print msg;
+            inp,o,e = select.select([sys.stdin], [], [], 10);
+            if(inp):
+                inp = sys.stdin.readline();
+            else:
+                inp = "";
+
         ans = inp.strip().upper()[0:1] # use 0:1 to avoid index error even on empty response
         if ans == "":
             ans = default
@@ -283,10 +294,11 @@ def shellexec_shell(cmd, throw_ex):
             return -1;
 
 # stdout -> return
-def shellexec_getout(cmd, throw_ex):
-    print "shellexec_long: " + cmd;
+def shellexec_getout(cmd, throw_ex=True):
+    print "shellexec_long: " + str(cmd);
     try:
-        p = subprocess.call([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=globals.env);
+        #p = subprocess.call([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=globals.env);
+        p = subprocess.Popen([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=globals.env);
         (out,err) = p.communicate();
         return out;
     except Exception, e:

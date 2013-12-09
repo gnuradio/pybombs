@@ -17,16 +17,7 @@
 # Boston, MA 02110-1301, USA.
 #
 
-# FIXME: recommends: doxygen
-
-category: common
-depends: fftw autoconf libtool
-source: git://git://git.osmocom.org/libosmo-dsp
-gitbranch: master
+category: baseline
+depends: wget
+source: wget://http://download.zeromq.org/zeromq-3.2.4.tar.gz
 inherit: autoconf
-
-configure {
-    autoreconf -i
-    ./configure --prefix=$prefix $config_opt
-}
-

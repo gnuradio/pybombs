@@ -22,3 +22,8 @@ depends: gnuradio gr-compat
 source: git://https://github.com/bistromath/gr-air-modes.git
 gitbranch: master
 inherit: cmake
+
+# work around lacking paralell cmake dep structure
+make {
+    make -j1
+    }

@@ -17,16 +17,9 @@
 # Boston, MA 02110-1301, USA.
 #
 
-# FIXME: recommends: doxygen
-
 category: common
-depends: fftw autoconf libtool
-source: git://git://git.osmocom.org/libosmo-dsp
+depends: gnuradio 
+source: git://https://github.com/manuts/gr-ldpc.git
 gitbranch: master
-inherit: autoconf
-
-configure {
-    autoreconf -i
-    ./configure --prefix=$prefix $config_opt
-}
+inherit: cmake
 

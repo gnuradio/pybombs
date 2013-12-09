@@ -27,6 +27,9 @@ import fetch
 from update import update;
 
 import pybombs_ops;
+import logging,sys
+
+logger = logging.getLogger('PyBombs.recipe')
 
 debug_en = False;
 
@@ -73,6 +76,8 @@ class recipescanner(Scanner):
             s = s.replace("$%s"%(k), self.lvars[k]);
         for k in self.lvars.keys():
             s = s.replace("$%s"%(k), self.lvars[k]);
+        for k in vars.keys():
+            s = s.replace("$%s"%(k), vars[k]);
         return s;
 
     def fancy_var_replace(self,s,d):
@@ -518,10 +523,13 @@ class recipe:
         print "install called (%s)"%(self.name)
         order =  vars["satisfy_order"];
         order = order.replace(" ","").lower();
+        types = None;
         if order.find(',') > 0:            
             types = order.split(",");
         elif order.find('-') > 0:
             types = order.split("-") # needed for Jenkins bug https://issues.jenkins-ci.org/browse/JENKINS-12439
+        else:
+            types = order.split(","); # needed for single item case
         if vars.has_key("install_like"):
             copyFrom = vars["install_like"]
             types.remove(global_recipes[copyFrom].satisfier)
@@ -529,6 +537,9 @@ class recipe:
         if self.name == 'all':
             print "pseudo installation ok"
             return True;
+        if(types==None):
+            logging.error('\x1b[31m' + "Your satisfy order (%s) provides no way to satisfy the dependency (%s) - please consider changing your satisfy order to \"deb,src\" or \"deb,rpm\" in config.dat!!!"%(order,self.name)+ '\x1b[0m');
+            sys.exit(-1);
         print "install type priority: " + str(types);
         
         for type in types:
@@ -635,27 +646,31 @@ class recipe:
         inv.set_prop(self.name, "source", fetcher.used_source);
         inv.set_prop(self.name, "version", fetcher.version);
         
+
+    def check_stat(self, stat, step):
+        if(stat == 0):
+            return;
+        logging.error('\x1b[31m' + "PyBOMBS %s step failed for package (%s) please see bash output above for a reason (hint: look for the word Error)"%(step, self.name) + '\x1b[0m');
+        sys.exit(-1);
+
     def configure(self):
         print "configure"
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
         st = bashexec(self.scanner.var_replace_all(self.scr_configure));
-        print "bash return val = %d"%(st);
-        assert(st == 0);
+        self.check_stat(st, "Configure");
 
     def make(self):
         print "make"
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
         st = bashexec(self.scanner.var_replace_all(self.scr_make));
-        print "bash return val = %d"%(st);
-        assert(st == 0);
+        self.check_stat(st, "Make");
 
     def installed(self):
         # perform installation, file copy
         print "installed"
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
         st = bashexec(self.scanner.var_replace_all(self.scr_install));
-        print "bash return val = %d"%(st);
-        assert(st == 0);
+        self.check_stat(st, "Install");
 
     # run package specific make uninstall
     def uninstall(self):

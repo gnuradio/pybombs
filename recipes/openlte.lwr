@@ -18,7 +18,7 @@
 #
 
 category: common
-depends: gnuradio
-source: svn://http://svn.code.sf.net/p/openlte/code/trunk/
+depends: gnuradio gr-osmosdr fftw
+source: git://git://git.code.sf.net/p/openlte/code 
 gitbranch: master
-inherit: empty
+inherit: cmake
