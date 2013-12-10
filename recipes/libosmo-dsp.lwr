@@ -20,7 +20,7 @@
 # FIXME: recommends: doxygen
 
 category: common
-depends: fftw autoconf libtool
+depends: fftw autoconf libtool automake
 source: git://git://git.osmocom.org/libosmo-dsp
 gitbranch: master
 inherit: autoconf
