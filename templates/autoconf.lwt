@@ -20,7 +20,7 @@
 var config_opt = ""
 
 configure { 
-    ./configure --prefix=$prefix $config_opt
+    ./configure --prefix=$prefix $config_opt CC=$cc CXX=$cxx
 }
 
 make {

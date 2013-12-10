@@ -6,6 +6,8 @@ forcepkgs=
 timeout=30
 cmakebuildtype=RelWithDebInfo
 builddocs=OFF
+CC=gcc
+CXX=g++
 
 [descriptions]
 gituser=Username for GIT access
@@ -16,3 +18,5 @@ forcepkgs=Comma seperated list of package names to assume are already installed
 timeout=Time the monitor thread waits (in seconds) before retrying downloads
 cmakebuildtype=CMAKE_BUILD_TYPE args to pass to cmake projects, options are: Debug, Release, RelWithDebInfo, MinSizeRel
 builddocs=Build doxygen while compiling packages? options are: ON, OFF
+CC=C Compiler Executable [gcc, clang, icc, etc]
+CXX=C++ Compiler Executable [g++, clang++, icpc, etc]
