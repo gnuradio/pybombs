@@ -25,7 +25,7 @@ depends: cmake
 var config_opt = ""
 
 configure { 
-    cmake .. -DCMAKE_BUILD_TYPE=$cmakebuildtype -DCMAKE_INSTALL_PREFIX=$prefix $config_opt
+    CC=$cc CXX=$cxx cmake .. -DCMAKE_BUILD_TYPE=$cmakebuildtype -DCMAKE_INSTALL_PREFIX=$prefix $config_opt
 }
 make {
     make -j4

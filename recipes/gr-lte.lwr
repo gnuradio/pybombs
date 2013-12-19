@@ -17,12 +17,8 @@
 # Boston, MA 02110-1301, USA.
 #
 
-category: baseline
-depends: swig mcpp db48 libbzip expat python wget ssl
-satisfy_deb: python-zeroc-ice >= 3.5 && libzeroc-ice35-dev && libzeroc-ice35 && ice35-services && ice35-translators  
-satisfy_rpm: (ice-devel && ice-python-devel) || (ice-python-devel >= 3.5 && ice-libs >= 3.5 && ice-utils >= 3.5)
-source: wget://http://www.zeroc.com/download/Ice/3.5/Ice-3.5.1.tar.gz
-make {
-    cd cpp && prefix=$prefix DB_HOME=$prefix MCPP_HOME=$prefix EXPAT_HOME=$prefix make -j8 prefix=$prefix && prefix=$prefix make install &&
-    cd ../py && prefix=$prefix DB_HOME=$prefix MCPP_HOME=$prefix EXPAT_HOME=$prefix make -j8 prefix=$prefix && prefix=$prefix make install
-}
+category: common
+depends: gnuradio gr-osmosdr fftw
+source: git://https://github.com/kit-cel/gr-lte.git
+gitbranch: master
+inherit: cmake
