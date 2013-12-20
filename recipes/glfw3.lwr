@@ -18,7 +18,7 @@
 #
 
 category: common
-depends: 
+depends: x11
 source: git://https://github.com/glfw/glfw
 gitbranch: master
 var config_opt = " -DBUILD_SHARED_LIBS=true "
