@@ -8,6 +8,7 @@ cmakebuildtype=RelWithDebInfo
 builddocs=OFF
 CC=gcc
 CXX=g++
+makewidth=4
 
 [descriptions]
 gituser=Username for GIT access
@@ -20,3 +21,4 @@ cmakebuildtype=CMAKE_BUILD_TYPE args to pass to cmake projects, options are: Deb
 builddocs=Build doxygen while compiling packages? options are: ON, OFF
 CC=C Compiler Executable [gcc, clang, icc, etc]
 CXX=C++ Compiler Executable [g++, clang++, icpc, etc]
+makewidth=Concurrent make threads [1,2,4,8...]

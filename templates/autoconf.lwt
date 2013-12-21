@@ -24,7 +24,7 @@ configure {
 }
 
 make {
-    make -j4
+    make -j$makewidth
 }
 
 install {
