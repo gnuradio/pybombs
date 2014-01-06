@@ -31,7 +31,7 @@ configure {
 }
 make {
     cd build_unix/
-    make -j4
+    make -j$makewidth
 }
 install {
     cd build_unix/
