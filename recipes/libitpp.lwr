@@ -17,13 +17,5 @@
 # Boston, MA 02110-1301, USA.
 #
 
-category: common
-depends: gnuradio gr-compat python-zmq
-source: git://https://github.com/bistromath/gr-air-modes.git
-gitbranch: master
-inherit: cmake
-
-# work around lacking paralell cmake dep structure
-make {
-    make -j1
-    }
+category: baseline
+satisfy_deb: libitpp7 && libitpp-dev
