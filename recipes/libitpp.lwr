@@ -18,4 +18,4 @@
 #
 
 category: baseline
-satisfy_deb: libitpp7 && libitpp-dev
+satisfy_deb: (libitpp7 || libitpp8) && libitpp-dev
