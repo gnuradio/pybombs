@@ -21,4 +21,5 @@ category: baseline
 depends: 
 satisfy_deb: gcc && g++
 satisfy_rpm: gcc-c++
+satisfy_brew: gcc48 || gcc47
 

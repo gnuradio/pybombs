@@ -21,6 +21,7 @@ category: baseline
 source: wget://http://ftp.gnu.org/gnu/make/make-3.82.tar.gz
 satisfy_deb: (make >= 3.75)
 #satisfy_rpm: (make >= 3.75)
+satisfy_builtin: make
 configure {
     ./configure --prefix=$prefix
 }

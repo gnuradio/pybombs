@@ -25,6 +25,7 @@ import os,re,shutil,time,glob,copy,signal,operator,re,sys
 import subprocess;
 import globals;
 import logging
+from platform import system
 from distutils.version import StrictVersion
 
 RED = str('\033[91m');
@@ -365,7 +366,52 @@ def which(program):
                 return exe_file
 
     return None
-    
+
+
+def mac_pkgutil_info(name):
+    a = shellexec(["pkgutil", "--pkg-info", name])
+    if re.search('No receipt', a) is not None:
+        return None
+    m = re.search("package-id: (?P<id>.*)\n" +
+                  "version: (?P<version>.*)\n" +
+                  "volume: (?P<volume>.*)\n" +
+                  "location: (?P<location>.*)\n" +
+                  "install-time: (?P<time>.*)\n" +
+                  "(groups: (?P<groups>.*)\n)?", a)
+    if m is None:
+        logger.warning("mac_pkgutil_info: Could not parse return value.")
+        return None
+    d = m.groupdict()
+    if d['groups'] is not None:
+        d['groups'] = d['groups'].split()
+    return d
+
+
+def is_builtin(name, comparator=None, version=None):
+    if comparator is not None and version is not None:
+        logger.warning("is_builtin: builtin satisfiers do not support version checks yet." % name)
+
+    os_name = system()
+    if(os_name == "Darwin"):
+        if name in ['curl', 'libxml', 'libxslt', 'ffi', 'flex', 'bison', 'ssl']:
+            return True
+        elif name in ['make', 'gcc', 'clang', 'svn', 'git']:
+            if mac_pkgutil_info('com.apple.pkg.CLTools_Executables') is not None:
+                return True
+            else:
+                logger.warning("is_builtin: The XCode CLT seems not to be installed...install them to use the '%s' that comes with it." % name)
+                return False
+        elif name == 'x11':
+            # Check if X11 or XQuartz is installed.
+            if os.path.isfile('/opt/X11/lib/libpng.dylib') or os.path.isfile('/usr/X11/lib/libpng.dylib'):
+                return True
+            else:
+                logger.warning("is_builtin: x11 seems not to be installed...install XQuartz and run PyBOMBS again.")
+                return False
+        else:
+            logger.warning("is_builtin: Does not satisfy requirement...%s is not builtin under %s" % (name, os_name))
+            return False
+
 
 def deb_exists(name, comparator=None, version=None):
     comparatorDict = {'<=':operator.le, '==':operator.eq, '>=':operator.ge, '!=':operator.ne}
@@ -436,8 +482,61 @@ def rpm_exists(name, comparator=None, version=None):
             globals.die("Please check the recipe for %s" % (name))
     else: return False
     print a;
-    globals.die("This should be unreachable: in rpm_exists()");    
-    
+    globals.die("This should be unreachable: in rpm_exists()");   
+
+def brew_exists(name, comparator=None, version=None):
+    comparatorDict = {'<=':operator.le, '==':operator.eq, '>=':operator.ge, '!=':operator.ne}
+    cmp = lambda x, y, z: z(StrictVersion(x),StrictVersion(y))
+    a = shellexec(["brew","info",name])
+    if re.search(r'No available formula for', a):
+        logger.warning("brew_exists: could not find a downloadable version of %s" % (name))
+        return False
+    m = re.search(r"(?<=stable )[0-9]+\.[0-9]+(\.[0-9]+)?[a-z]?", a)
+    if(m):
+        if not comparator:
+            logger.info("brew_exists: Satisfies requirement...found downloadable version of %s" % (name))
+            return True
+        try:
+            if cmp(m.group(0), version, comparatorDict[comparator]):
+                if comparator == '==':
+                    logger.info("brew_exists: Satisfies requirement...downloadable version of %s (%s) is %s" % (name, m.group(0), version))
+                else:
+                    logger.info("brew_exists: Satisfies requirement...downloadable version of %s (%s) is %s than %s" % (name, m.group(0), comparator, version))
+                return True
+            else:
+                if comparator == '==':
+                    logger.warning("brew_exists: Does not satisfy requirement...downloadable version of %s (%s) is not %s" % (name, m.group(0), version))
+                else:
+                    logger.warning("brew_exists: Does not satisfy requirement...downloadable version of %s (%s) is not %s than %s" % (name, m.group(0), comparator, version))
+                return False
+        except ValueError, e:
+            logger.error("brew_exists: fatal error: %s" % (e))
+            globals.die("Please check the recipe for %s" % (name))
+    else: return False
+    print a;
+    globals.die("This should be unreachable: in brew_exists()");
+
+
+def pip_exists(name, comparator=None, version=None): 
+    from pip.exceptions import DistributionNotFound
+    from pip.index import PackageFinder
+    from pip.req import InstallRequirement
+
+    if comparator is not None and version is not None:
+        name += comparator + version
+    req = InstallRequirement.from_line(name)
+    finder = PackageFinder([], ['http://pypi.python.org/simple/'])
+    try:
+        link = finder.find_requirement(req, False)
+        version = finder._link_package_versions(link, req.name)[0][2]
+        logger.info("pip_exists: Satisfies requirement...downloadable version of %s (%s) fullfills requirements." % (name, version))
+        return True
+    except DistributionNotFound, e:
+        logger.warning("pip_exists: Does not satisfy requirement... %s" % e)
+        return False
+
+
+    return True;
 
 def have_deb(name, comparator=None, version=None):
     comparatorDict = {'<=':operator.le, '==':operator.eq, '>=':operator.ge, '!=':operator.ne}
@@ -506,7 +605,72 @@ def have_rpm(name, comparator=None, version=None):
             globals.die("Please check the recipe for %s" % (name))
     print a;
     globals.die("This should be unreachable: in have_rpm()");
-        
+
+
+def have_brew(name, comparator=None, version=None):
+    comparatorDict = {'<=':operator.le, '==':operator.eq, '>=':operator.ge, '!=':operator.ne}
+    cmp = lambda x, y, z: z(StrictVersion(x),StrictVersion(y))
+    a = shellexec(["brew","info",name]);
+    if(re.search(r'Not installed', a)):
+        return False;
+    # ToDo: Make star in end optional and use match and check for installed but not linked versions
+    m = re.search(r"(?<=/Cellar/%s/)[0-9]+\.[0-9]+(\.[0-9]+)?[a-z]?(?=.*\*\n)" % name, a)
+    if(m):
+        if not comparator:
+            return True
+        try:
+            if cmp(m.group(0), version, comparatorDict[comparator]):
+                if comparator == '==':
+                    logger.info("have_brew: Satisfies requirement...installed version of %s (%s) is %s" % (name, m.group(0), version))
+                else:
+                    logger.info("have_brew: Satisfies requirement...installed version of %s (%s) is %s than %s" % (name, m.group(0), comparator, version))
+                return True
+            else:
+                if comparator == '==':
+                    logger.warning("have_brew: Does not satisfy requirement...installed version of %s (%s) is not %s" % (name, m.group(0), version))
+                else:
+                    logger.warning("have_brew: Does not satisfy requirement...installed version of %s (%s) is not %s than %s" % (name, m.group(0), comparator, version))
+                return False
+        except ValueError, e:
+            logger.error("have_brew: fatal error: %s" % (e))
+            globals.die("Please check the recipe for %s" % (name))
+    print a;
+    globals.die("This should be unreachable: in have_brew()");
+
+
+def have_pip(name, comparator=None, version=None):
+    comparatorDict = {'<=': operator.le, '==': operator.eq, '>=': operator.ge, '!=': operator.ne}
+    cmp = lambda x, y, z: z(StrictVersion(x), StrictVersion(y))
+
+    from pip.util import get_installed_distributions
+    for dist in get_installed_distributions(skip=[]):
+        if dist.key == name:
+            if not comparator:
+                return True
+            try:
+                if cmp(dist.version, version, comparatorDict[comparator]):
+                    if comparator == '==':
+                        logger.info("have_pip: Satisfies requirement...installed version of %s (%s) is %s" % (name, dist.version, version))
+                    else:
+                        logger.info("have_pip: Satisfies requirement...installed version of %s (%s) is %s than %s" % (name, dist.version, comparator, version))
+                    return True
+                else:
+                    if comparator == '==':
+                        logger.warning("have_pip: Does not satisfy requirement...installed version of %s (%s) is not %s" % (name, dist.version, version))
+                    else:
+                        logger.warning("have_pip: Does not satisfy requirement...installed version of %s (%s) is not %s than %s" % (name, dist.version, comparator, version))
+                    return False
+            except ValueError, e:
+                logger.error("have_pip: fatal error: %s" % (e))
+                globals.die("Please check the recipe for %s" % (name))
+    return False
+
+
+
+def is_builtins(pkg_expr_tree):
+    if(pkg_expr_tree):
+        return pkg_expr_tree.ev(is_builtin);
+    return False;
 
 def have_debs(pkg_expr_tree):
     if(which("dpkg") == None):
@@ -521,7 +685,21 @@ def have_rpms(pkg_expr_tree):
     if(pkg_expr_tree):
         return pkg_expr_tree.ev(have_rpm);
     return False;
+
+def have_brews(pkg_expr_tree):
+    if(which("brew") == None):
+        return False;
+    if(pkg_expr_tree):
+        return pkg_expr_tree.ev(have_brew);
+    return False;
     
+def have_pips(pkg_expr_tree):
+    if(which("pip") == None):
+        return False;
+    if(pkg_expr_tree):
+        return pkg_expr_tree.ev(have_pip);
+    return False;
+
 def debs_exist(pkg_expr_tree):
     if(which("apt-cache") == None):
         return False
@@ -536,15 +714,19 @@ def rpms_exist(pkg_expr_tree):
         return pkg_expr_tree.ev(rpm_exists);
     return False
 
-def rpm_install(namelist):
-    print "rpm install: "+str(namelist);
-    try:
-        nlj = namelist.name;
-    except:
-        return True;
-    if(namelist is list):
-        nlj = " ".join(namelist);
-    return sudorun("yum -y install %s"%(nlj));
+def brews_exist(pkg_expr_tree):
+    if(which("brew") == None):
+        return False
+    if(pkg_expr_tree):
+        return pkg_expr_tree.ev(brew_exists);
+    return False
+
+def pips_exist(pkg_expr_tree):
+    if(which("pip") == None):
+        return False
+    if(pkg_expr_tree):
+        return pkg_expr_tree.ev(pip_exists);
+    return False
 
 def rpm_install(namelist):
     print "rpm install: "+str(namelist);
@@ -557,7 +739,7 @@ def rpm_install(namelist):
             return rpm_install(namelist.first) or rpm_install(namelist.second);
         else:
             print "invalid combiner logic."
-            return false;
+            return False;
 #    if(namelist is list):
 #        nlj = " ".join(namelist);
     return sudorun("yum -y install %s"%(nlj));
@@ -573,10 +755,42 @@ def deb_install(namelist):
             return deb_install(namelist.first) or deb_install(namelist.second);
         else:
             print "invalid combiner logic."
-            return false;
+            return False;
 #    if(namelist is list):
 #        nlj = " ".join(namelist);
     return sudorun("apt-get -y install %s"%(nlj));
+
+def brew_install(namelist):
+    print "brew install: "+str(namelist);
+    try:
+        nlj = namelist.name;
+    except:
+        if(namelist.combiner == "&&"):
+            return brew_install(namelist.first) and brew_install(namelist.second);
+        elif(namelist.combiner == "||"):
+            return brew_install(namelist.first) or brew_install(namelist.second);
+        else:
+            print "invalid combiner logic."
+            return False;
+#    if(namelist is list):
+#        nlj = " ".join(namelist);
+    return bashexec("brew install %s"%(nlj))==0;
+
+def pip_install(namelist):
+    print "pip install: "+str(namelist);
+    try:
+        nlj = namelist.name;
+    except:
+        if(namelist.combiner == "&&"):
+            return pip_install(namelist.first) and pip_install(namelist.second);
+        elif(namelist.combiner == "||"):
+            return pip_install(namelist.first) or pip_install(namelist.second);
+        else:
+            print "invalid combiner logic."
+            return False;
+#    if(namelist is list):
+#        nlj = " ".join(namelist);
+    return bashexec("pip install %s"%(nlj))==0;
 
 def mkchdir(p):
     try:

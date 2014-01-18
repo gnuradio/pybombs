@@ -21,6 +21,7 @@ depends: wget
 category: baseline
 satisfy_deb: (libdb++-dev >= 4.8 && libdb++-dev <= 5.1.9) || libdb4.8++-dev || libdb5.1++-dev
 satisfy_rpm: (db4-devel >= 4.8 && db4-devel <= 5.1.9)
+satisfy_brew: berkeley-db
 source: wget://http://download.oracle.com/berkeley-db/db-4.8.30.tar.gz
 
 inherit: autoconf

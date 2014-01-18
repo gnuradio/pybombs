@@ -23,6 +23,7 @@ depends: python wget
 source: wget://http://pkgs.fedoraproject.org/repo/pkgs/sip/sip-4.10.1.tar.gz/9fa0b0d17ad355bde004317f67c819f9/sip-4.10.1.tar.gz
 satisfy_deb: python-sip-dev >= 4.10.1
 satisfy_rpm: sip-devel >= 4.10.1
+satisfy_brew: sip
 install_like: python
 inherit: autoconf
 configure {

@@ -21,5 +21,6 @@ depends: python wget
 category: baseline
 satisfy_deb: python-cheetah >= 2.0
 satisfy_rpm: python-cheetah >= 2.0
+satisfy_pip: cheetah
 source: wget://http://prdownloads.sourceforge.net/cheetahtemplate/Cheetah-2.0.1.tar.gz
 inherit: distutils

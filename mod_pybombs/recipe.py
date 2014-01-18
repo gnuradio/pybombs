@@ -33,7 +33,7 @@ logger = logging.getLogger('PyBombs.recipe')
 
 debug_en = False;
 
-# structure for a dependency package (name, comparator, version) (for rpm or deb)
+# structure for a dependency package (name, comparator, version) (for rpm, deb or brew)
 class pkgreq:
     def __init__(self, name):
         self.name = name;
@@ -170,6 +170,14 @@ class recipescanner(Scanner):
         self.recipe.currpkg = pr_pair(self.recipe.currpkg);
         self.recipe.currpkg.combiner = e;
 
+    def builtinexpr(self, e):
+        if debug_en:
+            print "BUILTIN satisfier EXPR"
+            print self.recipe.currpkg;
+        self.recipe.satisfy_builtin = self.recipe.currpkg;
+        self.recipe.clearpkglist();
+        self.begin("")
+
     def debexpr(self,e):
         if debug_en:
             print "DEB satisfier EXPR"
@@ -183,6 +191,22 @@ class recipescanner(Scanner):
             print "RPM satisfier EXPR"
             print self.recipe.currpkg;
         self.recipe.satisfy_rpm = self.recipe.currpkg;
+        self.recipe.clearpkglist();
+        self.begin("")
+
+    def brewexpr(self,e):
+        if debug_en:
+            print "BREW satisfier EXPR"
+            print self.recipe.currpkg;
+        self.recipe.satisfy_brew = self.recipe.currpkg;
+        self.recipe.clearpkglist();
+        self.begin("")
+
+    def pipexpr(self,e):
+        if debug_en:
+            print "PIP satisfier EXPR"
+            print self.recipe.currpkg;
+        self.recipe.satisfy_pip = self.recipe.currpkg;
         self.recipe.clearpkglist();
         self.begin("")
 
@@ -306,8 +330,11 @@ class recipescanner(Scanner):
         (Str("gitbranch:"), Begin("gitbranch")),
         (Str("svnrev:"), Begin("svnrev")),
         (Str("gitrev:"), Begin("gitrev")),
+        (Str("satisfy_builtin:"), Begin("builtin")),
         (Str("satisfy_deb:"), Begin("debexpr")),
         (Str("satisfy_rpm:"), Begin("rpmsat")),
+        (Str("satisfy_brew:"), Begin("brewform")),
+        (Str("satisfy_pip:"), Begin("pippkg")),
         (Str("source:"), Begin("source_uri")),
         (Str("install_like:"), Begin("install_like")),
         (Str("configure") + Rep(space) + Str("{"), Begin("configure")),
@@ -322,11 +349,20 @@ class recipescanner(Scanner):
         State('deplist', [
             (sep, IGNORE), (pkgname, deplist_add), (eol, mainstate),
             ]),
+        State('builtin', [
+            (sep, IGNORE), (pkgname, pl_pkg), (version,pl_ver), (parens,pl_par), (comparators, pl_cmp), (combiner, pl_cmb), (Eol, builtinexpr),
+            ]),
         State('debexpr', [
             (sep, IGNORE), (pkgname, pl_pkg), (version,pl_ver), (parens,pl_par), (comparators, pl_cmp), (combiner, pl_cmb), (Eol, debexpr), 
             ]),
         State('rpmsat', [
             (sep, IGNORE), (pkgname, pl_pkg), (version,pl_ver), (parens,pl_par), (comparators, pl_cmp), (combiner, pl_cmb), (Eol, rpmexpr), 
+            ]),
+        State('brewform', [
+            (sep, IGNORE), (pkgname, pl_pkg), (version,pl_ver), (parens,pl_par), (comparators, pl_cmp), (combiner, pl_cmb), (Eol, brewexpr), 
+            ]),
+        State('pippkg', [
+            (sep, IGNORE), (pkgname, pl_pkg), (version,pl_ver), (parens,pl_par), (comparators, pl_cmp), (combiner, pl_cmb), (Eol, pipexpr),
             ]),
         State('source_uri', [
             (sep, IGNORE), (uri, source_add), (eol, mainstate),
@@ -423,8 +459,11 @@ class recipe:
         self.name = name;
         self.clearpkglist();
         self.depends = [];
+        self.satisfy_builtin = None;
         self.satisfy_deb = None;
         self.satisfy_rpm = None;
+        self.satisfy_brew = None;
+        self.satisfy_pip = None;
         self.source = [];
         self.install_like = None
         self.category = None;
@@ -485,8 +524,13 @@ class recipe:
             if(inv.state(self.name) == "installed"):
                 self.satisfier = "inventory";
                 vars["%s.satisfier"%(self.name)] = self.satisfier;
-                return True;                                                    
-               
+                return True;
+
+        if(is_builtins(self.satisfy_builtin)):
+            self.satisfier = "builtin";
+            vars["%s.satisfier"%(self.name)] = self.satisfier;
+            return True;
+
         if(have_debs(self.satisfy_deb)):
             self.satisfier = "deb";
             vars["%s.satisfier"%(self.name)] = self.satisfier;
@@ -496,7 +540,17 @@ class recipe:
             self.satisfier = "rpm";
             vars["%s.satisfier"%(self.name)] = self.satisfier;
             return True;
-        
+
+        if(have_brews(self.satisfy_brew)):
+            self.satisfier = "brew";
+            vars["%s.satisfier"%(self.name)] = self.satisfier;
+            return True;
+
+        if(have_pips(self.satisfy_pip)):
+            self.satisfier = "pip";
+            vars["%s.satisfier"%(self.name)] = self.satisfier;
+            return True;
+
         return False;
 
     def recursive_satisfy(self, recurse_if_installed=False):
@@ -544,12 +598,18 @@ class recipe:
         
         for type in types:
             st = False;
-            if(type == "src"):
+            if(type == "builtin"):
+                st = self.check_builtin();
+            elif(type == "src"):
                 st = self.install_src();
             elif(type == "rpm"):
                 st = self.install_rpm();
             elif(type == "deb"):
                 st = self.install_deb();
+            elif(type == "brew"):
+                st = self.install_brew();
+            elif(type == "pip"):
+                st = self.install_pip();
             else:
                 die( "unknown install type: %s"%(type) );
             if(st):
@@ -557,6 +617,18 @@ class recipe:
                 return True;
         die("failed to install %s"%(self.name));   
         return False;
+
+    def check_builtin(self):
+        print "check builtin called (%s)"%(self.name)
+        # this is not possible if we do not have builtin satisfiers
+        if((self.satisfy_builtin == None) or ((type(self.satisfy_builtin) == type([])) and (len(self.satisfy_builtin) == 0))):
+            print "no builtin satisfiers available"
+            return False;
+        elif self.satisfy_builtin and not is_builtins(self.satisfy_builtin):
+            print "package is NOT builtin"
+            return False;
+        print "package is a builtin to OS"
+        return True
 
     def install_rpm(self):
         print "install rpm called (%s)"%(self.name)
@@ -585,6 +657,35 @@ class recipe:
                 return False;
         print "CONDUCTING DEB INSTALL"
         return deb_install(self.satisfy_deb);  
+
+    def install_brew(self):
+        print "install brew called (%s)"%(self.name)
+        # this is not possible if we do not have brew satisfiers
+        if((self.satisfy_brew == None) or ((type(self.satisfy_brew) == type([])) and (len(self.satisfy_brew) == 0))):
+            print "no brew satisfiers available"
+            return False;
+        elif self.satisfy_brew and not have_brews(self.satisfy_brew):
+            print "brew is not available locally"
+            print "check remote repositories..."
+            if not brews_exist(self.satisfy_brew):
+                return False;
+        print "CONDUCTING BREW INSTALL"
+        return brew_install(self.satisfy_brew); 
+
+    def install_pip(self):
+        print "install pip called (%s)"%(self.name)
+        # this is not possible if we do not have pip satisfiers
+        if((self.satisfy_pip == None) or ((type(self.satisfy_pip) == type([])) and (len(self.satisfy_pip) == 0))):
+            print "no pip satisfiers available"
+            return False;
+        elif self.satisfy_pip and not have_pips(self.satisfy_pip):
+            print "pip is not available locally"
+            print "check remote repositories..."
+            if not pips_exist(self.satisfy_pip):
+                return False;
+        print "CONDUCTING PIP INSTALL"
+        return pip_install(self.satisfy_pip);  
+
 
     def install_src(self):
         print "install src called (%s)"%(self.name)
