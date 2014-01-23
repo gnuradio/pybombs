@@ -21,6 +21,7 @@ category: baseline
 depends: wget
 satisfy_deb: (libcppunit-1.12-1 || libcppunit-1.13-0) && libcppunit-dev
 satisfy_rpm: cppunit-devel
+satisfy_brew: cppunit
 source: wget://http://prdownloads.sourceforge.net/cppunit/cppunit-1.12.1.tar.gz
 var config_opt = "LIBS=-ldl"
 inherit: autoconf

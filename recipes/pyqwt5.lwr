@@ -21,6 +21,7 @@ category: baseline
 depends: qwt5 pyqt4 sip wget
 satisfy_deb: python-qwt5-qt4 >= 5.2
 satisfy_rpm: PyQwt-devel >= 5.2
+satisfy_brew: pyqwt
 source: wget://http://prdownloads.sourceforge.net/pyqwt/PyQwt-5.2.0.tar.gz
 install_like: qwt5
 inherit: autoconf

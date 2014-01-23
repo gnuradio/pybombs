@@ -23,4 +23,5 @@ depends: wget
 source: wget://http://www.cmake.org/files/v2.8/cmake-2.8.6.tar.gz
 satisfy_deb: (cmake >= 2.8.3) && (cmake-data >= 2.8.3)
 satisfy_rpm: (cmake >= 2.8.3)
+satisfy_brew: (cmake >= 2.8.3)
 inherit: autoconf

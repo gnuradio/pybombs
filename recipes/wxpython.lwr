@@ -24,6 +24,7 @@ depends: gtk2 python swig wget
 source: wget://http://prdownloads.sourceforge.net/wxpython/wxPython-src-2.8.11.0.tar.bz2
 satisfy_deb: python-wxgtk2.8 
 satisfy_rpm: wxPython
+satisfy_brew: wxmac
 var config_opt = " --disable-unicode "
 inherit: autoconf
 make {

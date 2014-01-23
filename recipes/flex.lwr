@@ -21,5 +21,6 @@ depends: wget
 category: baseline
 satisfy_deb: flex >= 2.5.35
 satisfy_rpm: flex >= 2.5.35
+satisfy_builtin: flex
 source: wget://http://prdownloads.sourceforge.net/flex/flex-2.5.35.tar.bz2
 inherit: autoconf

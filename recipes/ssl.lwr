@@ -19,5 +19,6 @@
 
 category: baseline
 satisfy_deb: libssl-dev
-satisfy_rpm: openssl-devel 
+satisfy_rpm: openssl-devel
+satisfy_builtin: ssl
 
