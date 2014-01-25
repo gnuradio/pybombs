@@ -18,5 +18,5 @@
 #
 
 category: baseline
-depends: python-qt4
+depends: pyqt4
 satisfy_deb: pyqt4-dev-tools
