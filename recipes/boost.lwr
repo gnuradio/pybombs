@@ -26,5 +26,5 @@ configure {
     ./bootstrap.sh --prefix=$prefix --libdir=$prefix/lib/
 }
 install {
-    ./bjam --threading=multi --layout=tagged link=shared install
+    ./bjam --threading=multi --layout=tagged link=shared -j$makewidth install
 }

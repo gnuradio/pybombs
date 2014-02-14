@@ -276,6 +276,7 @@ class recipescanner(Scanner):
 
     letter = Range("AZaz")
     digit = Range("09")
+    gitbranchtype = Rep(letter | digit | Any("_-./"))
     revtype = Rep(letter | digit | Any("_-."))
     name = letter + Rep(letter | digit | Any("-"))
     var_name = letter + Rep(letter | digit | Any("_"));
@@ -353,7 +354,7 @@ class recipescanner(Scanner):
             (sep, IGNORE), (uri, makedir), (eol, mainstate),
             ]),
         State('gitbranch', [
-            (sep, IGNORE), (revtype, gitbranch), (eol, mainstate),
+            (sep, IGNORE), (gitbranchtype, gitbranch), (eol, mainstate),
             ]),
         State('gitrev', [
             (sep, IGNORE), (revtype, gitrev), (eol, mainstate),

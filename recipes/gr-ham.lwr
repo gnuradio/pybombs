@@ -19,7 +19,7 @@
 
 category: common
 depends: gnuradio gr-compat
-source: git://https://github.com/benreynwar/gr-ham.git
+source: git://https://github.com/argilo/gr-ham.git
 gitbranch: master
 inherit: cmake
 

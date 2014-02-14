@@ -18,7 +18,7 @@
 #
 
 category: common
-depends: gnuradio libav
-source: git://https://github.com/osh/gr-mediatools.git
+depends: gnuradio boost libpcap gr-osmosdr libitpp
+source: git://git://op25.osmocom.org/op25.git
 gitbranch: master
 inherit: cmake

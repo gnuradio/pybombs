@@ -17,8 +17,5 @@
 # Boston, MA 02110-1301, USA.
 #
 
-category: common
-depends: gnuradio libav
-source: git://https://github.com/osh/gr-mediatools.git
-gitbranch: master
-inherit: cmake
+category: baseline
+satisfy_deb: python-zmq

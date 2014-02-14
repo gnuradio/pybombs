@@ -42,9 +42,31 @@ topdir = os.path.split(os.path.realpath(__file__))[0] + "/../";
 # load config values
 config = ConfigParser.RawConfigParser();
 cfg = config.read("config.dat");
+
+# initialize cfg if need be
 if(len(cfg) == 0):
     config_init(config);
     config_write(config);
+
+# make sure we are not missing values that have been added to defaults file
+config_desc = ConfigParser.RawConfigParser();
+config_desc.read("config.defaults");
+for v in config_desc.options("defaults"):
+    defa = config_desc.get("defaults",v);
+    try:
+        desc = config_desc.get("descriptions",v);
+    except:
+        desc = None
+    if not v in config.options("config"):
+        print "Found new missing default value in your config.dat:"
+        if desc:
+            print desc;
+        rv = raw_input("%s [%s]:"%(v,defa));
+        if not rv:
+            rv = defa;
+        config.set("config", v, rv);
+        config_write(config);
+
 
 # set up the force list
 force_list = [];

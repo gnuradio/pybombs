@@ -541,16 +541,6 @@ def rpm_install(namelist):
     try:
         nlj = namelist.name;
     except:
-        return True;
-    if(namelist is list):
-        nlj = " ".join(namelist);
-    return sudorun("yum -y install %s"%(nlj));
-
-def rpm_install(namelist):
-    print "rpm install: "+str(namelist);
-    try:
-        nlj = namelist.name;
-    except:
         if(namelist.combiner == "&&"):
             return rpm_install(namelist.first) and rpm_install(namelist.second);
         elif(namelist.combiner == "||"):
