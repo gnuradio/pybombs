@@ -69,7 +69,7 @@ if(len(args) == 0):
 cmd = args.pop(0)
 
 """
-Handle commands the con't require loading the PyBombs modules & subsytem.
+Handle commands don't require loading the PyBombs modules & subsytem.
 """
 if(cmd == "help"):
     parser.print_help()
@@ -98,7 +98,13 @@ for f in files:
         os.unlink("mod_pybombs/" + f)
 # remove this for deployment
 
-from mod_pybombs import *
+#from mod_pybombs import *
+import mod_pybombs.pybombs_ops as pybombs_ops
+import mod_pybombs.recipe_loader as recipe_loader
+import mod_pybombs.sysutils as sysutils
+#from mod_pybombs import recipe,update,fetch,inventory
+#from mod_pybombs import cfg,vars,globals
+
 print "---------- loading recipes -------------------"
 recipe_loader.load_all()
 print "---------- loading recipes finished ----------\n"
@@ -106,92 +112,92 @@ print "---------- loading recipes finished ----------\n"
 if(cmd == "search"):
     st = " ".join(args)
     print "Searching for packages matching: " + st;
-    pkg_search(st);
+    pybombs_ops.pkg_search(st);
 
 elif(cmd == "list"):
     print "Printing recipe status list:"
-    pkglist()
+    pybombs_ops.pkglist()
     print ""
 
 elif(cmd == "env"):
     print "Writing out env...:"
-    writeenv()
+    pybombs_ops.writeenv()
 
 elif(cmd == "install"):
     if(len(args) == 0):
         parser.error("Command 'install' requires at least one package")
     else:
         for p in args:
-            install(p, not opts.force);
+            pybombs_ops.install(p, not opts.force);
 
 elif(cmd == "update"):
     if(len(args) == 0):
-        update();
+        pybombs_ops.update();
     else:
-        update(args)
+        pybombs_ops.update(args)
 
 elif(cmd == "rb"):
     if(len(args) == 0):
         parser.error("Command 'rb' requires at least one package")
     else:
-        for x in args: inventory_set(x, "fetch")
-        for x in args: install(x,True)
+        for x in args: pybombs_ops.inventory_set(x, "fetch")
+        for x in args: pybombs_ops.install(x,True)
 
 elif(cmd == "remove" or cmd == "rm" or cmd == "uninstall"):
     if(len(args) == 0):
         confirm = sysutils.confirm("Really remove all installed packages?", default="N")
         if(confirm):
-            remove()
+            pybombs_ops.remove()
         else:
             print "Operation cancelled!"
             sys.exit(0)
     else:
-        remove(args)
+        pybombs_ops.remove(args)
 
 elif(cmd == "rnd"):
     if(len(args) == 0):
         parser.error("Command 'rnd' requires at least one package")
     else:
-        remove_nd(args)
+        pybombs_ops.remove_nd(args)
 
 elif(cmd == "clean" or cmd== "reset"):
     if(len(args) == 0):
         parser.error("Command 'clean' requires at least one package")
     else:
-        clean(args)
+        pybombs_ops.clean(args)
 
 elif(cmd == "digraph"):
-    graphviz(not opts.all)
+    pybombs_ops.graphviz(not opts.all)
 
 elif(cmd == "info"):
     if(len(args) == 0):
         parser.error("Command 'info' requires at least one package")
     else:
-        for a in args: pkginfo(a) 
+        for a in args: pybombs_ops.pkginfo(a) 
 
 elif(cmd == "config"):
     if(len(args) == 0):
-        config_print()
+        pybombs_ops.config_print()
     elif(len(args) == 1):
-        config_get(args[0])
+        pybombs_ops.config_get(args[0])
     elif(len(args) == 2):
-        config_set(args[0], args[1])
+        pybombs_ops.config_set(args[0], args[1])
     else:
         parser.error("Command 'config' accepts at most 2 arguments")
 
 elif(cmd == "reconfig"):
-    config = ConfigParser.RawConfigParser()
-    config_init(config, True)
-    config_write(config)
+    config = pybombs_ops.ConfigParser.RawConfigParser()
+    pybombs_ops.config_init(config, True)
+    pybombs_ops.config_write(config)
     sys.exit(0)
 
 elif(cmd == "inv"):
     if(len(args) == 0):
-        inv.show()
+        pybombs_ops.inv.show()
     elif(len(args) == 1):
-        inventory_set(args[0], None)
+        pybombs_ops.inventory_set(args[0], None)
     elif(len(args) == 2):
-        inventory_set(args[0], args[1])
+        pybombs_ops.inventory_set(args[0], args[1])
     else:
         parser.error("Command 'inv' accepts at most 2 arguments")
 
@@ -200,11 +206,11 @@ elif(cmd == "fetch"):
         parser.error("Command 'fetch' requires at least one package")
     else:
         for p in args:
-            fetch(p, not opts.force, opts._continue);
+            pybombs_ops.fetch(p, not opts.force, opts._continue);
 
 elif(cmd == "profile"):
 
-    run_volk_profile();
+    pybombs_ops.run_volk_profile();
 
 else:
     parser.error("Command '%s' is not a valid command" % cmd )
