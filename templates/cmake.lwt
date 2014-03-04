@@ -38,3 +38,8 @@ install {
 uninstall {
     make uninstall
 }
+
+verify {
+    make test
+}
+

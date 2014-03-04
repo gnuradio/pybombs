@@ -31,6 +31,7 @@ Operations:"
     list            - show installed & available packages
     info <pkg>      - display package info
     install <pkg>   - install a package
+    verify <pkg>    - verify an installed a package
     remove          - cleanly remove all fully installed packages and dependents
     remove <pkg>    - cleanly remove a fully installed package and dependents
     rnd <pkg>       - cleanly remove a fully installed package (*DANGER* can break dependees!)
@@ -129,6 +130,13 @@ elif(cmd == "install"):
     else:
         for p in args:
             pybombs_ops.install(p, not opts.force);
+
+elif(cmd == "verify"):
+    if(len(args) == 0):
+        parser.error("Command 'verify' requires at least one package")
+    else:
+        for p in args:
+            pybombs_ops.verify(p);
 
 elif(cmd == "update"):
     if(len(args) == 0):
