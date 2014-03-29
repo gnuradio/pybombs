@@ -18,9 +18,9 @@
 #
 
 category: common
-depends: gnuradio gr-compat python-zmq pyqt4-dev-tools
+depends: gnuradio python-zmq pyqt4-dev-tools
 source: git://https://github.com/bistromath/gr-air-modes.git
-gitbranch: master
+gitbranch: next
 inherit: cmake
 
 # work around lacking paralell cmake dep structure
