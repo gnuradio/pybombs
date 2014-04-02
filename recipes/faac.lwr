@@ -18,5 +18,5 @@
 #
 
 category: baseline
-satisfy_deb: libfaac-dev
+satisfy_deb: libfaac-dev && libfaac0
 satisfy_rpm: libfaac-devel
