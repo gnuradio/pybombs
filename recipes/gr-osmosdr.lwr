@@ -18,7 +18,7 @@
 #
 
 category: common
-depends: uhd rtl-sdr osmo-sdr hackrf gnuradio gr-iqbal
+depends: uhd rtl-sdr osmo-sdr hackrf gnuradio gr-iqbal airspy
 source: git://git://git.osmocom.org/gr-osmosdr
 gitbranch: master
 inherit: cmake

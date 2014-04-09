@@ -18,6 +18,6 @@
 #
 
 category: baseline
-satisfy_deb: libpulse-dev >= 1.1
+satisfy_deb: libpulse-dev >= 1.1 && pulseaudio
 satisfy_rpm: ((libpulse-devel >= 1.1) || (libpulseaudio-devel >= 1.1))
 
