@@ -123,6 +123,12 @@ def install(pkgname, die_if_already=False):
 
 #    global_recipes[pkgname].install();
 
+def verify(pkgname):
+    # make sure its installed
+    install(pkgname);
+    rc = global_recipes[pkgname];
+    rc.verify();
+
 def graphviz(installed_only=False):
     if(not check_installed("graphviz")):
         install("graphviz",True);

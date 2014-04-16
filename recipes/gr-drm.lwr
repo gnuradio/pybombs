@@ -18,7 +18,7 @@
 #
 
 category: common
-depends: gnuradio uhd faad gr-compat
+depends: gnuradio uhd faac faad gr-compat
 source: git://https://github.com/kit-cel/gr-drm.git
 gitbranch: master
 inherit: cmake

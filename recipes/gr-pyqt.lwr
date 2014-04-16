@@ -18,7 +18,7 @@
 #
 
 category: common
-depends: uhd rtl-sdr osmo-sdr hackrf gnuradio gr-iqbal bladeRF
-source: git://git://git.osmocom.org/gr-osmosdr
+depends: gnuradio 
+source: git://https://github.com/osh/gr-pyqt.git
 gitbranch: master
 inherit: cmake

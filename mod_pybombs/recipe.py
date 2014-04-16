@@ -203,6 +203,9 @@ class recipescanner(Scanner):
     def install_set(self,a):
         self.recipe.scr_install = a;
     
+    def verify_set(self,a):
+        self.recipe.scr_verify = a;
+    
     def uninstall_set(self,a):
         self.recipe.scr_uninstall = a;
         
@@ -314,6 +317,7 @@ class recipescanner(Scanner):
         (Str("configure") + Rep(space) + Str("{"), Begin("configure")),
         (Str("make") + Rep(space) + Str("{"), Begin("make")),
         (Str("install") + Rep(space) + Str("{"), Begin("install")),
+        (Str("verify") + Rep(space) + Str("{"), Begin("verify")),
         (Str("uninstall") + Rep(space) + Str("{"), Begin("uninstall")),
         (Str("var") + Rep(space) + var_name + Rep(space) + assignments + Rep(space) + Str("\"") , variable_begin ),
         (name, TEXT),
@@ -374,6 +378,9 @@ class recipescanner(Scanner):
         State('install', [
             (Rep(AnyBut("}")), install_set), (Str("}"), mainstate),
             ]),
+        State('verify', [
+            (Rep(AnyBut("}")), verify_set), (Str("}"), mainstate),
+            ]),
         State('uninstall', [
             (Rep(AnyBut("}")), uninstall_set), (Str("}"), mainstate),
             ]),
@@ -433,6 +440,7 @@ class recipe:
         self.scr_configure = "";
         self.scr_make = "";
         self.scr_install = "";
+        self.scr_verify = "";
         self.scr_uninstall = "";
         self.configuredir = "";
         self.makedir = "";
@@ -693,4 +701,10 @@ class recipe:
         rmrf(self.name);
         inv.set_state(self.name,None);
 
+    def verify(self):
+        # perform install verification
+        print "verify install..."
+        mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
+        st = bashexec(self.scanner.var_replace_all(self.scr_verify));
+        self.check_stat(st, "Verify");
 
