@@ -20,6 +20,6 @@
 category: common
 depends: gnuradio
 source: git://https://github.com/kit-cel/gr-specest.git
-gitbranch: 37
+gitbranch: master
 inherit: cmake
 
