@@ -1,4 +1,3 @@
-
 #
 # This file is part of PyBOMBS
 #
@@ -18,9 +17,9 @@
 # Boston, MA 02110-1301, USA.
 #
 
+depends: git cmake libusb
+category: common
+source: git://https://github.com/airspy/host.git
+gitbranch: master
+inherit: cmake
 
-depends: 
-category: baseline
-satisfy_deb: libapr1-dev
-satisfy_rpm: apr-devel
-inherit: autoconf

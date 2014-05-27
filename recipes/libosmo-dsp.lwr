@@ -1,4 +1,3 @@
-
 #
 # This file is part of PyBOMBS
 #
@@ -18,9 +17,16 @@
 # Boston, MA 02110-1301, USA.
 #
 
+# FIXME: recommends: doxygen
 
-depends: 
-category: baseline
-satisfy_deb: libapr1-dev
-satisfy_rpm: apr-devel
+category: common
+depends: fftw autoconf libtool automake
+source: git://git://git.osmocom.org/libosmo-dsp
+gitbranch: master
 inherit: autoconf
+
+configure {
+    autoreconf -i
+    ./configure --prefix=$prefix $config_opt
+}
+

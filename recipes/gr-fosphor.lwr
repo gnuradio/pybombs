@@ -1,4 +1,3 @@
-
 #
 # This file is part of PyBOMBS
 #
@@ -18,9 +17,11 @@
 # Boston, MA 02110-1301, USA.
 #
 
-
-depends: 
-category: baseline
-satisfy_deb: libapr1-dev
-satisfy_rpm: apr-devel
-inherit: autoconf
+category: common
+depends: gnuradio glfw3
+source: git://git://git.osmocom.org/gr-fosphor
+gitbranch: master
+# NOTE: If cmake does not find your libOpenCL.so you may
+#       need to uncomment and update the following line!
+#var config_opt = " -DOPENCL_ROOT_DIR=/usr/lib/nvidia-304-updates/ "
+inherit: cmake

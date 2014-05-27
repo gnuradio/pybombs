@@ -1,8 +1,9 @@
-
+#
+# Copyright 2013 Tim O'Shea
 #
 # This file is part of PyBOMBS
 #
-# PyBOMBS is free software; you can redistribute it and/or modify
+# PyBOMBS is free software; you can redistribute it and\/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3, or (at your option)
 # any later version.
@@ -18,9 +19,6 @@
 # Boston, MA 02110-1301, USA.
 #
 
+Find all supporting documentation and instructions at:
 
-depends: 
-category: baseline
-satisfy_deb: libapr1-dev
-satisfy_rpm: apr-devel
-inherit: autoconf
+http://gnuradio.org/pybombs

@@ -1,4 +1,3 @@
-
 #
 # This file is part of PyBOMBS
 #
@@ -18,9 +17,8 @@
 # Boston, MA 02110-1301, USA.
 #
 
-
-depends: 
-category: baseline
-satisfy_deb: libapr1-dev
-satisfy_rpm: apr-devel
-inherit: autoconf
+category: common
+depends: gnuradio boost libpcap gr-osmosdr libitpp
+source: git://git://op25.osmocom.org/op25.git
+gitbranch: master
+inherit: cmake

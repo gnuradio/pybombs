@@ -1,4 +1,3 @@
-
 #
 # This file is part of PyBOMBS
 #
@@ -18,9 +17,7 @@
 # Boston, MA 02110-1301, USA.
 #
 
-
-depends: 
-category: baseline
-satisfy_deb: libapr1-dev
-satisfy_rpm: apr-devel
-inherit: autoconf
+depends: gnuradio 
+category: common
+source: git://https://github.com/osh/gr-benchmark.git
+gitbranch: master
