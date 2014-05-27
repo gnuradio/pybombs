@@ -1,7 +1,7 @@
 category: common
-depends: subversion gnuradio rtl-sdr gr-osmosdr armadillo
-source: svn://http://svn.code.sf.net/p/gnss-sdr/code/trunk/
-gitbranch: master
+depends: gnuradio rtl-sdr gr-osmosdr armadillo
+source: git://git.code.sf.net/p/gnss-sdr/cttc
+gitbranch: next
 var config_opt = "-DRTLSDR_DRIVER=1"
 inherit: cmake
 make {
