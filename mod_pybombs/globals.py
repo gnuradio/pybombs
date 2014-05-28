@@ -1,24 +1,3 @@
-#
-# Copyright 2013 Tim O'Shea
-#
-# This file is part of PyBOMBS
-#
-# PyBOMBS is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-#
-# PyBOMBS is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with PyBOMBS; see the file COPYING.  If not, write to
-# the Free Software Foundation, Inc., 51 Franklin Street,
-# Boston, MA 02110-1301, USA.
-#
-
 import sys, os, errno
 from inventory import *
 import ConfigParser
@@ -42,31 +21,9 @@ topdir = os.path.split(os.path.realpath(__file__))[0] + "/../";
 # load config values
 config = ConfigParser.RawConfigParser();
 cfg = config.read("config.dat");
-
-# initialize cfg if need be
 if(len(cfg) == 0):
     config_init(config);
     config_write(config);
-
-# make sure we are not missing values that have been added to defaults file
-config_desc = ConfigParser.RawConfigParser();
-config_desc.read("config.defaults");
-for v in config_desc.options("defaults"):
-    defa = config_desc.get("defaults",v);
-    try:
-        desc = config_desc.get("descriptions",v);
-    except:
-        desc = None
-    if not v in config.options("config"):
-        print "Found new missing default value in your config.dat:"
-        if desc:
-            print desc;
-        rv = raw_input("%s [%s]:"%(v,defa));
-        if not rv:
-            rv = defa;
-        config.set("config", v, rv);
-        config_write(config);
-
 
 # set up the force list
 force_list = [];

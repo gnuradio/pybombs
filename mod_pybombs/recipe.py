@@ -1,35 +1,11 @@
 #!/usr/bin/env python
-#
-# Copyright 2013 Tim O'Shea
-#
-# This file is part of PyBOMBS
-#
-# PyBOMBS is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-#
-# PyBOMBS is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with PyBOMBS; see the file COPYING.  If not, write to
-# the Free Software Foundation, Inc., 51 Franklin Street,
-# Boston, MA 02110-1301, USA.
-#
-
 from globals import *;
 from plex import *;
 from sysutils import *;
-import fetch
+from fetch import fetch;
 from update import update;
 
 import pybombs_ops;
-import logging,sys
-
-logger = logging.getLogger('PyBombs.recipe')
 
 debug_en = False;
 
@@ -76,8 +52,6 @@ class recipescanner(Scanner):
             s = s.replace("$%s"%(k), self.lvars[k]);
         for k in self.lvars.keys():
             s = s.replace("$%s"%(k), self.lvars[k]);
-        for k in vars.keys():
-            s = s.replace("$%s"%(k), vars[k]);
         return s;
 
     def fancy_var_replace(self,s,d):
@@ -203,9 +177,6 @@ class recipescanner(Scanner):
     def install_set(self,a):
         self.recipe.scr_install = a;
     
-    def verify_set(self,a):
-        self.recipe.scr_verify = a;
-    
     def uninstall_set(self,a):
         self.recipe.scr_uninstall = a;
         
@@ -279,11 +250,10 @@ class recipescanner(Scanner):
 
     letter = Range("AZaz")
     digit = Range("09")
-    gitbranchtype = Rep(letter | digit | Any("_-./"))
     revtype = Rep(letter | digit | Any("_-."))
     name = letter + Rep(letter | digit | Any("-"))
     var_name = letter + Rep(letter | digit | Any("_"));
-    pkgname = letter + Rep(letter | digit | Any("-.+_"))
+    pkgname = letter + Rep(letter | digit | Any("-.+"))
     uri = letter + Rep(letter | digit | Any("+@$-._:/"))
     number = Rep1(digit)
     space = Any(" \t\n")
@@ -317,7 +287,6 @@ class recipescanner(Scanner):
         (Str("configure") + Rep(space) + Str("{"), Begin("configure")),
         (Str("make") + Rep(space) + Str("{"), Begin("make")),
         (Str("install") + Rep(space) + Str("{"), Begin("install")),
-        (Str("verify") + Rep(space) + Str("{"), Begin("verify")),
         (Str("uninstall") + Rep(space) + Str("{"), Begin("uninstall")),
         (Str("var") + Rep(space) + var_name + Rep(space) + assignments + Rep(space) + Str("\"") , variable_begin ),
         (name, TEXT),
@@ -358,7 +327,7 @@ class recipescanner(Scanner):
             (sep, IGNORE), (uri, makedir), (eol, mainstate),
             ]),
         State('gitbranch', [
-            (sep, IGNORE), (gitbranchtype, gitbranch), (eol, mainstate),
+            (sep, IGNORE), (revtype, gitbranch), (eol, mainstate),
             ]),
         State('gitrev', [
             (sep, IGNORE), (revtype, gitrev), (eol, mainstate),
@@ -377,9 +346,6 @@ class recipescanner(Scanner):
             ]),
         State('install', [
             (Rep(AnyBut("}")), install_set), (Str("}"), mainstate),
-            ]),
-        State('verify', [
-            (Rep(AnyBut("}")), verify_set), (Str("}"), mainstate),
             ]),
         State('uninstall', [
             (Rep(AnyBut("}")), uninstall_set), (Str("}"), mainstate),
@@ -402,10 +368,6 @@ class recipescanner(Scanner):
             print "init scanner with lvars = %s"%(lvars)
         self.recipe = recipe;
         self.recipe.scanner = self
-
-        if not os.path.exists(filename):
-            print "Missing file %s"%(filename)
-            raise RuntimeError
 
         f = open(filename,"r");
         Scanner.__init__(self, self.lexicon, f, filename);
@@ -440,7 +402,6 @@ class recipe:
         self.scr_configure = "";
         self.scr_make = "";
         self.scr_install = "";
-        self.scr_verify = "";
         self.scr_uninstall = "";
         self.configuredir = "";
         self.makedir = "";
@@ -532,23 +493,17 @@ class recipe:
         print "install called (%s)"%(self.name)
         order =  vars["satisfy_order"];
         order = order.replace(" ","").lower();
-        types = None;
         if order.find(',') > 0:            
             types = order.split(",");
         elif order.find('-') > 0:
             types = order.split("-") # needed for Jenkins bug https://issues.jenkins-ci.org/browse/JENKINS-12439
-        else:
-            types = order.split(","); # needed for single item case
         if vars.has_key("install_like"):
             copyFrom = vars["install_like"]
             types.remove(global_recipes[copyFrom].satisfier)
             types.insert(0, global_recipes[copyFrom].satisfier)
-        if self.name == 'all':
+	if self.name == 'all':
             print "pseudo installation ok"
             return True;
-        if(types==None):
-            logging.error('\x1b[31m' + "Your satisfy order (%s) provides no way to satisfy the dependency (%s) - please consider changing your satisfy order to \"deb,src\" or \"deb,rpm\" in config.dat!!!"%(order,self.name)+ '\x1b[0m');
-            sys.exit(-1);
         print "install type priority: " + str(types);
         
         for type in types:
@@ -608,6 +563,11 @@ class recipe:
             except:
                 return False;
 
+        # this is not possible if we do not have sources
+        if(len(self.source) == 0):
+            print "no sources available"
+            return False;
+
         state = inv.state(self.name);
         print "state = %s"%(state)
         step = 0;
@@ -630,68 +590,41 @@ class recipe:
             step = step + 1;
 
         return True;
-     
-    def fetched(self):
-        fetcher = fetch.fetcher(self.source, self);
-        return fetcher.fetched();
-   
-    def fetch(self):
-        # this is not possible if we do not have sources
-        if(len(self.source) == 0):
-            print "WARNING: no sources available for package %s!"%(self.name)
-            return True
-        fetcher = fetch.fetcher(self.source, self);
-        fetcher.fetch();
-        if(not fetcher.success):
-            if(len(self.source) == 0):
-                raise Exception("Failed to Fetch package '%s' no sources were provided! '%s'!"%(self.name, self.source));
-            else:
-                raise Exception("Failed to Fetch package '%s' sources were '%s'!"%(self.name, self.source));
-
-        # update value in inventory
-        inv.set_state(self.name, "fetch");
-        self.last_fetcher = fetcher;
-        print "Setting fetched version info (%s,%s)"%(fetcher.used_source, fetcher.version)
-        inv.set_prop(self.name, "source", fetcher.used_source);
-        inv.set_prop(self.name, "version", fetcher.version);
         
-
-    def check_stat(self, stat, step):
-        if(stat == 0):
-            return;
-        logging.error('\x1b[31m' + "PyBOMBS %s step failed for package (%s) please see bash output above for a reason (hint: look for the word Error)"%(step, self.name) + '\x1b[0m');
-        sys.exit(-1);
-
+    def fetch(self):
+        fetcher = fetch(self.source, self);
+        if(not fetcher.success):
+            raise Exception("Failed to Fetch package!");
+        self.last_fetcher = fetcher;
+        
     def configure(self):
         print "configure"
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
         st = bashexec(self.scanner.var_replace_all(self.scr_configure));
-        self.check_stat(st, "Configure");
+        print "bash return val = %d"%(st);
+        assert(st == 0);
 
     def make(self):
         print "make"
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
         st = bashexec(self.scanner.var_replace_all(self.scr_make));
-        self.check_stat(st, "Make");
+        print "bash return val = %d"%(st);
+        assert(st == 0);
 
     def installed(self):
         # perform installation, file copy
         print "installed"
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
         st = bashexec(self.scanner.var_replace_all(self.scr_install));
-        self.check_stat(st, "Install");
+        print "bash return val = %d"%(st);
+        assert(st == 0);
 
     # run package specific make uninstall
     def uninstall(self):
         try:
-            if(self.satisfier == "inventory"):
-                mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-                st = bashexec(self.scanner.var_replace_all(self.scr_uninstall));
-                print "bash return val = %d"%(st);
-                self.satisfier = None;
-                del vars["%s.satisfier"%(self.name)]
-            else:
-                print "pkg not installed from source, ignoring"
+            mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
+            st = bashexec(self.scanner.var_replace_all(self.scr_uninstall));
+            print "bash return val = %d"%(st);
         except:
             print "local build dir does not exist"   
 
@@ -701,10 +634,4 @@ class recipe:
         rmrf(self.name);
         inv.set_state(self.name,None);
 
-    def verify(self):
-        # perform install verification
-        print "verify install..."
-        mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-        st = bashexec(self.scanner.var_replace_all(self.scr_verify));
-        self.check_stat(st, "Verify");
 

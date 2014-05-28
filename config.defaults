@@ -5,10 +5,6 @@ satisfy_order=deb,src
 forcepkgs=
 timeout=30
 cmakebuildtype=RelWithDebInfo
-builddocs=OFF
-CC=gcc
-CXX=g++
-makewidth=4
 
 [descriptions]
 gituser=Username for GIT access
@@ -18,7 +14,3 @@ satisfy_order=Order in which to attempt installations when available, options ar
 forcepkgs=Comma seperated list of package names to assume are already installed
 timeout=Time the monitor thread waits (in seconds) before retrying downloads
 cmakebuildtype=CMAKE_BUILD_TYPE args to pass to cmake projects, options are: Debug, Release, RelWithDebInfo, MinSizeRel
-builddocs=Build doxygen while compiling packages? options are: ON, OFF
-CC=C Compiler Executable [gcc, clang, icc, etc]
-CXX=C++ Compiler Executable [g++, clang++, icpc, etc]
-makewidth=Concurrent make threads [1,2,4,8...]

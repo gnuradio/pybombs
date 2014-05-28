@@ -1,65 +1,20 @@
 #!/usr/bin/env python
-#
-# Copyright 2013 Tim O'Shea
-#
-# This file is part of PyBOMBS
-#
-# PyBOMBS is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-#
-# PyBOMBS is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with PyBOMBS; see the file COPYING.  If not, write to
-# the Free Software Foundation, Inc., 51 Franklin Street,
-# Boston, MA 02110-1301, USA.
-#
 
 from globals import *
 import re,sys;
 from sysutils import *;
 
-class fetcher:
+class fetch:
     def __init__(self, source, recipe):
-        self.source = source;
         self.recipe = recipe;
         self.success = False;
 
-    def fetch(self):
         # try all the sources until one works?
-        for s in self.source:
+        for s in source:
             if(self.try_fetch(s)):
                 self.success = True;
                 self.used_source = s;
                 break;
-
-    def fetched(self):
-        for s in self.source:
-            if(self.check_fetched(s)):
-                return True
-        return False
-
-    def check_fetched(self, s):
-        r = re.search(r'(\w+)://',s);
-        ft = r.group(1); # fetch type
-        if(ft == "wget"):
-            url = s[7:];
-            fdir,fname = os.path.split(url);
-            return os.path.exists(os.path.join(topdir, "src", fname))
-        elif(ft == "file"):
-            path = s[7:]
-            fdir,fname = os.path.split(path);
-            return os.path.exists(os.path.join(topdir, "src", fname))
-        elif(ft == "git"):
-            return os.path.exists(os.path.join(topdir, "src", self.recipe.name))
-        elif(ft == "svn"):
-            return os.path.exists(os.path.join(topdir, "src", self.recipe.name))
-        die("unknown source type: %s"%(s))
 
     def try_fetch(self, s):
         r = re.search(r'(\w+)://',s);
@@ -79,8 +34,7 @@ class fetcher:
         fdir,fname = os.path.split(url);
         os.chdir(topdir + "/src/");
         try_unlink(fname);
-        timeout = int(vars['timeout']);
-        stat = shellexec_shell("wget --no-check-certificate --timeout=%d %s"%(timeout,url), False);
+        stat = shellexec_shell("wget --no-check-certificate --timeout=10 %s"%(url), False);
 
         # store our current version
         self.version = filemd5(fname);

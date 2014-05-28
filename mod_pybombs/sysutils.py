@@ -1,27 +1,6 @@
-#
-# Copyright 2013 Tim O'Shea
-#
-# This file is part of PyBOMBS
-#
-# PyBOMBS is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-#
-# PyBOMBS is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with PyBOMBS; see the file COPYING.  If not, write to
-# the Free Software Foundation, Inc., 51 Franklin Street,
-# Boston, MA 02110-1301, USA.
-#
-
 from threading import Thread,Event
 #from subprocess import call;
-import os,re,shutil,time,glob,copy,signal,operator,re,sys
+import os,re,shutil,time,glob,copy,signal,operator,re
 import subprocess;
 import globals;
 import logging
@@ -65,40 +44,6 @@ def shellexec(cmd):
     [pin,pout] = os.popen4( " ".join(cmd) );
     return pout.read();
     
-def confirm(msg, default="N", timeout=0):
-    # Remove the quesiton mark
-    if msg[-1] == "?":
-        msg = msg[:-1]
-    if default.upper() == "Y":
-        msg = msg + "[Y]/N? "
-    elif default.upper() == "N":
-        msg = msg + "Y/[N]? "
-    else:
-        raise ValueError("default must be either 'Y' or 'N'")
-
-    while True:
-        inp = None
-        if(timeout == 0):
-            inp = raw_input(msg)
-        else:
-            import select
-            print msg;
-            inp,o,e = select.select([sys.stdin], [], [], 10);
-            if(inp):
-                inp = sys.stdin.readline();
-            else:
-                inp = "";
-
-        ans = inp.strip().upper()[0:1] # use 0:1 to avoid index error even on empty response
-        if ans == "":
-            ans = default
-        if ans == "Y":
-            return True;
-        elif ans == "N":
-            return False;
-        else:
-            print "'%s' is not a valid response" % inp
-
 def monitor(cmd,event):                
     
     def kill_process_tree(process, pid):
@@ -136,8 +81,7 @@ def monitor(cmd,event):
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, env=globals.env)
         pid = p.pid
         parentPid = pid
-        while p.poll() == None:
-            event.wait(1)
+        event.wait(10)
         if event.isSet():
             logger.info("monitor: Caught the quit Event. Killing Subprocess...")
             kill_process_tree(p, pid)
@@ -294,11 +238,10 @@ def shellexec_shell(cmd, throw_ex):
             return -1;
 
 # stdout -> return
-def shellexec_getout(cmd, throw_ex=True):
-    print "shellexec_long: " + str(cmd);
+def shellexec_getout(cmd, throw_ex):
+    print "shellexec_long: " + cmd;
     try:
-        #p = subprocess.call([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=globals.env);
-        p = subprocess.Popen([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=globals.env);
+        p = subprocess.call([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=globals.env);
         (out,err) = p.communicate();
         return out;
     except Exception, e:
@@ -308,13 +251,11 @@ def shellexec_getout(cmd, throw_ex=True):
             return -1;
 
 def bashexec(cmd):
-    if cmd.strip() == "": return 0
     print "bash exec (%s):: %s"%(os.getcwd(),cmd);
+    #print "bash exec env: %s" %(globals.env)
     from subprocess import Popen, PIPE
     p = subprocess.Popen(["bash"], stdin=subprocess.PIPE, shell=True, env=globals.env)
-    p.stdin.write(cmd)
-    if(cmd[-1] != "\n"):
-        p.stdin.write("\n")
+    p.stdin.write(cmd+"\n")
     p.stdin.close()
     st = p.wait() # unless background execution preferred
     return st;
@@ -541,6 +482,16 @@ def rpm_install(namelist):
     try:
         nlj = namelist.name;
     except:
+        return True;
+    if(namelist is list):
+        nlj = " ".join(namelist);
+    return sudorun("yum -y install %s"%(nlj));
+
+def rpm_install(namelist):
+    print "rpm install: "+str(namelist);
+    try:
+        nlj = namelist.name;
+    except:
         if(namelist.combiner == "&&"):
             return rpm_install(namelist.first) and rpm_install(namelist.second);
         elif(namelist.combiner == "||"):
@@ -583,14 +534,4 @@ def filemd5(path):
     return hashval;
 
 
-def validate_write_perm(d):
-    try:
-        tmpfile = os.tempnam(d);
-        print "TMPFILE = %s"%(tmpfile)
-        f1 = open(tmpfile,"w")
-        f1.close()
-        os.unlink(tmpfile);
-        print "WRITE PERMS OK %s"%(tmpfile)
-    except:
-        logger.error("Can not write to prefix (%s)! please fix your permissions or choose another prefix!"%(d));
-        sys.exit(-10)
+

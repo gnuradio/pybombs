@@ -1,24 +1,4 @@
 #!/usr/bin/env python
-#
-# Copyright 2013 Tim O'Shea
-#
-# This file is part of PyBOMBS
-#
-# PyBOMBS is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-#
-# PyBOMBS is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with PyBOMBS; see the file COPYING.  If not, write to
-# the Free Software Foundation, Inc., 51 Franklin Street,
-# Boston, MA 02110-1301, USA.
-#
 
 import ConfigParser;
 import os, sys;
@@ -62,14 +42,6 @@ def config_init(cfg, reconfig=False):
     for kn in kl:
         if(desc.has_key(kn)):
             print desc[kn];
-        if kn == "gituser":
-            if os.environ.get("USER"):
-                vals[kn] = os.environ.get("USER");
-        if kn == "prefix":
-            pwd = os.environ.get("PWD");
-            if os.path.basename(pwd)=="pybombs":
-                vals[kn] = os.path.join(os.path.dirname(pwd), "target")
-
         rv = raw_input("%s [%s]:"%(kn,vals[kn]));
         if not rv:
             rv = vals[kn];
