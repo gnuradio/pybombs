@@ -19,7 +19,6 @@
 
 category: baseline
 depends: subversion cmake
-satisfy_deb: libgtest-dev
 source: svn://http://googletest.googlecode.com/svn/trunk/
 make {
     cmake .
