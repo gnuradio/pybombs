@@ -17,9 +17,9 @@
 # Boston, MA 02110-1301, USA.
 #
 
-category: common
-depends: gnuradio
-source: git://https://github.com/kit-cel/gr-specest.git
-gitbranch: master
-inherit: cmake
-
+category: baseline
+depends: wget
+source: wget://ftp://ftp.alsa-project.org/pub/lib/alsa-lib-1.0.27.2.tar.bz2
+satisfy_deb: libasound2-dev
+satisfy_rpm: alsa-lib-devel
+inherit: autoconf

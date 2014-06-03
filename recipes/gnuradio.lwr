@@ -17,7 +17,7 @@
 # Boston, MA 02110-1301, USA.
 #
 
-depends: make boost fftw cppunit swig gsl uhd git python cheetah wxpython numpy lxml pygtk pycairo cmake pyqt4 pyqwt5 gcc ice
+depends: make boost fftw cppunit swig gsl uhd alsa git python cheetah wxpython numpy lxml pygtk pycairo cmake pyqt4 pyqwt5 gcc ice
 category: common
 source: git://http://www.gnuradio.org/git/gnuradio.git
 gitbranch: master
