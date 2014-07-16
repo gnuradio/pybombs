@@ -19,7 +19,6 @@
 
 category: common
 depends: gnuradio uhd curl cmake armadillo gr-compat
-source: git://https://github.com/gthouret/gr-baz
-gitbranch: feature/3.7
+source: git://https://github.com/balint256/gr-baz.git
+gitbranch: master
 inherit: cmake
-
