@@ -19,7 +19,7 @@
 
 category: common
 depends: gnuradio gr-compat
-source: git://https://github.com/balint256/gr-rds.git
+source: git://https://github.com/bastibl/gr-rds.git
 gitbranch: master
 inherit: cmake
 
