@@ -18,8 +18,8 @@
 #
 
 category: baseline
-depends: wget cmake
-source: wget://http://sourceforge.net/projects/arma/files/armadillo-3.810.2.tar.gz
-satisfy_deb: libarmadillo-dev && libarmadillo3
+depends: wget cmake blas lapack
+source: wget://http://sourceforge.net/projects/arma/files/armadillo-4.300.6.tar.gz
+satisfy_deb: libarmadillo-dev 
 var config_opt = " -DINSTALL_LIB_DIR=$prefix/lib "
 inherit: cmake
