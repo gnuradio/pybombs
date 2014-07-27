@@ -18,7 +18,7 @@
 #
 
 category: common
-depends: gnuradio gr-compat
+depends: gnuradio 
 source: git://https://github.com/bastibl/gr-rds.git
 gitbranch: master
 inherit: cmake
