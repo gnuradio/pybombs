@@ -94,6 +94,8 @@ class ASMain(QtGui.QWidget):
 
         self.menu = QtGui.QMenuBar(self);
 
+        # Official GNU Radio logo
+        # please see http://www.gnuradio.org
         pixmap = QtGui.QPixmap("img/logo.png")
         lbl = QtGui.QLabel(self)
         lbl.setPixmap(pixmap)
