@@ -23,7 +23,7 @@ _pybombs()
 {
 
     local cur prev special i
-    local config_file=/home/nathan/code/pybombs/config.dat
+    local config_file=config.dat
 
     COMPREPLY=()
     cur=${COMP_WORDS[COMP_CWORD]}
