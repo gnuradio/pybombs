@@ -93,6 +93,7 @@ class ASMain(QtGui.QWidget):
         self.setLayout(self.layout);
 
         self.menu = QtGui.QMenuBar(self);
+        self.setStyleSheet("background-color: white")
 
         # Official GNU Radio logo
         # please see http://www.gnuradio.org
