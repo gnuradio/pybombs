@@ -96,7 +96,9 @@ class ASMain(QtGui.QWidget):
         self.setStyleSheet("""
            QWidget { background-color: white }
            QMenuBar { background-color: rgb(49,49,49); border: 1px solid #000; }
+           QMenuBar::item { background-color: rgb(49,49,49); color: rgb(255,255,255); }
            QMenuBar::item::selected { background-color: rgb(30,30,30); }
+           QMenu { background-color: rgb(30,30,30); color: rgb(255,255,255); border: 1px solid #000;          }
            QMenu::item::selected { background-color: rgb(30,30,30); }
             """)
 
