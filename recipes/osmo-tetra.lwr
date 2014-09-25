@@ -19,7 +19,7 @@
 
 category: common
 depends:
-source: git://https://github.com/brmlab/osmo-tetra.git
+source: git://git://git.osmocom.org/osmo-tetra.git
 gitbranch: master
 #inherit: autoconf
 
