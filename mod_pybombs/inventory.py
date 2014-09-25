@@ -83,7 +83,7 @@ class inventory:
         if(not self.has(pkg)):
             raise exceptions.NameError("package has no inv entry" + str((pkg,prop)));
         if(not self.contents[pkg].has_key(prop)):
-            raise exceptions.NameError("package in inv does not have prop" + (pkg,prop));
+            raise exceptions.NameError("package in inv does not have prop" + str((pkg,prop)));
         return self.contents[pkg][prop];
 
     def try_get_prop(self,pkg,prop):
