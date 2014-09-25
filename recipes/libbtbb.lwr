@@ -18,7 +18,7 @@
 #
 
 category: common
-depends: gnuradio gr-compat libbtbb
-source: git://https://github.com/greatscottgadgets/gr-bluetooth.git
+depends: libpcap
+source: git://https://github.com/greatscottgadgets/libbtbb.git
 gitbranch: master
 inherit: cmake
