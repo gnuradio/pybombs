@@ -22,22 +22,3 @@ depends: gnuradio
 source: git://https://github.com/osh/gr-theano.git
 gitbranch: master
 inherit: cmake
-
-make {
-    cd src
-    export LD_LIBRARY_PATH=$prefix/lib/:$prefix/lib64/
-    make
-}
-
-install {
-	cp -v src/libosmo-tetra-mac.a $prefix/lib
-	cp -v src/libosmo-tetra-phy.a $prefix/lib
-	ldconfig -C $prefix/etc/ld.so.cache $prefix/lib	
-	cd src
-	find . -name '*.h' | cpio -pdm $prefix/include/osmo-tetra
-}
-
-uninstall {
-	rm $prefix/lib/libosmo-tetra-mac.a
-	rm $prefix/lib/libosmo-tetra-phy.a
-}
