@@ -210,7 +210,9 @@ elif(cmd == "inv"):
         parser.error("Command 'inv' accepts at most 2 arguments")
 
 elif(cmd == "fetch"):
-    if(len(args) == 0):
+    if(opts.all):
+        pybombs_ops.fetch("all", not opts.force, opts._continue)
+    elif(len(args) == 0):
         parser.error("Command 'fetch' requires at least one package")
     else:
         for p in args:

@@ -30,7 +30,7 @@ _pybombs()
 
     for (( i=0; i< ${#COMP_WORDS[@]}-1; i++ )); do
         # match special to the last command on the line
-        if [[ ${COMP_WORDS[i]} == @(help|info|install|remove|rnd|clean|config|reconfig|inv|digraph|digraphi|update|rb|search) ]]; then
+        if [[ ${COMP_WORDS[i]} == @(help|info|install|remove|rnd|clean|config|reconfig|inv|digraph|digraphi|update|rb|search|fetch) ]]; then
             special=${COMP_WORDS[i]}
         fi
     done
@@ -51,7 +51,7 @@ _pybombs()
                 COMPREPLY=( $(compgen -W "$_config_options" -- $cur) )
                 return 0
                 ;;
-            install|digraph|search) # list all packages
+            install|digraph|search|fetch) # list all packages
                 # this works, but is incredibly slow (same as list installed)
                 # _all_packages=`pybombs list 2>/dev/null | gawk '/^ /{print $1}'`
                 _all_packages=`ls recipes | sed 's/.lwr//'`
@@ -60,13 +60,13 @@ _pybombs()
                 return 0
                 ;;
             help) # list all commands
-                COMPREPLY=( $( compgen -W 'list info install remove rnd clean config reconfig inv digraph digraphi env update rb search' -- $cur ) )
+                COMPREPLY=( $( compgen -W 'list info install verify remove rnd clean config reconfig inv digraph digraphi env update rb search fetch profile' -- $cur ) )
                 return 0
                 ;;
         esac
     fi
 
-    COMPREPLY=( $( compgen -W 'help list info install remove rnd clean config reconfig inv digraph digraphi env update rb search' -- $cur ) )
+    COMPREPLY=( $( compgen -W 'help list info install verify remove rnd clean config reconfig inv digraph digraphi env update rb search fetch profile' -- $cur ) )
 
     return 0
 }
