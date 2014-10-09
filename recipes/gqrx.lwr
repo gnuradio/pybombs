@@ -19,6 +19,7 @@
 
 category: common
 depends: gnuradio gr-osmosdr pulseaudio qt4
+satisfy_deb: gqrx-sdr
 source: git://https://github.com/csete/gqrx.git
 gitbranch: master
 inherit: empty
