@@ -19,6 +19,7 @@
 
 category: common
 depends: x11
+satisfy_deb: libglfw3-dev
 source: git://https://github.com/glfw/glfw
 gitbranch: master
 var config_opt = " -DBUILD_SHARED_LIBS=true "
