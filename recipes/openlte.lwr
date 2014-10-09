@@ -18,7 +18,7 @@
 #
 
 category: common
-depends: gnuradio gr-osmosdr fftw
+depends: gnuradio gr-osmosdr fftw libpolarssl
 source: git://git://git.code.sf.net/p/openlte/code 
 gitbranch: master
 inherit: cmake
