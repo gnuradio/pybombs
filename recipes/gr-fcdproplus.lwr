@@ -18,7 +18,7 @@
 #
 
 category: common
-depends: gnuradio libusb
+depends: gnuradio libusb libhidapi
 satisfy_deb: gr-fcdproplus && qthid-fcd-controller
 source: git://https://github.com/dl1ksv/gr-fcdproplus.git
 gitbranch: master
