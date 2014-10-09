@@ -19,5 +19,6 @@
 
 category: baseline
 depends: wget
+satisfy_deb: libzmq3-dev
 source: wget://http://download.zeromq.org/zeromq-3.2.4.tar.gz
 inherit: autoconf
