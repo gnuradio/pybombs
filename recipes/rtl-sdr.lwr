@@ -19,6 +19,7 @@
 
 category: common
 depends: libusb
+satisfy_deb: rtl-sdr && librtlsdr-dev
 source: git://git://git.osmocom.org/rtl-sdr
 gitbranch: master
 var config_opt = " -DDETACH_KERNEL_DRIVER=ON "
