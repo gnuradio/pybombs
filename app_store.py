@@ -35,7 +35,6 @@ class AppList(QtGui.QWidget):
         self.parent = parent;
         self.lay = QtGui.QGridLayout();
         self.setLayout(self.lay);
-        self.width = 8;
         self.idx = 0;
         self.cbd = {};
 
@@ -56,10 +55,10 @@ class AppList(QtGui.QWidget):
         action.setStatusTip('Install App')
         button.setDefaultAction(action);
         button.setToolButtonStyle(Qt.ToolButtonTextUnderIcon);
-        button.setIconSize(QtCore.QSize(100,100));
+        button.setIconSize(QtCore.QSize(self.parent.iconsize,self.parent.iconsize));
         button.setAutoRaise(True);
         self.connect(action, QtCore.SIGNAL("triggered()"), callback);
-        self.lay.addWidget(button, self.idx/self.width, self.idx%self.width);
+        self.lay.addWidget(button, self.idx/self.parent.width, self.idx%self.parent.width);
         self.idx = self.idx + 1;
 
 class Installer:
@@ -86,6 +85,9 @@ class Remover:
 class ASMain(QtGui.QWidget):
 #class ASMain(QtGui.QMainWindow):
     def __init__(self):
+        self.width = 8;
+        self.iconsize = 72
+
         super(ASMain, self).__init__()
 
         self.setWindowTitle("Python Build Overlay Managed Bundle System - APP STORE GUI");
@@ -106,12 +108,15 @@ class ASMain(QtGui.QWidget):
         l2.addWidget(QtGui.QLabel(" "));
 
         self.tw = QtGui.QTabWidget(self);
+        self.scrollArea = QtGui.QScrollArea()
+        self.scrollArea.setWidget(self.tw)
+        self.scrollArea.setWidgetResizable(True);
 
         self.layout.setMargin(0);
 
         self.layout.addWidget(self.menu);
         self.layout.addLayout(l2);
-        self.layout.addWidget(self.tw);
+        self.layout.addWidget(self.scrollArea);
 
         # Populate Apps
         self.populate_tabs();
@@ -129,6 +134,7 @@ class ASMain(QtGui.QWidget):
         toolsMenu = self.menu.addMenu('&Tools');
         toolsMenu.addAction(reloadAction);
 
+        self.resize(self.iconsize * self.width * 2, self.iconsize * self.width)
         self.show();
   
     def reload_op(self):
