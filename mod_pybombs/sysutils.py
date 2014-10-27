@@ -377,7 +377,7 @@ def deb_exists(name, comparator=None, version=None):
     if re.search(r'Unable to locate package', a):
         logger.warning("deb_exists: could not find a downloadable version of %s" % (name))
         return False
-    m = re.search(r'Versions: \n(\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+).*\n', a)
+    m = re.search(r'Versions: \n(\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n', a)
     if(m):
         if not comparator:
             logger.info("deb_exists: Satisfies requirement...found downloadable version of %s" % (name))
@@ -449,7 +449,7 @@ def have_deb(name, comparator=None, version=None):
     if notfound:
         return False;
     a = shellexec(["dpkg","-s",name]);
-    m = re.search(r'Version: (\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+).*\n', a);
+    m = re.search(r'Version: (\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n', a);
 #    print "MATCH:" + "1" + str( m.group(1) )  + "2" + str( m.group(2) )
     if(m):
         #print "Deb Version: " + m.group(2);
