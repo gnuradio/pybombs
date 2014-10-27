@@ -585,12 +585,13 @@ def filemd5(path):
 
 def validate_write_perm(d):
     try:
-        tmpfile = os.tempnam(d);
+        import tempfile
+        fd, tmpfile = tempfile.mkstemp(dir=d);
         print "TMPFILE = %s"%(tmpfile)
         f1 = open(tmpfile,"w")
         f1.close()
         os.unlink(tmpfile);
-        print "WRITE PERMS OK %s"%(tmpfile)
+        print "WRITE PERMS OK %s"%(d)
     except:
         logger.error("Can not write to prefix (%s)! please fix your permissions or choose another prefix!"%(d));
         sys.exit(-10)
