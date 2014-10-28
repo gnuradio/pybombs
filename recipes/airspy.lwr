@@ -19,6 +19,7 @@
 
 depends: git cmake libusb
 category: common
+satisfy_deb: airspy
 source: git://https://github.com/airspy/host.git
 gitbranch: master
 inherit: cmake

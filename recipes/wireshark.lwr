@@ -19,5 +19,6 @@
 
 category: common
 depends: bison flex wget gtk2 perl libpcap
+satisfy_deb: wireshark
 source: wget://http://wiresharkdownloads.riverbed.com/wireshark/src/all-versions/wireshark-1.10.2.tar.bz2
 inherit: autoconf

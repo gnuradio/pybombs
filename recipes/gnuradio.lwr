@@ -19,6 +19,7 @@
 
 depends: make boost fftw cppunit swig gsl uhd alsa git python cheetah wxpython numpy lxml pygtk pycairo cmake pyqt4 pyqwt5 gcc ice
 category: common
+satisfy_deb: gnuradio
 source: git://http://www.gnuradio.org/git/gnuradio.git
 gitbranch: master
 var config_opt = " -DENABLE_GR_FCD=ON -DENABLE_DOXYGEN=$builddocs -DENABLE_GR_LOG=ON -DENABLE_PERFORMANCE_COUNTERS=ON -DCMAKE_CXX_FLAGS=-fpermissive "

@@ -19,6 +19,7 @@
 
 category: baseline
 depends: wget
+satisfy_deb: google-perftools
 source: wget://http://gperftools.googlecode.com/files/gperftools-2.0.tar.gz
 var config_opt = " --enable-frame-pointers "
 inherit: autoconf
