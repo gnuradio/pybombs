@@ -18,7 +18,7 @@
 #
 
 category: common
-depends: gnuradio gfortran liblapack-dev libblas-dev
+depends: gnuradio gfortran lapack blas
 source: git://https://github.com/kit-cel/gr-specest.git
 gitbranch: master
 inherit: cmake
