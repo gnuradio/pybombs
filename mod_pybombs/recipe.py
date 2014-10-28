@@ -480,12 +480,16 @@ class recipe:
 
     def satisfy(self):
 
+        print "satisfy(%s)" % self.name
+        if(any(self.name in s for s in force_build)):
+            return False;
+
         # early out if we have already checked this
         if(vars.has_key("%s.satisfier"%(self.name))):
             self.satisfied = vars["%s.satisfier"%(self.name)];
             return True;
 
-        if(any(self.name in s for s in force_list)):
+        if(any(self.name in s for s in force_pkgs)):
             self.satisfier = "force";
             vars["%s.satisfier"%(self.name)] = self.satisfier;
             return True;
@@ -533,6 +537,8 @@ class recipe:
         order =  vars["satisfy_order"];
         order = order.replace(" ","").lower();
         types = None;
+        if self.name in force_build:
+            order = 'src'
         if order.find(',') > 0:            
             types = order.split(",");
         elif order.find('-') > 0:

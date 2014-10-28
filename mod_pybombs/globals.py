@@ -69,10 +69,17 @@ for v in config_desc.options("defaults"):
 
 
 # set up the force list
-force_list = [];
+force_pkgs = [];
 try:
     fl = config.get("config","forcepkgs");
-    force_list = re.sub(r' ', r'', fl).split(",")
+    force_pkgs = re.sub(r' ', r'', fl).split(",")
+except:
+    pass
+
+force_build = [];
+try:
+    fl = config.get("config","forcebuild");
+    force_build = re.sub(r' ', r'', fl).split(",")
 except:
     pass
 
