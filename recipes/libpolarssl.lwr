@@ -17,8 +17,8 @@
 # Boston, MA 02110-1301, USA.
 #
 
-category: common
-depends: gnuradio gr-osmosdr fftw libpolarssl
-source: git://git://git.code.sf.net/p/openlte/code 
-gitbranch: master
+depends: wget
+category: baseline
+source: wget://https://polarssl.org/download/polarssl-1.3.8-gpl.tgz
+satisfy_deb: libpolarssl-dev
 inherit: cmake
