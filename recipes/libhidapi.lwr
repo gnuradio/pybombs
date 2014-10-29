@@ -17,9 +17,8 @@
 # Boston, MA 02110-1301, USA.
 #
 
-category: common
-depends: gnuradio libusb libhidapi
-satisfy_deb: gr-fcdproplus && qthid-fcd-controller
-source: git://https://github.com/dl1ksv/gr-fcdproplus.git
-gitbranch: master
-inherit: cmake
+depends: libusb
+category: baseline
+source: git://https://github.com/signal11/hidapi.git
+satisfy_deb: libhidapi-dev
+inherit: autoconf
