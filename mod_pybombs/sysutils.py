@@ -548,8 +548,6 @@ def rpm_install(namelist):
         else:
             print "invalid combiner logic."
             return false;
-#    if(namelist is list):
-#        nlj = " ".join(namelist);
     return sudorun("yum -y install %s"%(nlj));
 
 def deb_install(namelist):
@@ -564,9 +562,7 @@ def deb_install(namelist):
         else:
             print "invalid combiner logic."
             return false;
-#    if(namelist is list):
-#        nlj = " ".join(namelist);
-    return sudorun("apt-get -y install %s"%(nlj));
+    return sudorun("aptdcon --safe-upgrade && apt-get -y install %s"%(nlj));
 
 def mkchdir(p):
     try:
