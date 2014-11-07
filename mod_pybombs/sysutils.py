@@ -562,7 +562,8 @@ def deb_install(namelist):
         else:
             print "invalid combiner logic."
             return false;
-    return sudorun("aptdcon --safe-upgrade && apt-get -y install %s"%(nlj));
+    #return sudorun("aptdcon --safe-upgrade && apt-get -y install %s"%(nlj));
+    return sudorun("apt-get -y install %s"%(nlj));
 
 def mkchdir(p):
     try:
