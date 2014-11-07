@@ -480,7 +480,7 @@ class recipe:
 
     def satisfy(self):
 
-        print "satisfy(%s)" % self.name
+        #print "satisfy(%s)" % self.name
         if(any(self.name in s for s in force_build)):
             return False;
 
