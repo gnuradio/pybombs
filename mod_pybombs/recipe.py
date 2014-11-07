@@ -480,9 +480,10 @@ class recipe:
 
     def satisfy(self):
 
-        #print "satisfy(%s)" % self.name
+        # force src satisfaction if in the force_build list
         if(any(self.name in s for s in force_build)):
-            return False;
+            self.satisfy_deb = None
+            self.satisfy_rpm = None
 
         # early out if we have already checked this
         if(vars.has_key("%s.satisfier"%(self.name))):
