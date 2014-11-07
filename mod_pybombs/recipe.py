@@ -535,11 +535,9 @@ class recipe:
 
     def install(self):
         print "install called (%s)"%(self.name)
-        order =  vars["satisfy_order"];
+        order =  "src" if (self.name in force_build) else vars["satisfy_order"];
         order = order.replace(" ","").lower();
         types = None;
-        if self.name in force_build:
-            order = 'src'
         if order.find(',') > 0:            
             types = order.split(",");
         elif order.find('-') > 0:
