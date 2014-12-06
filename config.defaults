@@ -30,9 +30,17 @@ prefix_override=/usr
 toolchain=
 sandbox=~/sdk_target
 env=
+inv=
+sdk_forcepkgs=
+sdk_forcebuild = gnuradio,uhd,gr-air-modes,gr-osmosdr,gr-iqbal,gr-fcdproplus,uhd,rtl-sdr,osmo-sdr,hackrf,gqrx,bladerf,airspy
+sdk_satisfy_order=src
 
 [sdk_descriptions]
 prefix_override=Point CMAKE to the de facto sdk install prefix
 toolchain=Location of the toolchain file for sdk
 sandbox=Local sdk sandbox location
 env=Location of environment setup script for sdk
+inv=Location of the sdk inventory file
+sdk_forcepkgs=(sdk override) Comma separated list of package names to assume are already installed
+sdk_forcebuild=(sdk override) Comma separated list of package names to always build from source
+sdk_satisfy_order=Order in which to attempt installations when available, options are: src, rpm, deb

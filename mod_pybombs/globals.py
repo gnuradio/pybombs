@@ -83,6 +83,9 @@ if str(os.environ.get('PYBOMBS_SDK')) == 'True':
                 rv = defa;
             config.set("config", v, rv);
             config_write(config);
+    config.set("config", "forcepkgs", config.get("config", "sdk_forcepkgs"));
+    config.set("config", "forcebuild", config.get("config", "sdk_forcebuild"));
+    config.set("config", "satify_orer", config.get("config", "sdk_satisfy_order"));
     #set environment...
     command = ['bash', '-c', 'source ' + config.get('config', 'env') + '  && env']
 
@@ -94,8 +97,7 @@ if str(os.environ.get('PYBOMBS_SDK')) == 'True':
 
     proc.communicate()
     
-    import pprint
-    pprint.pprint(dict(os.environ))
+    
 
 # set up the force list
 force_pkgs = [];
@@ -139,7 +141,10 @@ vars = vars_defaults(vars);
 env = env_init(vars);
 
 global_recipes = {};
-inv = inventory();
+if str(os.environ.get('PYBOMBS_SDK')) == 'True':
+    inv = inventory(str(config.get('config', 'inv')));
+else:
+    inv = inventory();
 
 def die(s):
     print s;
