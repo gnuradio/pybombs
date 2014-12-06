@@ -24,3 +24,15 @@ builddocs=Build doxygen while compiling packages? options are: ON, OFF
 CC=C Compiler Executable [gcc, clang, icc, etc]
 CXX=C++ Compiler Executable [g++, clang++, icpc, etc]
 makewidth=Concurrent make threads [1,2,4,8...]
+
+[sdk]
+prefix_override=/usr
+toolchain=
+sandbox=~/sdk_target
+env=
+
+[sdk_descriptions]
+prefix_override=Point CMAKE to the de facto sdk install prefix
+toolchain=Location of the toolchain file for sdk
+sandbox=Local sdk sandbox location
+env=Location of environment setup script for sdk

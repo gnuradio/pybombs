@@ -26,6 +26,7 @@ from sysutils import *;
 import fetch
 from update import update;
 
+
 import pybombs_ops;
 import logging,sys
 
@@ -109,6 +110,45 @@ class recipescanner(Scanner):
             self.tmpcond = lvars[k];
             s = re.sub(rg, self.replc, s);
         return s;
+
+    def config_filter(self, in_string):
+        prefix = re.compile("-DCMAKE_INSTALL_PREFIX=\S*")
+        toolchain = re.compile("-DCMAKE_TOOLCHAIN_FILE=\S*")
+        cmake = re.compile("cmake \S* ")
+        CC = re.compile("CC=\S* ")
+        CXX = re.compile("CXX=\S* ")
+        if str(os.environ.get('PYBOMBS_SDK')) == 'True':
+            cmk_cmd_match = re.search(cmake, in_string)
+            if cmk_cmd_match:
+                idx = in_string.find(cmk_cmd_match.group(0)) + len(cmk_cmd_match.group(0))
+                in_string = re.sub(prefix, "-DCMAKE_INSTALL_PREFIX=/usr", in_string);
+                if re.search(toolchain, in_string):
+                    in_string = re.sub(toolchain, "-DCMAKE_TOOLCHAIN_FILE=" + config.get('config', 'toolchain'), in_string)
+                else:
+                    in_string = in_string[:idx] +  "-DCMAKE_TOOLCHAIN_FILE=" + config.get('config', 'toolchain') + ' ' + in_string[idx:]
+                if re.search(CC, in_string):
+                    in_string = re.sub(CC, "", in_string)
+                if re.search(CXX, in_string):
+                    in_string = re.sub(CXX, "", in_string)
+                                       
+            
+        print in_string
+        return in_string
+
+    def installed_filter(self, in_string):
+        installed = re.compile("make install")
+        if str(os.environ.get('PYBOMBS_SDK')) == 'True':
+            print in_string
+            mk_inst_match = re.search(installed, in_string)
+            if mk_inst_match:
+                idx = in_string.find(mk_inst_match.group(0)) + len(mk_inst_match.group(0))
+                in_string = in_string[:idx] +  " DESTDIR=" + config.get('config', 'sandbox') + ' ' + in_string[idx:]
+                    
+                    
+                                       
+            
+        print in_string
+        return in_string
 
     def deplist_add(self,a):
         self.recipe.depends.append(a);
@@ -245,7 +285,13 @@ class recipescanner(Scanner):
     def installdir(self,a):
         if debug_en:
             print "installdir: %s"%(a);
-        self.recipe.installdir = a;
+        self.recipe.installdir = self.installdir_filter(a);
+
+    def installdir_filter(self, a):
+        if str(os.environ.get('PYBOMBS_SDK')) == 'True':
+            return a + '_sdk'
+        else:
+            return a
 
     def inherit(self,a):
         subscanner = recipescanner(topdir + "/templates/"+a+".lwt", self.recipe, self.lvars);
@@ -670,8 +716,9 @@ class recipe:
     def configure(self):
         print "configure"
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-        st = bashexec(self.scanner.var_replace_all(self.scr_configure));
-        self.check_stat(st, "Configure");
+        pre_filt_command = self.scanner.var_replace_all(self.scr_configure)
+        st = bashexec(self.scanner.config_filter(pre_filt_command))
+        self.check_stat(st, "Configure")
 
     def make(self):
         print "make"
@@ -683,7 +730,8 @@ class recipe:
         # perform installation, file copy
         print "installed"
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-        st = bashexec(self.scanner.var_replace_all(self.scr_install));
+        pre_filt_command = self.scanner.var_replace_all(self.scr_install)
+        st = bashexec(self.scanner.installed_filter(pre_filt_command))
         self.check_stat(st, "Install");
 
     # run package specific make uninstall

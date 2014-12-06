@@ -19,7 +19,7 @@
 # Boston, MA 02110-1301, USA.
 #
 
-import sys, os, errno
+import sys, os, errno, subprocess
 from inventory import *
 import ConfigParser
 from cfg import *
@@ -66,7 +66,36 @@ for v in config_desc.options("defaults"):
             rv = defa;
         config.set("config", v, rv);
         config_write(config);
+if str(os.environ.get('PYBOMBS_SDK')) == 'True':
+    #deal with additional, sdk-specific configuration
+    for v in config_desc.options("sdk"):
+        defa = config_desc.get("sdk",v);
+        try:
+            desc = config_desc.get("sdk_descriptions",v);
+        except:
+            desc = None
+        if not v in config.options("config"):
+            print "Found new missing default value in your config.dat:"
+            if desc:
+                print desc;
+            rv = raw_input("%s [%s]:"%(v,defa));
+            if not rv:
+                rv = defa;
+            config.set("config", v, rv);
+            config_write(config);
+    #set environment...
+    command = ['bash', '-c', 'source ' + config.get('config', 'env') + '  && env']
 
+    proc = subprocess.Popen(command, stdout = subprocess.PIPE)
+
+    for line in proc.stdout:
+        (key, _, value) = line.partition("=")
+        os.environ[key] = value.replace('\n', '')
+
+    proc.communicate()
+    
+    import pprint
+    pprint.pprint(dict(os.environ))
 
 # set up the force list
 force_pkgs = [];
