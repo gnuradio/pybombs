@@ -121,7 +121,7 @@ class recipescanner(Scanner):
             cmk_cmd_match = re.search(cmake, in_string)
             if cmk_cmd_match:
                 idx = in_string.find(cmk_cmd_match.group(0)) + len(cmk_cmd_match.group(0))
-                in_string = re.sub(prefix, "-DCMAKE_INSTALL_PREFIX=/usr", in_string);
+                in_string = re.sub(prefix, "-DCMAKE_INSTALL_PREFIX=" + config.get('config', 'sdk_prefix'), in_string);
                 if re.search(toolchain, in_string):
                     in_string = re.sub(toolchain, "-DCMAKE_TOOLCHAIN_FILE=" + config.get('config', 'toolchain'), in_string)
                 else:

@@ -86,6 +86,7 @@ if str(os.environ.get('PYBOMBS_SDK')) == 'True':
     config.set("config", "forcepkgs", config.get("config", "sdk_forcepkgs"));
     config.set("config", "forcebuild", config.get("config", "sdk_forcebuild"));
     config.set("config", "satify_orer", config.get("config", "sdk_satisfy_order"));
+    config.set("config", "prefix", config.get("config", "sandbox") + config.get("config", "sdk_prefix"));
     #set environment...
     command = ['bash', '-c', 'source ' + config.get('config', 'env') + '  && env']
 
@@ -143,8 +144,12 @@ env = env_init(vars);
 global_recipes = {};
 if str(os.environ.get('PYBOMBS_SDK')) == 'True':
     inv = inventory(str(config.get('config', 'inv')));
+    written_env = env_init(vars, 'device_prefix');
+    destination_key = 'sandbox'
 else:
     inv = inventory();
+    written_env = env;
+    destination_key = 'prefix'
 
 def die(s):
     print s;

@@ -26,9 +26,10 @@ CXX=C++ Compiler Executable [g++, clang++, icpc, etc]
 makewidth=Concurrent make threads [1,2,4,8...]
 
 [sdk]
-prefix_override=/usr
-toolchain=
+sdk_prefix=/usr
 sandbox=~/sdk_target
+device_prefix=/target/usr
+toolchain=
 env=
 inv=
 sdk_forcepkgs=
@@ -36,9 +37,10 @@ sdk_forcebuild = gnuradio,uhd,gr-air-modes,gr-osmosdr,gr-iqbal,gr-fcdproplus,uhd
 sdk_satisfy_order=src
 
 [sdk_descriptions]
-prefix_override=Point CMAKE to the de facto sdk install prefix
-toolchain=Location of the toolchain file for sdk
+sdk_prefix=(sdk override) Install Prefix
 sandbox=Local sdk sandbox location
+device_prefix=Device mountpoint for sandbox (for generating setup_env.py)
+toolchain=Location of the toolchain file for sdk
 env=Location of environment setup script for sdk
 inv=Location of the sdk inventory file
 sdk_forcepkgs=(sdk override) Comma separated list of package names to assume are already installed

@@ -582,6 +582,7 @@ def filemd5(path):
 
 def validate_write_perm(d):
     try:
+        d = os.path.expanduser(d)
         import tempfile
         fd, tmpfile = tempfile.mkstemp(dir=d);
         print "TMPFILE = %s"%(tmpfile)
