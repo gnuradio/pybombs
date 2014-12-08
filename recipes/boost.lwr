@@ -25,6 +25,9 @@ satisfy_rpm: boost-devel >= 1.53
 configure {
     ./bootstrap.sh --prefix=$prefix --libdir=$prefix/lib/
 }
+install_static {
+    ./bjam cxxflags='-fPIC' --threading=multi --layout=tagged link=static -j$makewidth install
+}
 install {
     ./bjam --threading=multi --layout=tagged link=shared -j$makewidth install
 }
