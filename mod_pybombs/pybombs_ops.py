@@ -374,6 +374,12 @@ def update(pkglist=None):
     for p in rblist:
         install(p);
 
+def package_prefix():
+    directory = os.path.expanduser(vars[destination_key])
+    command = ['tar', '-zcvf', 'target.tar.gz', directory]
+    proc = subprocess.Popen(command);
+    proc.communicate()
+
 def writeenv():
     fn = vars[destination_key] + "/setup_env.sh";
     fn = os.path.expanduser(fn)

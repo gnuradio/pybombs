@@ -127,6 +127,7 @@ pathcheck = [topdir + "src", prefix, prefix + "/lib64",
 
 try:
     for path in pathcheck:
+        path = os.path.expanduser(path)
         if(not os.path.exists(path)):
             os.mkdir(path);
 except OSError, error:

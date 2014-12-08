@@ -51,6 +51,7 @@ Operations:"
     fetch <pkg>     - fetch a package without building or checking dependencies
     search <expr>   - search for a package recipe matching <expr>
     profile         - run volk profile
+    package         - create .tar.gz file out of prefix 
 """
 
 parser = OptionParser(USAGE)
@@ -219,6 +220,10 @@ elif(cmd == "fetch"):
 elif(cmd == "profile"):
 
     pybombs_ops.run_volk_profile();
+
+elif(cmd == "package"):
+         
+    pybombs_ops.package_prefix();
 
 else:
     parser.error("Command '%s' is not a valid command" % cmd )
