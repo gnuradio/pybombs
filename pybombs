@@ -31,6 +31,7 @@ Operations:"
     list            - show installed & available packages
     info <pkg>      - display package info
     install <pkg>   - install a package
+    install <pkg> static   - install a package using the static options
     verify <pkg>    - verify an installed a package
     remove          - cleanly remove all fully installed packages and dependents
     remove <pkg>    - cleanly remove a fully installed package and dependents
@@ -105,6 +106,13 @@ import mod_pybombs.recipe_loader as recipe_loader
 import mod_pybombs.sysutils as sysutils
 #from mod_pybombs import recipe,update,fetch,inventory
 #from mod_pybombs import cfg,vars,globals
+
+if len(args) > 0:
+    if args[len(args)-1] == "static":
+        pybombs_ops.config_set("static","True")
+        args.pop()
+    else:
+        pybombs_ops.config_set("static","False")
 
 print "---------- loading recipes -------------------"
 recipe_loader.load_all()
