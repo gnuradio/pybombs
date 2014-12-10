@@ -377,7 +377,7 @@ def update(pkglist=None):
 def package_prefix():
     directory = os.path.expanduser(vars[destination_key])
     print os.path.dirname(directory), os.path.basename(directory) 
-    command = ['tar', '-zcvf', 'target.tar.gz', os.path.basename(directory)]
+    command = ['tar', '-zcvf', topdir + 'target.tar.gz', os.path.basename(directory)]
     proc = subprocess.Popen(command, cwd=os.path.dirname(directory));
     proc.communicate()
 
