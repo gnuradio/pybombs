@@ -234,14 +234,30 @@ class recipescanner(Scanner):
     def mainstate(self,a):
         self.begin("")
 
+    def configure_set_static(self,a):
+        if config.get("config","static") == "True":
+            self.recipe.scr_configure = a;
+
     def configure_set(self,a):
-        self.recipe.scr_configure = a;
+        if config.get("config","static") == "False":
+            self.recipe.scr_configure = a;
+        else:
+            if self.recipe.scr_configure == "":
+                self.recipe.scr_configure = a;
 
     def make_set(self,a):
         self.recipe.scr_make = a;
 
+    def install_set_static(self,a):
+        if config.get("config","static") == "True":
+            self.recipe.scr_install = a;
+
     def install_set(self,a):
-        self.recipe.scr_install = a;
+        if config.get("config","static") == "False":
+            self.recipe.scr_install = a;
+        else:
+            if self.recipe.scr_install == "":
+                self.recipe.scr_install = a;
     
     def verify_set(self,a):
         self.recipe.scr_verify = a;
@@ -361,8 +377,10 @@ class recipescanner(Scanner):
         (Str("source:"), Begin("source_uri")),
         (Str("install_like:"), Begin("install_like")),
         (Str("configure") + Rep(space) + Str("{"), Begin("configure")),
+        (Str("configure_static") + Rep(space) + Str("{"), Begin("configure_static")),
         (Str("make") + Rep(space) + Str("{"), Begin("make")),
         (Str("install") + Rep(space) + Str("{"), Begin("install")),
+        (Str("install_static") + Rep(space) + Str("{"), Begin("install_static")),
         (Str("verify") + Rep(space) + Str("{"), Begin("verify")),
         (Str("uninstall") + Rep(space) + Str("{"), Begin("uninstall")),
         (Str("var") + Rep(space) + var_name + Rep(space) + assignments + Rep(space) + Str("\"") , variable_begin ),
@@ -415,11 +433,17 @@ class recipescanner(Scanner):
         State('installdir', [
             (sep, IGNORE), (uri, installdir), (eol, mainstate),
             ]),
+        State('configure_static', [
+            (Rep(AnyBut("}")), configure_set_static), (Str("}"), mainstate),
+            ]),
         State('configure', [
             (Rep(AnyBut("}")), configure_set), (Str("}"), mainstate),
             ]),
         State('make', [
             (Rep(AnyBut("}")), make_set), (Str("}"), mainstate),
+            ]),
+        State('install_static', [
+            (Rep(AnyBut("}")), install_set_static), (Str("}"), mainstate),
             ]),
         State('install', [
             (Rep(AnyBut("}")), install_set), (Str("}"), mainstate),
