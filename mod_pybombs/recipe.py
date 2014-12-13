@@ -27,6 +27,8 @@ import fetch
 from update import update;
 
 import pybombs_ops;
+import output_proc
+import verbosity as v
 
 debug_en = False;
 
@@ -45,7 +47,7 @@ class pkgreq:
 class pr_pair:
     def __init__(self, pkg):
         if debug_en:
-            print "pr_pair(%s,...)"%(pkg)
+            v.print_v(v.PDEBUG, "pr_pair(%s,...)"%(pkg))
         self.first = pkg;
         self.second = None;
         self.combiner = None;
@@ -81,7 +83,7 @@ class recipescanner(Scanner):
             os = s;
             for k in d.keys():
                 s = s.replace("$%s"%(k), d[k]);
-            print (s,os)
+            v.print_v(v.PDEBUG, (s,os))
             if(os == s):
                 finished = True;
         return s;
@@ -496,7 +498,7 @@ class recipe:
 
     def recursive_satisfy(self, recurse_if_installed=False):
         ll = [];
-        print "%s dep [%s]"%(self.name, self.depends)
+        v.print_v(v.PDEBUG, "%s dep [%s]"%(self.name, self.depends))
  
         selfsat = self.satisfy();
 
@@ -515,7 +517,6 @@ class recipe:
         return ll;
 
     def install(self):
-        print "install called (%s)"%(self.name)
         order =  vars["satisfy_order"];
         order = order.replace(" ","").lower();
         if order.find(',') > 0:            
@@ -529,8 +530,7 @@ class recipe:
         if self.name == 'all':
             print "pseudo installation ok"
             return True;
-        print "install type priority: " + str(types);
-        
+        v.print_v(v.PDEBUG, "install type priority: " + str(types))
         for type in types:
             st = False;
             if(type == "src"):
@@ -562,21 +562,21 @@ class recipe:
         return rpm_install(self.satisfy_rpm);  
     
     def install_deb(self):
-        print "install deb called (%s)"%(self.name)
+        v.print_v(v.PDEBUG, "install deb called (%s)"%(self.name))
         # this is not possible if we do not have deb satisfiers
         if((self.satisfy_deb == None) or ((type(self.satisfy_deb) == type([])) and (len(self.satisfy_deb) == 0))):
-            print "no deb satisfiers available"
-            return False;
+            v.print_v(v.PDEBUG, "no deb satisfiers available")
+            return False
         elif self.satisfy_deb and not have_debs(self.satisfy_deb):
-            print "deb is not available locally"
-            print "check remote repositories..."
+            v.print_v(v.PDEBUG, "deb is not available locally")
+            v.print_v(v.PDEBUG, "check remote repositories...")
             if not debs_exist(self.satisfy_deb):
-                return False;
-        print "CONDUCTING DEB INSTALL"
-        return deb_install(self.satisfy_deb);  
+                return False
+        v.print_v(v.INFO, "Installing from .deb: {0}".format(self.name))
+        return deb_install(self.satisfy_deb)
 
     def install_src(self):
-        print "install src called (%s)"%(self.name)
+        v.print_v(v.PDEBUG, "install src called (%s)"%(self.name))
 
         # basic source installation requirements
         # install gcc etc before proceeding to build steps
@@ -588,27 +588,26 @@ class recipe:
             except:
                 return False;
 
+        v.print_v(v.INFO, "Installing from source: {0}".format(self.name))
         state = inv.state(self.name);
-        print "state = %s"%(state)
         step = 0;
         for i in range( len( self.install_order ) ):
             if( self.install_order[i][0] == state ):
                 step = i+1;
-
+        v.print_v(v.PDEBUG, self.install_order)
         # iterate through the install steps of current package
         while(step < len(self.install_order)):
-            print "Current step: (%s :: %s)"%(self.name, self.install_order[step][0]);
+            v.print_v(v.PDEBUG, "Current step: (%s :: %s)"%(self.name, self.install_order[step][0]))
             # run the installation step
             self.install_order[step][1]();
             # update value in inventory
             inv.set_state(self.name, self.install_order[step][0]);
             if(self.install_order[step][0] == "fetch"):
                 # if we just fetched a package, store its version and source
-                print "setting installed version info (%s,%s)"%(self.last_fetcher.used_source,self.last_fetcher.version)
+                v.print_v(v.PDEBUG, "setting installed version info (%s,%s)"%(self.last_fetcher.used_source,self.last_fetcher.version))
                 inv.set_prop(self.name, "source", self.last_fetcher.used_source);
                 inv.set_prop(self.name, "version", self.last_fetcher.version);
             step = step + 1;
-
         return True;
      
     def fetched(self):
@@ -618,7 +617,7 @@ class recipe:
     def fetch(self):
         # this is not possible if we do not have sources
         if(len(self.source) == 0):
-            print "WARNING: no sources available for package %s!"%(self.name)
+            v.print_v(v.WARN, "WARNING: no sources available for package %s!"%(self.name))
             return True
         fetcher = fetch.fetcher(self.source, self);
         fetcher.fetch();
@@ -631,30 +630,39 @@ class recipe:
         # update value in inventory
         inv.set_state(self.name, "fetch");
         self.last_fetcher = fetcher;
-        print "Setting fetched version info (%s,%s)"%(fetcher.used_source, fetcher.version)
+        v.print_v(v.DEBUG, "Setting fetched version info (%s,%s)"%(fetcher.used_source, fetcher.version))
         inv.set_prop(self.name, "source", fetcher.used_source);
         inv.set_prop(self.name, "version", fetcher.version);
-        
+
     def configure(self):
-        print "configure"
+        v.print_v(v.PDEBUG, "configure")
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-        st = bashexec(self.scanner.var_replace_all(self.scr_configure));
-        print "bash return val = %d"%(st);
+        if v.VERBOSITY_LEVEL >= v.DEBUG:
+            o_proc = None
+        else:
+            o_proc = output_proc.OutputProcessorMake(preamble="Configuring: ")
+        st = bashexec(self.scanner.var_replace_all(self.scr_configure), o_proc)
         assert(st == 0);
 
     def make(self):
-        print "make"
+        v.print_v(v.PDEBUG, "make")
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-        st = bashexec(self.scanner.var_replace_all(self.scr_make));
-        print "bash return val = %d"%(st);
+        if v.VERBOSITY_LEVEL >= v.DEBUG:
+            o_proc = None
+        else:
+            o_proc = output_proc.OutputProcessorMake(preamble="Building: ")
+        st = bashexec(self.scanner.var_replace_all(self.scr_make), o_proc)
         assert(st == 0);
 
     def installed(self):
         # perform installation, file copy
-        print "installed"
+        v.print_v(v.PDEBUG, "installed")
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-        st = bashexec(self.scanner.var_replace_all(self.scr_install));
-        print "bash return val = %d"%(st);
+        if v.VERBOSITY_LEVEL >= v.DEBUG:
+            o_proc = None
+        else:
+            o_proc = output_proc.OutputProcessorMake(preamble="Installing: ")
+        st = bashexec(self.scanner.var_replace_all(self.scr_install), o_proc)
         assert(st == 0);
 
     # run package specific make uninstall
@@ -663,11 +671,10 @@ class recipe:
             if(self.satisfier == "inventory"):
                 mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
                 st = bashexec(self.scanner.var_replace_all(self.scr_uninstall));
-                print "bash return val = %d"%(st);
                 self.satisfier = None;
                 del vars["%s.satisfier"%(self.name)]
             else:
-                print "pkg not installed from source, ignoring"
+                v.print_v(v.WARN, "pkg not installed from source, ignoring")
         except:
             print "local build dir does not exist"   
 

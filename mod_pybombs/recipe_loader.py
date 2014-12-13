@@ -23,11 +23,13 @@
 import os,re,sys
 from recipe import *;
 
+import verbosity as v
+
 def load_all():
     global_recipes.clear();
     files = os.listdir("recipes");
     recipes = [];
-    print "Loading recipes ..."
+    v.print_v(v.INFO, "Loading recipes ...")
     for f in files:
         if(re.match("[\w\d_-]+.lwr$", f)):
             recipes.append(f[:-4]);
@@ -37,15 +39,9 @@ def load_all():
             try:
                 global_recipes[r] = recipe(r);
             except:
-                print "Failed to load recipe", r
-            
+                v.print_v(v.WARN, "Failed to load recipe {0}".format(r))
     global_recipes['all'] = recipe('all')
     global_recipes['all'].category = "pseudo"
     global_recipes['all'].depends.extend(recipes)
-
-    print "Loading recipes ... done"
-    
-
-    
-
+    v.print_v(v.PDEBUG, "Loading recipes ... done")
 
