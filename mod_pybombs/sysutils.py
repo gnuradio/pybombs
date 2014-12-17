@@ -27,6 +27,9 @@ import globals;
 import logging
 from distutils.version import StrictVersion
 
+import output_proc
+import verbosity as v
+
 RED = str('\033[91m');
 ENDC = str('\033[0m');      
 BOLD = str('\033[1m')
@@ -52,13 +55,19 @@ class ColoredConsoleHandler(logging.StreamHandler):
         myrecord.msg = BOLD + color + str(myrecord.msg) + '\x1b[0m'  # normal
         logging.StreamHandler.emit(self, myrecord)
 
+log_level = logging.INFO
 logger = logging.getLogger('PyBombs.sysutils')
-logger.setLevel(logging.INFO)
+logger.setLevel(log_level)
 ch = ColoredConsoleHandler()
-ch.setLevel(logging.INFO)
+ch.setLevel(log_level)
 formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
 logger.addHandler(ch)            
+
+def set_logger():
+    if v.VERBOSITY_LEVEL < v.DEBUG:
+        logger.setLevel(logging.WARNING)
+        ch.setLevel(logging.WARNING)
 
 def shellexec(cmd):
 #    print cmd;
@@ -270,7 +279,7 @@ def monitor(cmd,event):
 
 # stdout -> shell
 def shellexec_shell(cmd, throw_ex):
-    print "shellexec_long: " + cmd
+    v.print_v(v.PDEBUG, "shellexec_long: " + cmd)
     try:    
         result = None
         quitEvent = Event()
@@ -295,7 +304,7 @@ def shellexec_shell(cmd, throw_ex):
 
 # stdout -> return
 def shellexec_getout(cmd, throw_ex=True):
-    print "shellexec_long: " + str(cmd);
+    v.print_v(v.PDEBUG, "shellexec_long: " + str(cmd))
     try:
         #p = subprocess.call([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=globals.env);
         p = subprocess.Popen([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=globals.env);
@@ -307,17 +316,30 @@ def shellexec_getout(cmd, throw_ex=True):
         else:
             return -1;
 
-def bashexec(cmd):
+def bashexec(cmd, o_proc=None):
+    """
+    Launch a bash and run 'cmd' inside it.
+    If an output processor is given, a thread is spawned to poll
+    the output and feed it to the processor.
+    Otherwise, the output is displayed verbatim.
+    """
     if cmd.strip() == "": return 0
-    print "bash exec (%s):: %s"%(os.getcwd(),cmd);
-    from subprocess import Popen, PIPE
-    p = subprocess.Popen(["bash"], stdin=subprocess.PIPE, shell=True, env=globals.env)
-    p.stdin.write(cmd)
+    v.print_v(v.PDEBUG,  "bash exec (%s):: %s"%(os.getcwd(),cmd.strip()))
     if(cmd[-1] != "\n"):
-        p.stdin.write("\n")
+        cmd += "\n"
+    extra_popen_args = {}
+    if isinstance(o_proc, output_proc.OutputProcessor):
+        extra_popen_args = o_proc.extra_popen_args
+    from subprocess import Popen, PIPE
+    p = subprocess.Popen(["bash"], stdin=subprocess.PIPE, shell=True, env=globals.env, **extra_popen_args)
+    p.stdin.write(cmd)
     p.stdin.close()
-    st = p.wait() # unless background execution preferred
-    return st;
+    if isinstance(o_proc, output_proc.OutputProcessor):
+        st = output_proc.run_with_output_processing(p, o_proc)
+    else:
+        st = p.wait() # unless background execution preferred
+    v.print_v(v.PDEBUG, "bash return val = %d"%(st))
+    return st
 
 enable_sudo = True;
 def sudorun(cmd):
@@ -326,7 +348,7 @@ def sudorun(cmd):
     elif(enable_sudo):
         rv = bashexec("sudo %s"%(cmd));
     else:
-        print(RED + " *** ERROR: re-run as root to apt-get install %s! *** "%(nlj) + ENDC);
+        v.print_v(v.ERROR, RED + " *** ERROR: re-run as root to apt-get install %s! *** "%(nlj) + ENDC)
         return False;
     return rv==0;
  
@@ -537,7 +559,17 @@ def rpms_exist(pkg_expr_tree):
     return False
 
 def rpm_install(namelist):
-    print "rpm install: "+str(namelist);
+    v.print_v(v.PDEBUG, "rpm install: "+str(namelist))
+    try:
+        nlj = namelist.name;
+    except:
+        return True;
+    if(namelist is list):
+        nlj = " ".join(namelist);
+    return sudorun("yum -y install %s"%(nlj));
+
+def rpm_install(namelist):
+    v.print_v(v.PDEBUG, "rpm install: "+str(namelist))
     try:
         nlj = namelist.name;
     except:
@@ -548,10 +580,12 @@ def rpm_install(namelist):
         else:
             print "invalid combiner logic."
             return false;
+#    if(namelist is list):
+#        nlj = " ".join(namelist);
     return sudorun("yum -y install %s"%(nlj));
 
 def deb_install(namelist):
-    print "deb install: "+str(namelist);
+    v.print_v(v.PDEBUG, "deb install: "+str(namelist))
     try:
         nlj = namelist.name;
     except:
@@ -562,7 +596,8 @@ def deb_install(namelist):
         else:
             print "invalid combiner logic."
             return false;
-    #return sudorun("aptdcon --safe-upgrade && apt-get -y install %s"%(nlj));
+#    if(namelist is list):
+#        nlj = " ".join(namelist);
     return sudorun("apt-get -y install %s"%(nlj));
 
 def mkchdir(p):
@@ -584,11 +619,11 @@ def validate_write_perm(d):
     try:
         import tempfile
         fd, tmpfile = tempfile.mkstemp(dir=d);
-        print "TMPFILE = %s"%(tmpfile)
+        v.print_v(v.PDEBUG, "TMPFILE = %s"%(tmpfile))
         f1 = open(tmpfile,"w")
         f1.close()
         os.unlink(tmpfile);
-        print "WRITE PERMS OK %s"%(d)
+        v.print_v(v.PDEBUG, "WRITE PERMS OK %s"%(tmpfile))
     except:
         logger.error("Can not write to prefix (%s)! please fix your permissions or choose another prefix!"%(d));
         sys.exit(-10)
