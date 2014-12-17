@@ -18,14 +18,10 @@
 #
 
 category: common
-depends: gnuradio gtest rtl-sdr gr-osmosdr armadillo
-source: git://http://git.code.sf.net/p/gnss-sdr/cttc
+depends: gnuradio armadillo
+source: git://http://github.com/gnss-sdr/gnss-sdr.git
 gitbranch: next
-var config_opt = "-DRTLSDR_DRIVER=1 -DGTEST_DIR=$prefix/gtest -DDISABLE_OPENCL=1"
 inherit: cmake
 configuredir: build
 makedir: build
-installdir: build
-install {
-    make install
-}
+
