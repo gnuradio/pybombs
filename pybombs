@@ -22,6 +22,7 @@
 
 import os,re,sys;
 from optparse import OptionParser
+from mod_pybombs import verbosity as v
 
 USAGE="""Python Build Overlay Managed Bundle Systems - CLI
 %prog [options] COMMAND [args]
@@ -57,6 +58,7 @@ parser = OptionParser(USAGE)
 parser.add_option("-c", "--continue", dest="_continue", default=False, action="store_true", help="Attempt to continue in-spite of failures")
 parser.add_option("-f", "--force", default=False, action="store_true", help="Force operation to occur")
 parser.add_option("-a", "--all", default=False, action="store_true", help="Apply operation to all packages")
+parser.add_option("-v", "--verbose", default=False, action="count", help="Increase verbosity")
 opts,args = parser.parse_args()
 
 """
@@ -88,6 +90,8 @@ elif(cmd == "moo"):
     print "....\"Have you mooed today?\"..."
     sys.exit(0)
 
+# Set up verbosity level
+v.VERBOSITY_LEVEL = v.INFO + opts.verbose
 
 """
 Load the PyBomb modules & subsystem. 
@@ -106,9 +110,11 @@ import mod_pybombs.sysutils as sysutils
 #from mod_pybombs import recipe,update,fetch,inventory
 #from mod_pybombs import cfg,vars,globals
 
-print "---------- loading recipes -------------------"
+from mod_pybombs import *
+sysutils.set_logger()
+v.print_v(v.PDEBUG, "---------- loading recipes -------------------")
 recipe_loader.load_all()
-print "---------- loading recipes finished ----------\n"
+v.print_v(v.PDEBUG, "---------- loading recipes finished ----------\n")
 
 if(cmd == "search"):
     st = " ".join(args)

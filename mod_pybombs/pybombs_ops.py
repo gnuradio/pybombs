@@ -23,6 +23,7 @@ import sys;
 from globals import *;
 from sysutils import *;
 from inventory import *
+import verbosity as v
 
 def list_unique_ord(seq): 
    # order preserving
@@ -41,15 +42,14 @@ def check_recipe(pkgname):
     return global_recipes.has_key(pkgname)
 
 def check_installed(pkgname):
-    print "checking for "+pkgname;
-    #print pkgname + " not installed"
-    print global_recipes[pkgname].satisfy()
-    return global_recipes[pkgname].satisfy();
+    pkg_installed = global_recipes[pkgname].satisfy()
+    v.print_v(v.DEBUG, "Checking if {0} is installed: {1}".format(pkgname, "Yes" if pkg_installed else "No"))
+    return pkg_installed
 
 def check_fetched(pkgname):
-    print "checking if fetched"+pkgname
-    print global_recipes[pkgname].fetched()
-    return global_recipes[pkgname].fetched()
+    pkg_fetched = global_recipes[pkgname].fetched()
+    v.print_v(v.DEBUG, "Checking if {0} is fetched: {1}".format(pkgname, "Yes" if pkg_fetched else "No"))
+    return pkg_fetched
 
 def fetch(pkgname, die_if_already=False, continue_on_failure=False):
     if not check_recipe(pkgname):
@@ -101,16 +101,12 @@ def install(pkgname, die_if_already=False):
         print pkgname + " already installed";
         return;
     validate_write_perm(vars["prefix"])
-
-    print "installing "+pkgname;
-
     rc = global_recipes[pkgname];
     pkg_missing = rc.recursive_satisfy();
 
     # remove duplicates while preserving list order (lowest nodes first)
     pkg_missing = list_unique_ord(pkg_missing);
-
-    print "packages to install: " + str(pkg_missing);
+    v.print_v(v.INFO, "Installing packages:\n" + "\n".join(["* {0}".format(x) for x in pkg_missing]))
 
     # prompt if list is ok?
     # provide choice of deb satisfiers or source build?

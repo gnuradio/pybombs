@@ -21,6 +21,7 @@
 #
 
 import os
+import verbosity as v
 
 def tryenv(k):
     try: 
@@ -29,7 +30,7 @@ def tryenv(k):
         return ""
 
 def env_init(vars):
-    print "Initializing environmental variables..."
+    v.print_v(v.DEBUG, "Initializing environmental variables...")
     env = os.environ
     env["PATH"] = vars["prefix"] + "/bin/:" + tryenv("PATH")
     env["PATH"] = tryenv("PATH") + ":/usr/lib64/qt4/bin/"
@@ -41,7 +42,7 @@ def env_init(vars):
     env["PYTHONPATH"] = env["PYTHONPATH"] + tryenv("PYTHONPATH")
     if env["PYTHONPATH"][-1] == ":":
         env["PYTHONPATH"] = env["PYTHONPATH"][:-1]
-    print env["PYTHONPATH"]
+    v.print_v(v.DEBUG, "$PYTHONPATH = {0}".format(env["PYTHONPATH"]))
     
     env["ATLAS"] = vars["prefix"] + "/lib/libatlas.so:/usr/local/lib/:/usr/lib/"
     env["BLAS"] = vars["prefix"] + "/lib/libblas.so:/usr/local/lib/:/usr/lib/"
