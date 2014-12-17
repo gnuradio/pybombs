@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 #
 # Copyright 2013 Tim O'Shea
 #
@@ -656,7 +656,13 @@ class recipe:
         v.print_v(v.DEBUG, "Setting fetched version info (%s,%s)"%(fetcher.used_source, fetcher.version))
         inv.set_prop(self.name, "source", fetcher.used_source);
         inv.set_prop(self.name, "version", fetcher.version);
-        
+     
+    def check_stat(self, stat, step):
+        if(stat == 0):
+            return;
+        logging.error('\x1b[31m' + "PyBOMBS %s step failed for package (%s) please see bash output above for a reason (hint: look for the word Error)"%(step, self.name) + '\x1b[0m');
+        sys.exit(-1);
+   
     def configure(self):
         v.print_v(v.PDEBUG, "configure")
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)

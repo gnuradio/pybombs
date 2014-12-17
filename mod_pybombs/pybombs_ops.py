@@ -47,7 +47,7 @@ def check_installed(pkgname):
     return pkg_installed
 
 def check_fetched(pkgname):
-    pkg_fetched
+    pkg_fetched = global_recipes[pkgname].fetched()
     v.print_v(v.DEBUG, "Checking if {0} is fetched: {1}".format(pkgname, "Yes" if pkg_fetched else "No"))
     return pkg_fetched
 
