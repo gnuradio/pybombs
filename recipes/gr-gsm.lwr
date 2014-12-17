@@ -17,14 +17,17 @@
 # Boston, MA 02110-1301, USA.
 #
 
-depends: make boost fftw cppunit swig gsl uhd alsa git python cheetah wxpython numpy lxml pygtk pycairo cmake pyqt4 pyqwt5 gcc ice
 category: common
-satisfy_deb: gnuradio-dev
-source: git://http://www.gnuradio.org/git/gnuradio.git
+depends: gnuradio gr-osmosdr scipy liblog4cpp
+source: git://https://github.com/ptrkrysik/gr-gsm.git
 gitbranch: master
-var config_opt = " -DENABLE_GR_FCD=ON -DENABLE_DOXYGEN=$builddocs -DENABLE_GR_LOG=ON -DENABLE_PERFORMANCE_COUNTERS=ON -DCMAKE_CXX_FLAGS=-fpermissive "
 inherit: cmake
+configuredir: build
+makedir: build
+installdir: build
+
 install {
-    make install
-    make install
+   cd build
+   make install
+   ldconfig
 }
