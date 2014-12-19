@@ -32,6 +32,10 @@ import verbosity as v
 
 debug_en = False;
 
+class PBRecipeException(Exception):
+    """ Is thrown when a Pybombs recipe fails one of its steps """
+    pass
+
 # structure for a dependency package (name, comparator, version) (for rpm or deb)
 class pkgreq:
     def __init__(self, name):
@@ -67,6 +71,26 @@ class pr_pair:
         return a;
 
 class recipescanner(Scanner):
+    def __init__(self, filename, recipe, lvars = None):
+        if(not lvars):
+            lvars = vars_copy(vars);
+        self.lvars = lvars;
+        v.print_v(v.PDEBUG, "init scanner with lvars = %s"%(lvars))
+        self.recipe = recipe
+        self.recipe.scanner = self
+        if not os.path.exists(filename):
+            v.print_v(v.ERROR, "Missing file %s"%(filename))
+            raise RuntimeError
+        f = open(filename,"r");
+        Scanner.__init__(self, self.lexicon, f, filename);
+        self.begin("");
+        v.print_v(v.PDEBUG, "Parsing "+filename)
+        while 1:
+            token = Scanner.read(self);
+            if token[0] is None:
+                break;
+        f.close();
+
 
     def var_replace(self,s):
         #for k in vars.keys():
@@ -392,36 +416,6 @@ class recipescanner(Scanner):
         ])
 
 
-    def __init__(self, filename, recipe, lvars = None):
-
-        if(not lvars):
-            lvars = vars_copy(vars);
-        self.lvars = lvars;
-        if debug_en:
-            print "init scanner with lvars = %s"%(lvars)
-        self.recipe = recipe;
-        self.recipe.scanner = self
-
-        if not os.path.exists(filename):
-            print "Missing file %s"%(filename)
-            raise RuntimeError
-
-        f = open(filename,"r");
-        Scanner.__init__(self, self.lexicon, f, filename);
-        self.begin("");
-#        print dir(self);
-#        print self.cur_line
-
-        if debug_en:
-            print "Parsing "+filename       
-        while 1:
-            token = Scanner.read(self);
-#            print token;
-            if token[0] is None:
-                break;
-        
-        f.close();
-
 
 class recipe:
 
@@ -621,7 +615,11 @@ class recipe:
         while(step < len(self.install_order)):
             v.print_v(v.PDEBUG, "Current step: (%s :: %s)"%(self.name, self.install_order[step][0]))
             # run the installation step
-            self.install_order[step][1]();
+            try:
+                self.install_order[step][1]();
+            except PBRecipeException as e:
+                # If any of these fails, we can quit.
+                exit(1)
             # update value in inventory
             inv.set_state(self.name, self.install_order[step][0]);
             if(self.install_order[step][0] == "fetch"):
@@ -630,7 +628,6 @@ class recipe:
                 inv.set_prop(self.name, "source", self.last_fetcher.used_source);
                 inv.set_prop(self.name, "version", self.last_fetcher.version);
             step = step + 1;
-
         return True;
      
     def fetched(self):
@@ -646,10 +643,9 @@ class recipe:
         fetcher.fetch();
         if(not fetcher.success):
             if(len(self.source) == 0):
-                raise Exception("Failed to Fetch package '%s' no sources were provided! '%s'!"%(self.name, self.source));
+                raise PBRecipeException("Failed to Fetch package '%s' no sources were provided! '%s'!"%(self.name, self.source))
             else:
-                raise Exception("Failed to Fetch package '%s' sources were '%s'!"%(self.name, self.source));
-
+                raise PBRecipeException("Failed to Fetch package '%s' sources were '%s'!"%(self.name, self.source))
         # update value in inventory
         inv.set_state(self.name, "fetch");
         self.last_fetcher = fetcher;
@@ -663,25 +659,57 @@ class recipe:
         logging.error('\x1b[31m' + "PyBOMBS %s step failed for package (%s) please see bash output above for a reason (hint: look for the word Error)"%(step, self.name) + '\x1b[0m');
         sys.exit(-1);
    
-    def configure(self):
+    def configure(self, try_again=False):
+        """
+        Run the configuration step for this recipe.
+        If try_again is set, it will assume the configuration failed before
+        and we're trying to run it again.
+        """
         v.print_v(v.PDEBUG, "configure")
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-        if v.VERBOSITY_LEVEL >= v.DEBUG:
+        if v.VERBOSITY_LEVEL >= v.DEBUG or try_again:
             o_proc = None
         else:
             o_proc = output_proc.OutputProcessorMake(preamble="Configuring: ")
         st = bashexec(self.scanner.var_replace_all(self.scr_configure), o_proc)
-        assert(st == 0);
+        if (st == 0):
+            return
+        # If configuration fails:
+        if try_again == False:
+            v.print_v(v.ERROR, "Configuration failed. Re-trying with higher verbosity.")
+            self.make(try_again=True)
+        else:
+            v.print_v(v.ERROR, "Configuration failed. See output above for error messages.")
+            raise PBRecipeException("Configuration failed")
 
-    def make(self):
+    def make(self, try_again=False):
+        """
+        Build this recipe.
+        If try_again is set, it will assume the build failed before
+        and we're trying to run it again. In this case, reduce the
+        makewidth to 1 and show the build output.
+        """
         v.print_v(v.PDEBUG, "make")
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-        if v.VERBOSITY_LEVEL >= v.DEBUG:
+        if v.VERBOSITY_LEVEL >= v.DEBUG or try_again:
             o_proc = None
         else:
-            o_proc = output_proc.OutputProcessorMake(preamble="Building: ")
+            o_proc = output_proc.OutputProcessorMake(preamble="Building:    ")
+        # Stash the makewidth so we can set it back later
+        makewidth = self.scanner.lvars['makewidth']
+        if try_again:
+            self.scanner.lvars['makewidth'] = '1'
         st = bashexec(self.scanner.var_replace_all(self.scr_make), o_proc)
-        assert(st == 0);
+        self.scanner.lvars['makewidth'] = makewidth
+        if st == 0:
+            return
+        # If build fails, try again with more output:
+        if try_again == False:
+            v.print_v(v.ERROR, "Build failed. Re-trying with reduced makewidth and higher verbosity.")
+            self.make(try_again=True)
+        else:
+            v.print_v(v.ERROR, "Build failed. See output above for error messages.")
+            raise PBRecipeException("Build failed.")
 
     def installed(self):
         # perform installation, file copy
@@ -692,7 +720,8 @@ class recipe:
         else:
             o_proc = output_proc.OutputProcessorMake(preamble="Installing: ")
         st = bashexec(self.scanner.var_replace_all(self.scr_install), o_proc)
-        assert(st == 0);
+        if (st != 0):
+            raise PBRecipeException("Installation failed.")
 
     # run package specific make uninstall
     def uninstall(self):
@@ -705,7 +734,7 @@ class recipe:
             else:
                 v.print_v(v.WARN, "pkg not installed from source, ignoring")
         except:
-            print "local build dir does not exist"   
+            v.print_v(v.DEBUG, "local build dir does not exist")
 
     # clean the src dir
     def clean(self):
@@ -715,7 +744,7 @@ class recipe:
 
     def verify(self):
         # perform install verification
-        print "verify install..."
+        v.print_v(v.INFO, "verify install...")
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
         st = bashexec(self.scanner.var_replace_all(self.scr_verify));
         self.check_stat(st, "Verify");
