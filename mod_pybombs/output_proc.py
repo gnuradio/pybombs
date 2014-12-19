@@ -65,6 +65,7 @@ class OutputProcessorMake(OutputProcessor):
     """ Shows progress """
     def __init__(self, preamble="Progress: "):
         OutputProcessor.__init__(self)
+        self.extra_popen_args = {'stdout': PIPE, 'stderr': STDOUT}
         self.preamble = preamble
         self.percent_found = False
         self.percentage = 0
@@ -144,9 +145,10 @@ def run_with_output_processing(p, o_proc):
         for line in iter(stdout_data.readline, b''):
             stdout_queue.put(line)
         stdout_data.close()
-        for line in iter(stderr_data.readline, b''):
-            stderr_queue.put(line)
-        stderr_data.close()
+        if stderr_data is not None:
+            for line in iter(stderr_data.readline, b''):
+                stderr_queue.put(line)
+            stderr_data.close()
     def poll_queue(q):
         " Safe polling from queue "
         line = ""
