@@ -20,7 +20,7 @@
 # Boston, MA 02110-1301, USA.
 #
 
-import pickle,os;
+import pickle,os,pprint
 topdir = os.path.split(os.path.realpath(__file__))[0] + "/../";
 import exceptions;
 
@@ -99,6 +99,6 @@ class inventory:
         self.savec();
 
     def show(self):
-        print self.contents;
+        pprint.pprint(self.contents)
 
 

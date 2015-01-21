@@ -27,4 +27,3 @@ inherit: cmake
 configuredir: software/libosmosdr/build
 makedir: software/libosmosdr/build
 installdir: software/libosmosdr/build
-

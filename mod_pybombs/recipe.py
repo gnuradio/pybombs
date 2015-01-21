@@ -26,13 +26,15 @@ from sysutils import *;
 import fetch
 from update import update;
 
-
 import pybombs_ops;
-import logging,sys
-
-logger = logging.getLogger('PyBombs.recipe')
+import output_proc
+import verbosity as v
 
 debug_en = False;
+
+class PBRecipeException(Exception):
+    """ Is thrown when a Pybombs recipe fails one of its steps """
+    pass
 
 # structure for a dependency package (name, comparator, version) (for rpm or deb)
 class pkgreq:
@@ -87,7 +89,7 @@ class recipescanner(Scanner):
             os = s;
             for k in d.keys():
                 s = s.replace("$%s"%(k), d[k]);
-            print (s,os)
+            v.print_v(v.PDEBUG, (s,os))
             if(os == s):
                 finished = True;
         return s;
@@ -585,7 +587,7 @@ class recipe:
 
     def recursive_satisfy(self, recurse_if_installed=False):
         ll = [];
-        print "%s dep [%s]"%(self.name, self.depends)
+        v.print_v(v.PDEBUG, "%s dep [%s]"%(self.name, self.depends))
  
         selfsat = self.satisfy();
 
@@ -604,7 +606,6 @@ class recipe:
         return ll;
 
     def install(self):
-        print "install called (%s)"%(self.name)
         order =  "src" if (self.name in force_build) else vars["satisfy_order"];
         order = order.replace(" ","").lower();
         types = None;
@@ -624,8 +625,7 @@ class recipe:
         if(types==None):
             logging.error('\x1b[31m' + "Your satisfy order (%s) provides no way to satisfy the dependency (%s) - please consider changing your satisfy order to \"deb,src\" or \"deb,rpm\" in config.dat!!!"%(order,self.name)+ '\x1b[0m');
             sys.exit(-1);
-        print "install type priority: " + str(types);
-        
+        v.print_v(v.PDEBUG, "install type priority: " + str(types))
         for type in types:
             st = False;
             if(type == "src"):
@@ -657,21 +657,21 @@ class recipe:
         return rpm_install(self.satisfy_rpm);  
     
     def install_deb(self):
-        print "install deb called (%s)"%(self.name)
+        v.print_v(v.PDEBUG, "install deb called (%s)"%(self.name))
         # this is not possible if we do not have deb satisfiers
         if((self.satisfy_deb == None) or ((type(self.satisfy_deb) == type([])) and (len(self.satisfy_deb) == 0))):
-            print "no deb satisfiers available"
-            return False;
+            v.print_v(v.PDEBUG, "no deb satisfiers available")
+            return False
         elif self.satisfy_deb and not have_debs(self.satisfy_deb):
-            print "deb is not available locally"
-            print "check remote repositories..."
+            v.print_v(v.PDEBUG, "deb is not available locally")
+            v.print_v(v.PDEBUG, "check remote repositories...")
             if not debs_exist(self.satisfy_deb):
-                return False;
-        print "CONDUCTING DEB INSTALL"
-        return deb_install(self.satisfy_deb);  
+                return False
+        v.print_v(v.INFO, "Installing from .deb: {0}".format(self.name))
+        return deb_install(self.satisfy_deb)
 
     def install_src(self):
-        print "install src called (%s)"%(self.name)
+        v.print_v(v.PDEBUG, "install src called (%s)"%(self.name))
 
         # basic source installation requirements
         # install gcc etc before proceeding to build steps
@@ -683,27 +683,30 @@ class recipe:
             except:
                 return False;
 
+        v.print_v(v.INFO, "Installing from source: {0}".format(self.name))
         state = inv.state(self.name);
-        print "state = %s"%(state)
         step = 0;
         for i in range( len( self.install_order ) ):
             if( self.install_order[i][0] == state ):
                 step = i+1;
-
+        v.print_v(v.PDEBUG, self.install_order)
         # iterate through the install steps of current package
         while(step < len(self.install_order)):
-            print "Current step: (%s :: %s)"%(self.name, self.install_order[step][0]);
+            v.print_v(v.PDEBUG, "Current step: (%s :: %s)"%(self.name, self.install_order[step][0]))
             # run the installation step
-            self.install_order[step][1]();
+            try:
+                self.install_order[step][1]();
+            except PBRecipeException as e:
+                # If any of these fails, we can quit.
+                exit(1)
             # update value in inventory
             inv.set_state(self.name, self.install_order[step][0]);
             if(self.install_order[step][0] == "fetch"):
                 # if we just fetched a package, store its version and source
-                print "setting installed version info (%s,%s)"%(self.last_fetcher.used_source,self.last_fetcher.version)
+                v.print_v(v.PDEBUG, "setting installed version info (%s,%s)"%(self.last_fetcher.used_source,self.last_fetcher.version))
                 inv.set_prop(self.name, "source", self.last_fetcher.used_source);
                 inv.set_prop(self.name, "version", self.last_fetcher.version);
             step = step + 1;
-
         return True;
      
     def fetched(self):
@@ -713,50 +716,91 @@ class recipe:
     def fetch(self):
         # this is not possible if we do not have sources
         if(len(self.source) == 0):
-            print "WARNING: no sources available for package %s!"%(self.name)
+            v.print_v(v.WARN, "WARNING: no sources available for package %s!"%(self.name))
             return True
         fetcher = fetch.fetcher(self.source, self);
         fetcher.fetch();
         if(not fetcher.success):
             if(len(self.source) == 0):
-                raise Exception("Failed to Fetch package '%s' no sources were provided! '%s'!"%(self.name, self.source));
+                raise PBRecipeException("Failed to Fetch package '%s' no sources were provided! '%s'!"%(self.name, self.source))
             else:
-                raise Exception("Failed to Fetch package '%s' sources were '%s'!"%(self.name, self.source));
-
+                raise PBRecipeException("Failed to Fetch package '%s' sources were '%s'!"%(self.name, self.source))
         # update value in inventory
         inv.set_state(self.name, "fetch");
         self.last_fetcher = fetcher;
-        print "Setting fetched version info (%s,%s)"%(fetcher.used_source, fetcher.version)
+        v.print_v(v.DEBUG, "Setting fetched version info (%s,%s)"%(fetcher.used_source, fetcher.version))
         inv.set_prop(self.name, "source", fetcher.used_source);
         inv.set_prop(self.name, "version", fetcher.version);
-        
-
+     
     def check_stat(self, stat, step):
         if(stat == 0):
             return;
         logging.error('\x1b[31m' + "PyBOMBS %s step failed for package (%s) please see bash output above for a reason (hint: look for the word Error)"%(step, self.name) + '\x1b[0m');
         sys.exit(-1);
-
-    def configure(self):
-        print "configure"
+   
+    def configure(self, try_again=False):
+        """
+        Run the configuration step for this recipe.
+        If try_again is set, it will assume the configuration failed before
+        and we're trying to run it again.
+        """
+        v.print_v(v.PDEBUG, "configure")
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-        pre_filt_command = self.scanner.var_replace_all(self.scr_configure)
-        st = bashexec(self.scanner.config_filter(pre_filt_command))
-        self.check_stat(st, "Configure")
+        if v.VERBOSITY_LEVEL >= v.DEBUG or try_again:
+            o_proc = None
+        else:
+            o_proc = output_proc.OutputProcessorMake(preamble="Configuring: ")
+        st = bashexec(self.scanner.var_replace_all(self.scr_configure), o_proc)
+        if (st == 0):
+            return
+        # If configuration fails:
+        if try_again == False:
+            v.print_v(v.ERROR, "Configuration failed. Re-trying with higher verbosity.")
+            self.make(try_again=True)
+        else:
+            v.print_v(v.ERROR, "Configuration failed. See output above for error messages.")
+            raise PBRecipeException("Configuration failed")
 
-    def make(self):
-        print "make"
+    def make(self, try_again=False):
+        """
+        Build this recipe.
+        If try_again is set, it will assume the build failed before
+        and we're trying to run it again. In this case, reduce the
+        makewidth to 1 and show the build output.
+        """
+        v.print_v(v.PDEBUG, "make")
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-        st = bashexec(self.scanner.var_replace_all(self.scr_make));
-        self.check_stat(st, "Make");
+        if v.VERBOSITY_LEVEL >= v.DEBUG or try_again:
+            o_proc = None
+        else:
+            o_proc = output_proc.OutputProcessorMake(preamble="Building:    ")
+        # Stash the makewidth so we can set it back later
+        makewidth = self.scanner.lvars['makewidth']
+        if try_again:
+            self.scanner.lvars['makewidth'] = '1'
+        st = bashexec(self.scanner.var_replace_all(self.scr_make), o_proc)
+        self.scanner.lvars['makewidth'] = makewidth
+        if st == 0:
+            return
+        # If build fails, try again with more output:
+        if try_again == False:
+            v.print_v(v.ERROR, "Build failed. Re-trying with reduced makewidth and higher verbosity.")
+            self.make(try_again=True)
+        else:
+            v.print_v(v.ERROR, "Build failed. See output above for error messages.")
+            raise PBRecipeException("Build failed.")
 
     def installed(self):
         # perform installation, file copy
-        print "installed"
+        v.print_v(v.PDEBUG, "installed")
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-        pre_filt_command = self.scanner.var_replace_all(self.scr_install)
-        st = bashexec(self.scanner.installed_filter(pre_filt_command))
-        self.check_stat(st, "Install");
+        if v.VERBOSITY_LEVEL >= v.DEBUG:
+            o_proc = None
+        else:
+            o_proc = output_proc.OutputProcessorMake(preamble="Installing: ")
+        st = bashexec(self.scanner.var_replace_all(self.scr_install), o_proc)
+        if (st != 0):
+            raise PBRecipeException("Installation failed.")
 
     # run package specific make uninstall
     def uninstall(self):
@@ -764,13 +808,12 @@ class recipe:
             if(self.satisfier == "inventory"):
                 mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
                 st = bashexec(self.scanner.var_replace_all(self.scr_uninstall));
-                print "bash return val = %d"%(st);
                 self.satisfier = None;
                 del vars["%s.satisfier"%(self.name)]
             else:
-                print "pkg not installed from source, ignoring"
+                v.print_v(v.WARN, "pkg not installed from source, ignoring")
         except:
-            print "local build dir does not exist"   
+            v.print_v(v.DEBUG, "local build dir does not exist")
 
     # clean the src dir
     def clean(self):
@@ -780,7 +823,7 @@ class recipe:
 
     def verify(self):
         # perform install verification
-        print "verify install..."
+        v.print_v(v.INFO, "verify install...")
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
         st = bashexec(self.scanner.var_replace_all(self.scr_verify));
         self.check_stat(st, "Verify");

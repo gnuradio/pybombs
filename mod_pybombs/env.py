@@ -21,6 +21,7 @@
 #
 
 import os
+import verbosity as v
 
 def tryenv(k):
     try: 
@@ -41,7 +42,7 @@ def env_init(vars, prefix_key='prefix'):
     env["PYTHONPATH"] = env["PYTHONPATH"] + tryenv("PYTHONPATH")
     if env["PYTHONPATH"][-1] == ":":
         env["PYTHONPATH"] = env["PYTHONPATH"][:-1]
-    print env["PYTHONPATH"]
+    v.print_v(v.DEBUG, "$PYTHONPATH = {0}".format(env["PYTHONPATH"]))
     
     env["ATLAS"] = vars[prefix_key] + "/lib/libatlas.so:/usr/local/lib/:/usr/lib/"
     env["BLAS"] = vars[prefix_key] + "/lib/libblas.so:/usr/local/lib/:/usr/lib/"
