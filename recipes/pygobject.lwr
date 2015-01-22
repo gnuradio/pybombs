@@ -22,7 +22,7 @@ category: baseline
 satisfy_deb: python-gobject-dev >= 2.27
 satisfy_rpm: pygobject2-devel >= 2.27
 #source: wget://http://ftp.gnome.org/pub/GNOME/sources/pygobject/2.21/pygobject-2.21.5.tar.bz2
-source: wget://http://ftp.gnome.org/pub/GNOME/sources/pygobject/2.27/pygobject-2.27.91.patched.tar.gz
+source: wget://http://ftp.gnome.org/pub/GNOME/sources/pygobject/2.27/pygobject-2.27.91.tar.gz
 var config_opt = " --enable-introspection "
 install_like: gobject-introspection
 inherit: autoconf
