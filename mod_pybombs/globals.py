@@ -85,7 +85,7 @@ if str(os.environ.get('PYBOMBS_SDK')) == 'True':
             config_write(config);
     config.set("config", "forcepkgs", config.get("config", "sdk_forcepkgs"));
     config.set("config", "forcebuild", config.get("config", "sdk_forcebuild"));
-    config.set("config", "satify_orer", config.get("config", "sdk_satisfy_order"));
+    config.set("config", "satsify_order", config.get("config", "sdk_satisfy_order"));
     config.set("config", "prefix", config.get("config", "sandbox") + config.get("config", "sdk_prefix"));
     #set environment...
     command = ['bash', '-c', 'source ' + config.get('config', 'env') + '  && env']
