@@ -218,7 +218,6 @@ def config_get(k):
 
 def config_set(k,v):
     config.set("config",k,v);
-    config_write(config);
     print "value updated"
 
 def clean(kl):
