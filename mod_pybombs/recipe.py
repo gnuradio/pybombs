@@ -750,7 +750,8 @@ class recipe:
             o_proc = None
         else:
             o_proc = output_proc.OutputProcessorMake(preamble="Configuring: ")
-        st = bashexec(self.scanner.var_replace_all(self.scr_configure), o_proc)
+	    pre_filt_command = self.scanner.var_replace_all(self.scr_configure)
+        st = bashexec(self.scanner.config_filter(pre_filt_command))
         if (st == 0):
             return
         # If configuration fails:
