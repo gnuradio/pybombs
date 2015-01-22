@@ -751,7 +751,7 @@ class recipe:
         else:
             o_proc = output_proc.OutputProcessorMake(preamble="Configuring: ")
 	    pre_filt_command = self.scanner.var_replace_all(self.scr_configure)
-        st = bashexec(self.scanner.config_filter(pre_filt_command))
+        st = bashexec(self.scanner.config_filter(pre_filt_command), o_proc)
         if (st == 0):
             return
         # If configuration fails:
@@ -799,7 +799,8 @@ class recipe:
             o_proc = None
         else:
             o_proc = output_proc.OutputProcessorMake(preamble="Installing: ")
-        st = bashexec(self.scanner.var_replace_all(self.scr_install), o_proc)
+		pre_filt_command = self.scanner.var_replace_all(self.scr_install)
+        st = bashexec(self.scanner.installed_filter(pre_filt_command), o_proc)
         if (st != 0):
             raise PBRecipeException("Installation failed.")
 
