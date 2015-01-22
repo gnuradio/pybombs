@@ -1,7 +1,7 @@
 [defaults]
 gituser=
 prefix=/usr/local/
-satisfy_order=deb,rpm,src
+satisfy_order=deb,src
 forcepkgs=
 forcebuild = gnuradio,uhd,gr-air-modes,gr-osmosdr,gr-iqbal,gr-fcdproplus,uhd,rtl-sdr,osmo-sdr,hackrf,gqrx,bladerf,airspy
 timeout=30
