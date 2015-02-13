@@ -27,6 +27,10 @@ var config_opt = ""
 configure { 
     CC=$cc CXX=$cxx cmake .. -DCMAKE_BUILD_TYPE=$cmakebuildtype -DCMAKE_INSTALL_PREFIX=$prefix $config_opt
 }
+configure_static {
+    CC=$cc CXX=$cxx cmake .. -DCMAKE_BUILD_TYPE=$cmakebuildtype -DCMAKE_INSTALL_PREFIX=$prefix -DENABLE_STATIC_LIBS=True $config_opt
+}
+
 make {
     make -j$makewidth
 }

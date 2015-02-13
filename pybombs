@@ -32,6 +32,7 @@ Operations:"
     list            - show installed & available packages
     info <pkg>      - display package info
     install <pkg>   - install a package
+    install <pkg> static   - install a package using the static options
     verify <pkg>    - verify an installed a package
     remove          - cleanly remove all fully installed packages and dependents
     remove <pkg>    - cleanly remove a fully installed package and dependents
@@ -52,6 +53,7 @@ Operations:"
     fetch <pkg>     - fetch a package without building or checking dependencies
     search <expr>   - search for a package recipe matching <expr>
     profile         - run volk profile
+    package         - create .tar.gz file out of prefix 
 """
 
 parser = OptionParser(USAGE)
@@ -110,6 +112,12 @@ import mod_pybombs.sysutils as sysutils
 #from mod_pybombs import recipe,update,fetch,inventory
 #from mod_pybombs import cfg,vars,globals
 
+if len(args) > 0:
+    if args[len(args)-1] == "static":
+        pybombs_ops.config_set("static","True")
+        args.pop()
+else:
+    pybombs_ops.config_set("static","False")
 from mod_pybombs import *
 sysutils.set_logger()
 v.print_v(v.PDEBUG, "---------- loading recipes -------------------")
@@ -225,6 +233,10 @@ elif(cmd == "fetch"):
 elif(cmd == "profile"):
 
     pybombs_ops.run_volk_profile();
+
+elif(cmd == "package"):
+         
+    pybombs_ops.package_prefix();
 
 else:
     parser.error("Command '%s' is not a valid command" % cmd )

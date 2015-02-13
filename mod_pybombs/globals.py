@@ -19,7 +19,7 @@
 # Boston, MA 02110-1301, USA.
 #
 
-import sys, os, errno
+import sys, os, errno, subprocess
 from inventory import *
 import ConfigParser
 from cfg import *
@@ -66,7 +66,39 @@ for v in config_desc.options("defaults"):
             rv = defa;
         config.set("config", v, rv);
         config_write(config);
+if str(os.environ.get('PYBOMBS_SDK')) == 'True':
+    #deal with additional, sdk-specific configuration
+    for v in config_desc.options("sdk"):
+        defa = config_desc.get("sdk",v);
+        try:
+            desc = config_desc.get("sdk_descriptions",v);
+        except:
+            desc = None
+        if not v in config.options("config"):
+            print "Found new missing default value in your config.dat:"
+            if desc:
+                print desc;
+            rv = raw_input("%s [%s]:"%(v,defa));
+            if not rv:
+                rv = defa;
+            config.set("config", v, rv);
+            config_write(config);
+    config.set("config", "forcepkgs", config.get("config", "sdk_forcepkgs"));
+    config.set("config", "forcebuild", config.get("config", "sdk_forcebuild"));
+    config.set("config", "satsify_order", config.get("config", "sdk_satisfy_order"));
+    config.set("config", "prefix", config.get("config", "sandbox") + config.get("config", "sdk_prefix"));
+    #set environment...
+    command = ['bash', '-c', 'source ' + config.get('config', 'env') + '  && env']
 
+    proc = subprocess.Popen(command, stdout = subprocess.PIPE)
+
+    for line in proc.stdout:
+        (key, _, value) = line.partition("=")
+        os.environ[key] = value.replace('\n', '')
+
+    proc.communicate()
+    
+    
 
 # set up the force list
 force_pkgs = [];
@@ -95,6 +127,7 @@ pathcheck = [topdir + "src", prefix, prefix + "/lib64",
 
 try:
     for path in pathcheck:
+        path = os.path.expanduser(path)
         if(not os.path.exists(path)):
             os.mkdir(path);
 except OSError, error:
@@ -110,7 +143,14 @@ vars = vars_defaults(vars);
 env = env_init(vars);
 
 global_recipes = {};
-inv = inventory();
+if str(os.environ.get('PYBOMBS_SDK')) == 'True':
+    inv = inventory(str(config.get('config', 'inv')));
+    written_env = env_init(vars, 'device_prefix');
+    destination_key = 'sandbox'
+else:
+    inv = inventory();
+    written_env = env;
+    destination_key = 'prefix'
 
 def die(s):
     print s;
