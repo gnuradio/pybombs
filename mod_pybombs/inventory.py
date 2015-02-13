@@ -25,8 +25,8 @@ topdir = os.path.split(os.path.realpath(__file__))[0] + "/../";
 import exceptions;
 
 class inventory:
-    def __init__(self):
-        self.inv_file = "inventory.dat";
+    def __init__(self, filename='inventory.dat'):
+        self.inv_file = filename;
         self.contents = {};
         self.loadc();
 

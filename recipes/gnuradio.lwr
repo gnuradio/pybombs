@@ -22,8 +22,12 @@ category: common
 satisfy_deb: gnuradio-dev
 source: git://http://www.gnuradio.org/git/gnuradio.git
 gitbranch: master
-var config_opt = " -DENABLE_GR_FCD=ON -DENABLE_DOXYGEN=$builddocs -DENABLE_GR_LOG=ON -DENABLE_PERFORMANCE_COUNTERS=ON -DCMAKE_CXX_FLAGS=-fpermissive "
+var config_opt = " -DENABLE_GR_FCD=ON -DENABLE_DOXYGEN=$builddocs -DENABLE_GR_LOG=OFF -DENABLE_PERFORMANCE_COUNTERS=ON -DCMAKE_CXX_FLAGS=-fpermissive "
 inherit: cmake
+configure_static {
+    cmake .. -DCMAKE_BUILD_TYPE=$cmakebuildtype -DCMAKE_INSTALL_PREFIX=$prefix -DENABLE_STATIC_LIBS=True $config_opt
+}
+
 install {
     make install
     make install
