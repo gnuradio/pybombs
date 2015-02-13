@@ -24,3 +24,25 @@ builddocs=Build doxygen while compiling packages? options are: ON, OFF
 CC=C Compiler Executable [gcc, clang, icc, etc]
 CXX=C++ Compiler Executable [g++, clang++, icpc, etc]
 makewidth=Concurrent make threads [1,2,4,8...]
+
+[sdk]
+sdk_prefix=/usr
+sandbox=~/sdk_target
+device_prefix=/target/usr
+toolchain=
+env=
+inv=
+sdk_forcepkgs=
+sdk_forcebuild = gnuradio,uhd,gr-air-modes,gr-osmosdr,gr-iqbal,gr-fcdproplus,uhd,rtl-sdr,osmo-sdr,hackrf,gqrx,bladerf,airspy
+sdk_satisfy_order=src
+
+[sdk_descriptions]
+sdk_prefix=(sdk override) Install Prefix
+sandbox=Local sdk sandbox location
+device_prefix=Device mountpoint for sandbox (for generating setup_env.py)
+toolchain=Location of the toolchain file for sdk
+env=Location of environment setup script for sdk
+inv=Location of the sdk inventory file
+sdk_forcepkgs=(sdk override) Comma separated list of package names to assume are already installed
+sdk_forcebuild=(sdk override) Comma separated list of package names to always build from source
+sdk_satisfy_order=Order in which to attempt installations when available, options are: src, rpm, deb

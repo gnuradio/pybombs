@@ -71,26 +71,6 @@ class pr_pair:
         return a;
 
 class recipescanner(Scanner):
-    def __init__(self, filename, recipe, lvars = None):
-        if(not lvars):
-            lvars = vars_copy(vars);
-        self.lvars = lvars;
-        v.print_v(v.PDEBUG, "init scanner with lvars = %s"%(lvars))
-        self.recipe = recipe
-        self.recipe.scanner = self
-        if not os.path.exists(filename):
-            v.print_v(v.ERROR, "Missing file %s"%(filename))
-            raise RuntimeError
-        f = open(filename,"r");
-        Scanner.__init__(self, self.lexicon, f, filename);
-        self.begin("");
-        v.print_v(v.PDEBUG, "Parsing "+filename)
-        while 1:
-            token = Scanner.read(self);
-            if token[0] is None:
-                break;
-        f.close();
-
 
     def var_replace(self,s):
         #for k in vars.keys():
@@ -132,6 +112,45 @@ class recipescanner(Scanner):
             self.tmpcond = lvars[k];
             s = re.sub(rg, self.replc, s);
         return s;
+
+    def config_filter(self, in_string):
+        prefix = re.compile("-DCMAKE_INSTALL_PREFIX=\S*")
+        toolchain = re.compile("-DCMAKE_TOOLCHAIN_FILE=\S*")
+        cmake = re.compile("cmake \S* ")
+        CC = re.compile("CC=\S* ")
+        CXX = re.compile("CXX=\S* ")
+        if str(os.environ.get('PYBOMBS_SDK')) == 'True':
+            cmk_cmd_match = re.search(cmake, in_string)
+            if cmk_cmd_match:
+                idx = in_string.find(cmk_cmd_match.group(0)) + len(cmk_cmd_match.group(0))
+                in_string = re.sub(prefix, "-DCMAKE_INSTALL_PREFIX=" + config.get('config', 'sdk_prefix'), in_string);
+                if re.search(toolchain, in_string):
+                    in_string = re.sub(toolchain, "-DCMAKE_TOOLCHAIN_FILE=" + config.get('config', 'toolchain'), in_string)
+                else:
+                    in_string = in_string[:idx] +  "-DCMAKE_TOOLCHAIN_FILE=" + config.get('config', 'toolchain') + ' ' + in_string[idx:]
+                if re.search(CC, in_string):
+                    in_string = re.sub(CC, "", in_string)
+                if re.search(CXX, in_string):
+                    in_string = re.sub(CXX, "", in_string)
+                                       
+            
+        print in_string
+        return in_string
+
+    def installed_filter(self, in_string):
+        installed = re.compile("make install")
+        if str(os.environ.get('PYBOMBS_SDK')) == 'True':
+            print in_string
+            mk_inst_match = re.search(installed, in_string)
+            if mk_inst_match:
+                idx = in_string.find(mk_inst_match.group(0)) + len(mk_inst_match.group(0))
+                in_string = in_string[:idx] +  " DESTDIR=" + config.get('config', 'sandbox') + ' ' + in_string[idx:]
+                    
+                    
+                                       
+            
+        print in_string
+        return in_string
 
     def deplist_add(self,a):
         self.recipe.depends.append(a);
@@ -217,14 +236,30 @@ class recipescanner(Scanner):
     def mainstate(self,a):
         self.begin("")
 
+    def configure_set_static(self,a):
+        if config.get("config","static") == "True":
+            self.recipe.scr_configure = a;
+
     def configure_set(self,a):
-        self.recipe.scr_configure = a;
+        if config.get("config","static") == "False":
+            self.recipe.scr_configure = a;
+        else:
+            if self.recipe.scr_configure == "":
+                self.recipe.scr_configure = a;
 
     def make_set(self,a):
         self.recipe.scr_make = a;
 
+    def install_set_static(self,a):
+        if config.get("config","static") == "True":
+            self.recipe.scr_install = a;
+
     def install_set(self,a):
-        self.recipe.scr_install = a;
+        if config.get("config","static") == "False":
+            self.recipe.scr_install = a;
+        else:
+            if self.recipe.scr_install == "":
+                self.recipe.scr_install = a;
     
     def verify_set(self,a):
         self.recipe.scr_verify = a;
@@ -268,7 +303,13 @@ class recipescanner(Scanner):
     def installdir(self,a):
         if debug_en:
             print "installdir: %s"%(a);
-        self.recipe.installdir = a;
+        self.recipe.installdir = self.installdir_filter(a);
+
+    def installdir_filter(self, a):
+        if str(os.environ.get('PYBOMBS_SDK')) == 'True':
+            return a + '_sdk'
+        else:
+            return a
 
     def inherit(self,a):
         subscanner = recipescanner(topdir + "/templates/"+a+".lwt", self.recipe, self.lvars);
@@ -338,8 +379,10 @@ class recipescanner(Scanner):
         (Str("source:"), Begin("source_uri")),
         (Str("install_like:"), Begin("install_like")),
         (Str("configure") + Rep(space) + Str("{"), Begin("configure")),
+        (Str("configure_static") + Rep(space) + Str("{"), Begin("configure_static")),
         (Str("make") + Rep(space) + Str("{"), Begin("make")),
         (Str("install") + Rep(space) + Str("{"), Begin("install")),
+        (Str("install_static") + Rep(space) + Str("{"), Begin("install_static")),
         (Str("verify") + Rep(space) + Str("{"), Begin("verify")),
         (Str("uninstall") + Rep(space) + Str("{"), Begin("uninstall")),
         (Str("var") + Rep(space) + var_name + Rep(space) + assignments + Rep(space) + Str("\"") , variable_begin ),
@@ -392,11 +435,17 @@ class recipescanner(Scanner):
         State('installdir', [
             (sep, IGNORE), (uri, installdir), (eol, mainstate),
             ]),
+        State('configure_static', [
+            (Rep(AnyBut("}")), configure_set_static), (Str("}"), mainstate),
+            ]),
         State('configure', [
             (Rep(AnyBut("}")), configure_set), (Str("}"), mainstate),
             ]),
         State('make', [
             (Rep(AnyBut("}")), make_set), (Str("}"), mainstate),
+            ]),
+        State('install_static', [
+            (Rep(AnyBut("}")), install_set_static), (Str("}"), mainstate),
             ]),
         State('install', [
             (Rep(AnyBut("}")), install_set), (Str("}"), mainstate),
@@ -415,6 +464,36 @@ class recipescanner(Scanner):
 
         ])
 
+
+    def __init__(self, filename, recipe, lvars = None):
+
+        if(not lvars):
+            lvars = vars_copy(vars);
+        self.lvars = lvars;
+        if debug_en:
+            print "init scanner with lvars = %s"%(lvars)
+        self.recipe = recipe;
+        self.recipe.scanner = self
+
+        if not os.path.exists(filename):
+            print "Missing file %s"%(filename)
+            raise RuntimeError
+
+        f = open(filename,"r");
+        Scanner.__init__(self, self.lexicon, f, filename);
+        self.begin("");
+#        print dir(self);
+#        print self.cur_line
+
+        if debug_en:
+            print "Parsing "+filename       
+        while 1:
+            token = Scanner.read(self);
+#            print token;
+            if token[0] is None:
+                break;
+        
+        f.close();
 
 
 class recipe:
@@ -671,7 +750,8 @@ class recipe:
             o_proc = None
         else:
             o_proc = output_proc.OutputProcessorMake(preamble="Configuring: ")
-        st = bashexec(self.scanner.var_replace_all(self.scr_configure), o_proc)
+        pre_filt_command = self.scanner.var_replace_all(self.scr_configure)
+        st = bashexec(self.scanner.config_filter(pre_filt_command), o_proc)
         if (st == 0):
             return
         # If configuration fails:
@@ -719,7 +799,8 @@ class recipe:
             o_proc = None
         else:
             o_proc = output_proc.OutputProcessorMake(preamble="Installing: ")
-        st = bashexec(self.scanner.var_replace_all(self.scr_install), o_proc)
+        pre_filt_command = self.scanner.var_replace_all(self.scr_install)
+        st = bashexec(self.scanner.installed_filter(pre_filt_command), o_proc)
         if (st != 0):
             raise PBRecipeException("Installation failed.")
 
