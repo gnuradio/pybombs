@@ -115,6 +115,9 @@ try:
 except:
     pass
 
+#give static a default value
+config.set("config","static","False")
+
 # make sure a few directories exist
 prefix = config.get("config", "prefix").rstrip('/')
 print "Settled on prefix: " + prefix
