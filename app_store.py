@@ -27,6 +27,11 @@ import sys
 import os.path
 from mod_pybombs import *;
 
+try:
+    print pybombs_ops.config_get("static")
+except:
+    pybombs_ops.config_set("static","False")
+
 recipe_loader.load_all();
 
 class AppList(QtGui.QWidget):
