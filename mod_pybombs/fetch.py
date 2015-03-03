@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 #
-# Copyright 2013 Tim O'Shea
+# Copyright 2015 Tim O'Shea
 #
 # This file is part of PyBOMBS
 #
@@ -109,16 +109,21 @@ class fetcher:
     def fetch_git(self,s):
         loc = s[6:]
         os.chdir(topdir + "/src/");
-        stat = shellexec_shell("git clone -b %s %s %s"%(self.recipe.gitbranch, loc, self.recipe.name), False);
+        gitcache=""
+        if vars['gitcache'] is not "":
+            print "Using gitcache at", vars['gitcache']
+            gitcache = "--reference %s"%vars['gitcache']
+
+        stat = shellexec_shell("git clone %s -b %s %s %s"%(gitcache, self.recipe.gitbranch, loc, self.recipe.name), False);
         if(stat != 0):
             return False;
-        
+
         os.chdir(topdir + "/src/" + self.recipe.name);
         if(self.recipe.gitrev != ""):
             stat = shellexec_shell("git checkout %s"%(self.recipe.gitrev), False);
             if(stat != 0):
                return False;
-    
+
         # store our current version
         out1 = shellexec(["git","rev-parse","HEAD"]);
         rm = re.search("([0-9a-f]+).*",out1);
@@ -163,4 +168,3 @@ class fetcher:
             return False;
         os.unlink(fn);
         return True;
-
