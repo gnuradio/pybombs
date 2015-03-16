@@ -283,7 +283,13 @@ class recipescanner(Scanner):
     def gitbranch(self,a):
         if debug_en:
             print "gitbranch: %s"%(a);
-        self.recipe.gitbranch = a;
+        self.recipe.git_branch = a;
+    
+    def gitargs(self,a):
+        print "gitargs: %s"%(a);
+        if debug_en:
+            print "gitbranch: %s"%(a);
+        self.recipe.git_args = a;
     
     def gitrev(self,a):
         if debug_en:
@@ -372,6 +378,7 @@ class recipescanner(Scanner):
         (Str("makedir:"), Begin("makedir")),
         (Str("installdir:"), Begin("installdir")),
         (Str("gitbranch:"), Begin("gitbranch")),
+        (Str("gitargs:"), Begin("gitargs")),
         (Str("svnrev:"), Begin("svnrev")),
         (Str("gitrev:"), Begin("gitrev")),
         (Str("satisfy_deb:"), Begin("debexpr")),
@@ -425,6 +432,9 @@ class recipescanner(Scanner):
             ]),
         State('gitbranch', [
             (sep, IGNORE), (gitbranchtype, gitbranch), (eol, mainstate),
+            ]),
+        State('gitargs', [
+            (sep, IGNORE), (gitbranchtype, gitargs), (eol, mainstate),
             ]),
         State('gitrev', [
             (sep, IGNORE), (revtype, gitrev), (eol, mainstate),
@@ -517,7 +527,8 @@ class recipe:
         self.configuredir = "";
         self.makedir = "";
         self.installdir = "";
-        self.gitbranch = "master";
+        self.git_branch = "master";
+        self.git_args = "";
         self.svnrev = "HEAD";
         self.gitrev = "";
         if name != 'all':        

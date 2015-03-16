@@ -114,7 +114,7 @@ class fetcher:
             print "Using gitcache at", vars['gitcache']
             gitcache = "--reference %s"%vars['gitcache']
 
-        stat = shellexec_shell("git clone %s -b %s %s %s"%(gitcache, self.recipe.gitbranch, loc, self.recipe.name), False);
+        stat = shellexec_shell("git clone %s %s -b %s %s %s"%(self.recipe.git_args, gitcache, self.recipe.git_branch, loc, self.recipe.name), False);
         if(stat != 0):
             return False;
 
