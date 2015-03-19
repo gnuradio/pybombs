@@ -96,7 +96,7 @@ class update:
                 return False;
 
         # Git Check #3 -- branch HEAD hash matches?
-        branch = self.r.gitbranch;
+        branch = self.r.git_branch;
         if(branch == ""):
             branch = "master";
         rs = re.search(("^([0-9a-f]+)\s+refs/heads/%s$"%(branch)), nv, re.MULTILINE);
