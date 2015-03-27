@@ -286,8 +286,8 @@ class recipescanner(Scanner):
         self.recipe.git_branch = a;
     
     def gitargs(self,a):
-        print "gitargs: %s"%(a);
         if debug_en:
+            print "gitargs: %s"%(a);
             print "gitbranch: %s"%(a);
         self.recipe.git_args = a;
     
