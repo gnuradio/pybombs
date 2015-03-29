@@ -52,6 +52,7 @@ Operations:"
     rb <pkg>        - rebuild without re-fetch (equivalent to [inv pkg fetch && install pkg])
     fetch <pkg>     - fetch a package without building or checking dependencies
     search <expr>   - search for a package recipe matching <expr>
+    status         -  show git status of modules
     profile         - run volk profile
     package         - create .tar.gz file out of prefix 
 """
@@ -243,6 +244,10 @@ elif(cmd == "profile"):
 elif(cmd == "package"):
          
     pybombs_ops.package_prefix();
+
+elif(cmd == "status"):
+
+    pybombs_ops.status();
 
 else:
     parser.error("Command '%s' is not a valid command" % cmd )

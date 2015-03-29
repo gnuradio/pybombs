@@ -388,4 +388,24 @@ def writeenv():
     f.close();
     logger.info( "To set up your environment (in bash) run: \"source %s\""%(fn) );
 
- 
+def status():
+    td = os.getcwd();
+    for d in os.listdir("src"):
+        os.chdir(td)
+        f = "src/" + d + "/.git"
+        try:
+            s = os.stat(f)
+            os.chdir("src/%s"%(d));
+            cmd = ["git", "status"]
+            #cmd = ["git", "status", "src/%s"%(d)]
+            out = shellexec_getout(cmd, True);
+            if(not re.search("nothing to commit, working directory clean",out)):
+                logger.warning( d + " modified" )
+                print out
+                #logger.warning( out )
+        except:
+            pass
+    
+
+
+

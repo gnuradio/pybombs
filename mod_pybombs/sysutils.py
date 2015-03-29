@@ -306,8 +306,9 @@ def shellexec_shell(cmd, throw_ex):
 def shellexec_getout(cmd, throw_ex=True):
     v.print_v(v.PDEBUG, "shellexec_long: " + str(cmd))
     try:
-        #p = subprocess.call([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=globals.env);
-        p = subprocess.Popen([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=globals.env);
+        if not isinstance(cmd, list):
+            cmd = [cmd]
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=globals.env);
         (out,err) = p.communicate();
         return out;
     except Exception, e:
