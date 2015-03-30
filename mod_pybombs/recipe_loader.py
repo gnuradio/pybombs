@@ -26,6 +26,12 @@ from recipe import *;
 import verbosity as v
 
 def load_all():
+
+    if(not os.path.isfile("recipes/.git")):
+        logger.warning("Recipes git submodule not checked out ... lets do that for you");
+        bashexec("git submodule update --init --recursive")
+        logger.info("Recipe clone finished...");
+    
     global_recipes.clear();
     files = os.listdir("recipes");
     recipes = [];
