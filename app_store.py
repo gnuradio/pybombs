@@ -21,9 +21,10 @@
 #
 
 from PyQt4.QtCore import Qt;
+import PyQt4.QtCore as QtCore;
 from PyQt4 import QtCore
 import PyQt4.QtGui as QtGui
-import sys
+import sys,time,threading
 import os.path
 from mod_pybombs import *;
 
@@ -35,6 +36,7 @@ except:
 recipe_loader.load_all();
 
 class AppList(QtGui.QWidget):
+
     def __init__(self, parent, name):
         super(AppList, self).__init__()
         self.parent = parent;
@@ -66,30 +68,55 @@ class AppList(QtGui.QWidget):
         self.lay.addWidget(button, self.idx/self.parent.width, self.idx%self.parent.width);
         self.idx = self.idx + 1;
 
-class Installer:
-    def __init__(self, parent, name):
+
+class Task(QtCore.QThread):
+    def __init__(self, parent, name, message):
+        QtCore.QThread.__init__(self, parent=parent)
         self.parent = parent;
         self.name = name;
+        self.message = message
     
     def cb(self):
+        # set up dialog...
+        self.progress = QtGui.QProgressDialog("%s %s, please wait..."%(self.message,self.name), "Abort", 0, 100, self.parent)
+        self.progress.setWindowModality(Qt.WindowModal)
+        self.progress.setValue(50);
+        self.progress.show()
+        self.progress.raise_()
+        self.progress.activateWindow()
+
+        # connect signal for when we are finished ...
+        QtCore.QObject.connect(self,
+                       QtCore.SIGNAL("finished()"),
+                       self.progress.close)
+        QtCore.QObject.connect(self,
+                       QtCore.SIGNAL("finished()"),
+                       self.parent.refresh)
+
+        self.start();
+    
+
+class Installer(Task):
+    def __init__(self, parent, name):
+        Task.__init__(self, parent, name, "Installing")
+    
+    def run(self):
         print "installing "+ self.name;
         install(self.name);
-        self.parent.refresh();
 
-class Remover:
+class Remover(Task):
     def __init__(self, parent, name):
-        self.parent = parent;
-        self.name = name;
+        Task.__init__(self, parent, name, "Removing")
 
     def cb(self):
         print "removing "+ self.name;
         remove(self.name);
-        self.parent.refresh();
     
 
 class ASMain(QtGui.QWidget):
-#class ASMain(QtGui.QMainWindow):
-    def __init__(self):
+    __pyqtSignals__ = ("refresh()")
+    def __init__(self, app):
+        self.app = app
         self.width = 8;
         self.iconsize = 72
 
@@ -192,7 +219,7 @@ class ASMain(QtGui.QWidget):
 
 
 app = QtGui.QApplication(sys.argv)
-mw = ASMain();   
+mw = ASMain(app);   
 sys.exit(app.exec_());
 
 
