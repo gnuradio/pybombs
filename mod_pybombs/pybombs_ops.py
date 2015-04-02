@@ -406,6 +406,7 @@ def status():
         except:
             pass
     
-
+def sync():
+    bashexec("git submodule update --remote");
 
 

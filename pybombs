@@ -52,7 +52,8 @@ Operations:"
     rb <pkg>        - rebuild without re-fetch (equivalent to [inv pkg fetch && install pkg])
     fetch <pkg>     - fetch a package without building or checking dependencies
     search <expr>   - search for a package recipe matching <expr>
-    status         -  show git status of modules
+    status          - show git status of modules
+    sync            - sync recipes to latest
     profile         - run volk profile
     package         - create .tar.gz file out of prefix 
 """
@@ -248,6 +249,10 @@ elif(cmd == "package"):
 elif(cmd == "status"):
 
     pybombs_ops.status();
+
+elif(cmd == "sync"):
+
+    pybombs_ops.sync();
 
 else:
     parser.error("Command '%s' is not a valid command" % cmd )
