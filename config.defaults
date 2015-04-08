@@ -1,6 +1,7 @@
 [defaults]
 gituser=
 gitcache=
+gitoptions=
 prefix=/usr/local/
 satisfy_order=deb,src
 forcepkgs=
@@ -15,6 +16,7 @@ makewidth=4
 [descriptions]
 gituser=Username for GIT access
 gitcache=Directory of git cache repository
+gitoptions=Options to always pass to git clones (--depth=1 or --single-branch will speed up clones)
 testkey=useless test key
 prefix=Install Prefix
 satisfy_order=Order in which to attempt installations when available, options are: src, rpm, deb
