@@ -52,7 +52,19 @@ class PyBombsInstall(PyBombsCmd):
 
     def run(self):
         " Go, go, go! "
-        pass
+
+        recipe_manager = RecipeListManager()
+
+        recipe = recipe_manager.get_recipe(pkg_name)
+        for dep in recipe.get_dependencies():
+            # Check if already installed
+            # if not, add to list of pkgs to install etc.
+
+        list_of_pkgs_including_deps = []
+
+
+
+
         #for p in self._pkgs:
             #self.run_install(p)
 
