@@ -21,7 +21,7 @@
 
 ### List of commands:
 from cmd_base import PyBombsCmd, PBException, get_class_dict
-from cmd_install import PyBombsInstall
+#from cmd_install import PyBombsInstall
 # Leave this at the end
 from cmd_help import PyBombsHelp
 
