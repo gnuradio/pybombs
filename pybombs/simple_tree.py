@@ -8,6 +8,18 @@ class SimpleTree(object):
     def __init__(self):
         self._tree = []
 
+    def is_node(self, node):
+        """
+        Returns true if node contains data (== is not a subtree)
+        """
+        return not isinstance(node, list)
+
+    def is_subtree(self, node):
+        """
+        Returns true if node contains data (== is not a subtree)
+        """
+        return isinstance(node, list)
+
     def empty(self):
         """
         Returns True if there are no nodes in the tree.
@@ -22,10 +34,10 @@ class SimpleTree(object):
             if self.empty():
                 return None
             return self.pop_leaf_node(self._tree, self._tree[0])
-        if not isinstance(child_node, list):
+        if self.is_node(child_node):
             base_node.remove(child_node)
             return child_node
-        elif isinstance(child_node, list) and len(child_node) == 0:
+        elif self.is_subtree(child_node) and len(child_node) == 0:
             base_node.remove(child_node)
             return None
         ret_val = self.pop_leaf_node(child_node, child_node[0])
@@ -45,9 +57,9 @@ class SimpleTree(object):
             return self.prune(self._tree)
         while [] in node:
             node.remove([])
-        for l in node:
-            if isinstance(l, list):
-                self.prune(l)
+        for sub_node in node:
+            if self.is_subtree(sub_node):
+                self.prune(sub_node)
 
     def insert_at(self, target_node, subtree, root=None):
         """
@@ -65,26 +77,51 @@ class SimpleTree(object):
             root.insert(root.index(target_node) + 1, subtree)
             return True
         else:
-            for l in root:
-                if isinstance(l, list):
-                    if self.insert_at(target_node, subtree, l):
+            for node in root:
+                if self.is_subtree(node):
+                    if self.insert_at(target_node, subtree, node):
                         return True
             return False
+
+    def pretty_print(self, indent='', root_node=None):
+        """
+        Pretty-prints the tree to the console.
+        """
+        if root_node is None:
+            self.prune()
+            root_node = self._tree
+        # This is true after we print an actual data node:
+        printed_node = False
+        lead_char = '|'
+        for idx, node in enumerate(root_node):
+            if idx == len(root_node) - 1:
+                lead_char = ' '
+            if self.is_node(node):
+                print indent + '|'
+                print "{0}{1}- {2}".format(indent, '\\' if  idx == len(root_node) - 1 else '+', str(node))
+                printed_node = True
+            else:
+                if not printed_node:
+                    print indent + '+--\\'
+                self.pretty_print(indent + lead_char + "  ", node)
+                printed_node = False
 
 
 if __name__ == "__main__":
     tree = SimpleTree()
-    print "Testing pop_leaf_node():"
-    tree._tree = [ [ ['foo', 'bar'] ], [ ['baz', 'fee'] ], ]
+    print "Testing pretty_print():"
+    tree._tree = ['root', 'root2', [ ['foo', 'bar'] ], [ ['baz', 'fee'] ],]
+    tree.pretty_print()
+    print "\nTesting pop_leaf_node():"
     while not tree.empty():
         print tree.pop_leaf_node()
-    print tree._tree
-    print "Testing prune():"
+    tree.pretty_print()
+    print "\nTesting prune():"
     tree._tree = [ [ ['foo', 'bar', []] ], [ [[], 'baz', 'fee', []], [] ], [], ]
     tree.prune()
-    print tree._tree
-    print "Testing insert_at():"
+    tree.pretty_print()
+    print "\nTesting insert_at():"
     tree.insert_at('foo', ["dep1", "dep2"])
     tree.insert_at(None, 'new_root_node')
-    print tree._tree
+    tree.pretty_print()
 
