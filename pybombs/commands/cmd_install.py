@@ -25,10 +25,12 @@ from pybombs.commands import *
 
 class PyBombsInstall(PyBombsCmd):
     """ Install a package """
-    name = 'install'
+    cmds = {
+            'install': 'Install a package'
+    }
 
-    def __init__(self):
-        PyBombsCmd.__init__(self, load_recipes=True)
+    def __init__(self, cmd=None):
+        PyBombsCmd.__init__(self, cmd)
 
     def setup_parser(self):
         " Add 'install' specific flags "
@@ -52,15 +54,16 @@ class PyBombsInstall(PyBombsCmd):
 
     def run(self):
         " Go, go, go! "
+        pass
 
-        recipe_manager = RecipeListManager()
+        #recipe_manager = RecipeListManager()
 
-        recipe = recipe_manager.get_recipe(pkg_name)
-        for dep in recipe.get_dependencies():
-            # Check if already installed
-            # if not, add to list of pkgs to install etc.
+        #recipe = recipe_manager.get_recipe(pkg_name)
+        #for dep in recipe.get_dependencies():
+            ## Check if already installed
+            ## if not, add to list of pkgs to install etc.
 
-        list_of_pkgs_including_deps = []
+        #list_of_pkgs_including_deps = []
 
 
 

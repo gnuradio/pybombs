@@ -32,7 +32,7 @@ def main():
     if command is None:
         print 'Usage:' + PyBombsHelp.usage
         exit(2)
-    pb_cmd = cmd_dict[command]()
+    pb_cmd = cmd_dict[command](command)
     try:
         (options, args) = pb_cmd.parser.parse_args()
         args.pop(0)
@@ -48,35 +48,3 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         pass
 
-### Old stuff:
-#import os,re,sys;
-#from optparse import OptionParser
-#from mod_pybombs import verbosity as v
-
-#parser = OptionParser(USAGE)
-#parser.add_option("-c", "--continue", dest="_continue", default=False, action="store_true", help="Attempt to continue in-spite of failures")
-#parser.add_option("-f", "--force", default=False, action="store_true", help="Force operation to occur")
-#parser.add_option("-a", "--all", default=False, action="store_true", help="Apply operation to all packages")
-#parser.add_option("-v", "--verbose", default=False, action="count", help="Increase verbosity")
-#opts,args = parser.parse_args()
-
-#"""
-#Handle commands don't require loading the PyBombs modules & subsytem.
-#"""
-## Set up verbosity level
-#v.VERBOSITY_LEVEL = v.INFO + opts.verbose
-
-#"""
-#Load the PyBomb modules & subsystem. 
-#"""
-
-##from mod_pybombs import *
-#import mod_pybombs.pybombs_ops as pybombs_ops
-#import mod_pybombs.recipe_loader as recipe_loader
-#import mod_pybombs.sysutils as sysutils
-##from mod_pybombs import recipe,update,fetch,inventory
-##from mod_pybombs import cfg,vars,globals
-
-
-#from mod_pybombs import *
-#sysutils.set_logger()
