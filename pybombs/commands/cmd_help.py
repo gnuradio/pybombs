@@ -38,8 +38,11 @@ def print_class_descriptions():
     desclist = []
     for gvar in globals().values():
         try:
-            if issubclass(gvar, PyBombsCmd) and not gvar.name in (PyBombsHelp.name, PyBombsCmd.name) and not gvar.hidden:
-                desclist.append((gvar.name, gvar.__doc__))
+            if issubclass(gvar, PyBombsCmd) \
+                    and PyBombsHelp.cmds != gvar.cmds \
+                    and not gvar.hidden:
+                for cmd_name, cmd_help in gvar.cmds.iteritems():
+                    desclist.append((cmd_name, cmd_help))
         except (TypeError, AttributeError):
             pass
     print '  Name       Description'
@@ -50,7 +53,7 @@ def print_class_descriptions():
 
 class PyBombsHelp(PyBombsCmd):
     """ Show some help. """
-    name = 'help'
+    cmds = {'help': 'Show help'}
     usage = """
     PyBOMBS -- The Python Build Overlay Management Build System.
 
@@ -59,8 +62,8 @@ class PyBombsHelp(PyBombsCmd):
     Run pybombs help <COMMAND> to get some help on a specific command.
     """
 
-    def __init__(self):
-        PyBombsCmd.__init__(self)
+    def __init__(self, cmd=None):
+        PyBombsCmd.__init__(self, cmd)
 
     def setup(self, options, args):
         " No setup necessary here. "
@@ -70,7 +73,7 @@ class PyBombsHelp(PyBombsCmd):
         " Go, go, go! "
         cmd_dict = get_class_dict(globals().values())
         cmds = cmd_dict.keys()
-        cmds.remove(self.name)
+        cmds.remove(self.cmds.keys()[0])
         help_requested_for = get_command_from_argv(cmds)
         if help_requested_for is None:
             print self.usage

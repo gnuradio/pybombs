@@ -36,9 +36,12 @@ class PyBombsCmd(object):
     Base class for all PyBOMBS commands classes.
     All PyBOMBS command classes must derive from this.
     """
-    name = '__command__'
+    cmds = {}
     hidden = False
-    def __init__(self, load_recipes=False):
+    def __init__(self, cmd=None):
+        self._cmd = cmd
+        if not cmd in self.cmds.keys():
+            raise PBException("{} is not a valid name for this command.".format(cmd))
         self.parser = self.setup_parser()
         #if load_recipes:
             #recipe_loader.load_all()
@@ -47,7 +50,7 @@ class PyBombsCmd(object):
 
     def get_usage_str(self):
         """ Returns a 'usage' string specific for this command. """
-        return '%prog [GLOBAL FLAGS] {} [CMD FLAGS] <PATTERN>'.format(self.name)
+        return '%prog [GLOBAL FLAGS] {} [CMD FLAGS] <PATTERN>'.format(self._cmd)
 
     def setup_parser(self):
         """ Init the option parser. If derived classes need to add options,
@@ -71,7 +74,7 @@ class PyBombsCmd(object):
 
     def run(self):
         """ Override this. """
-        raise PBException("run() method not implemented for command {0}!".format(self.name))
+        raise PBException("run() method not implemented for command {0}!".format(self._cmd))
 
 
 def get_class_dict(the_globals):
@@ -79,8 +82,9 @@ def get_class_dict(the_globals):
     classdict = {}
     for g in the_globals:
         try:
-            if issubclass(g, PyBombsCmd) and g.name != PyBombsCmd.name:
-                classdict[g.name] = g
+            if issubclass(g, PyBombsCmd) and len(g.cmds):
+                for cmd in g.cmds.keys():
+                    classdict[cmd] = g
         except (TypeError, AttributeError):
             pass
     return classdict
