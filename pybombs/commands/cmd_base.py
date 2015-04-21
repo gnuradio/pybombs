@@ -22,10 +22,9 @@
 
 import os
 import re
-import logging
 from optparse import OptionParser, OptionGroup
 #import recipe_loader
-#import pb_logging
+from pybombs import pb_logging
 
 class PBException(BaseException):
     """ Standard exception for PyBOMBS commands. """
@@ -45,8 +44,9 @@ class PyBombsCmd(object):
         self.parser = self.setup_parser()
         #if load_recipes:
             #recipe_loader.load_all()
-        #self.log = pb_logging.logger
+        self.log = pb_logging.logger
         # FIXME set logging level
+        self.cfg = config_manager.config_manager
 
     def get_usage_str(self):
         """ Returns a 'usage' string specific for this command. """
@@ -62,8 +62,8 @@ class PyBombsCmd(object):
         ogroup.add_option("-c", "--continue", dest="_continue", default=False, action="store_true", help="Attempt to continue in-spite of failures")
         ogroup.add_option("-f", "--force", default=False, action="store_true", help="Force operation to occur")
         ogroup.add_option("-a", "--all", default=False, action="store_true", help="Apply operation to all packages if applicable")
-        ogroup.add_option("-p", "--prefix", default=None, help="Specify a PyBOMBS prefix to use")
-        ogroup.add_option("-r", "--recipes", default=None, help="Specify a directory containing recipes")
+        ogroup.add_option("-p", "--prefix", default=None, help="Specify a PyBOMBS prefix directory to use")
+        ogroup.add_option("-r", "--recipes", default=None, help="Specify a directory containing recipes.")
         opts, args = parser.parse_args()
         parser.add_option_group(ogroup)
         return parser
