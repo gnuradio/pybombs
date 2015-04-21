@@ -21,7 +21,9 @@
 """ PyBOMBS command: Install """
 
 from pybombs.commands import *
+from pybombs import pb_logging
 #import pybombs_ops as pybombs_ops
+from pybombs import simple_tree
 
 class PyBombsInstall(PyBombsCmd):
     """ Install a package """
@@ -54,22 +56,59 @@ class PyBombsInstall(PyBombsCmd):
 
     def run(self):
         " Go, go, go! "
-        pass
 
-        #recipe_manager = RecipeListManager()
+        recipe_manager = RecipeListManager()
+        inv_manager = InventoryManager()
+        install_tree = simple_tree.SimpleTree()
 
-        #recipe = recipe_manager.get_recipe(pkg_name)
-        #for dep in recipe.get_dependencies():
-            ## Check if already installed
-            ## if not, add to list of pkgs to install etc.
+        ### Step 1: Make a list of packages to install
+        # Loop through all packages to install
+        for pkg in self._pkgs:
+            # Check is a valid package:
+            if self.recipe_manager.get_recipe(pkg) is None:
+                self.log.error("Package not in recipe list: {}".format(pkg))
+                exit(1)
 
-        #list_of_pkgs_including_deps = []
+            # Check if we already covered this package
+            if pkg in install_tree.get_nodes():
+                continue
+            # Check if package is already installed:
+            if inv_manager.get_version(pkg) is None:
+                install_tree.insert_at(pkg)
+                self._add_deps_recursive(install_tree, pkg)
+            else:
+                # TODO: Do something if we want to reinstall or update
+                pass
 
+        self.log.debug("Install tree:")
+        install_tree.pretty_print()
 
-
+        ### Step 2: Recursively install, starting at the leaf nodes
+        while not install_tree.empty():
+            pkg = install_tree.pop_leaf_node()
+            self.log.debug("Installing package: {}".format(pkg))
+            # Fetch (unless doing a reinstall, in that case, check source is available)
+            # Install
+            # Add to inventory
 
         #for p in self._pkgs:
             #self.run_install(p)
+
+
+    def _add_deps_recursive(self, install_tree, pkg):
+        """
+        Recursively add dependencies to the install tree.
+        """
+        recipe = self.recipe_manager.get_recipe(pkg)
+        deps = recipe.get_deps()
+        deps_to_install = [dep for dep in deps if not dep in install.get_nodes()]
+        if len(deps_to_install) == 0:
+            return
+        install_tree.insert_at(deps_to_install, pkg)
+        for dep in deps_to_install:
+            self._add_deps_recursive(install_tree, dep)
+
+
 
     def run_install(self, pkgname):
         """

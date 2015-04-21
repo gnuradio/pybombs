@@ -25,7 +25,12 @@ Simple Tree object, mainly for dependency tracking
 
 class SimpleTree(object):
     """
-    Very simple tree object.
+    Very simple tree object. Stored as a list of lists.
+    Anything not a list is considered a data node.
+    Example: ['a', ['aa', 'ab'], 'b', ['ba', 'bb', ['bba', 'bbb']]]
+    Beneath the root, there are two nodes, a and b. a has two subnodes,
+    aa and ab. b has two subnodes, of which the second one, bb, also has
+    subnodes.
     """
     def __init__(self):
         self._tree = []
@@ -38,7 +43,7 @@ class SimpleTree(object):
 
     def is_subtree(self, node):
         """
-        Returns true if node contains data (== is not a subtree)
+        Returns true if node is a subtree (== does not contain data)
         """
         return isinstance(node, list)
 
@@ -46,6 +51,7 @@ class SimpleTree(object):
         """
         Returns True if there are no nodes in the tree.
         """
+        self.prune()
         return len(self._tree) == 0
 
     def pop_leaf_node(self, base_node=None, child_node=None):
@@ -77,13 +83,13 @@ class SimpleTree(object):
             if len(self._tree) == 0:
                 return
             return self.prune(self._tree)
-        while [] in node:
-            node.remove([])
         for sub_node in node:
             if self.is_subtree(sub_node):
                 self.prune(sub_node)
+        while [] in node:
+            node.remove([])
 
-    def insert_at(self, target_node, subtree, root=None):
+    def insert_at(self, subtree, target_node=None, root=None):
         """
         Inserts a subtree under target_node.
         If target_node is None, the node gets inserted into
@@ -94,16 +100,30 @@ class SimpleTree(object):
             self._tree.append(subtree)
             return True
         if root is None:
-            return self.insert_at(target_node, subtree, self._tree)
+            return self.insert_at(subtree, target_node, self._tree)
         if target_node in root:
             root.insert(root.index(target_node) + 1, subtree)
             return True
         else:
             for node in root:
                 if self.is_subtree(node):
-                    if self.insert_at(target_node, subtree, node):
+                    if self.insert_at(subtree, target_node, node):
                         return True
             return False
+
+    def get_nodes(self, root_node=None, node_list=[]):
+        """
+        Return all data nodes as an unordered list
+        """
+        if root_node is None:
+            root_node = self._tree
+        for node in root_node:
+            if self.is_node(node):
+                node_list.append(node)
+            else:
+                node_list = self.get_nodes(node, node_list)
+        return node_list
+
 
     def pretty_print(self, indent='', root_node=None):
         """
@@ -134,6 +154,8 @@ if __name__ == "__main__":
     print "Testing pretty_print():"
     tree._tree = ['root', 'root2', [ ['foo', 'bar'] ], [ ['baz', 'fee'] ],]
     tree.pretty_print()
+    print "Testing get_nodes():"
+    print tree.get_nodes()
     print "\nTesting pop_leaf_node():"
     while not tree.empty():
         print tree.pop_leaf_node()
@@ -143,7 +165,7 @@ if __name__ == "__main__":
     tree.prune()
     tree.pretty_print()
     print "\nTesting insert_at():"
-    tree.insert_at('foo', ["dep1", "dep2"])
+    tree.insert_at(["dep1", "dep2"], 'foo')
     tree.insert_at(None, 'new_root_node')
     tree.pretty_print()
 
