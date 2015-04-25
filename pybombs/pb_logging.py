@@ -24,6 +24,9 @@ Logging interface: Creates a logger object for use in PyBOMBS commands
 """
 
 import logging
+import copy
+
+BOLD = str('\033[1m')
 
 class ColoredConsoleHandler(logging.StreamHandler):
     def emit(self, record):
@@ -31,27 +34,36 @@ class ColoredConsoleHandler(logging.StreamHandler):
         # to prevent altering the message for other loggers
         myrecord = copy.copy(record)
         levelno = myrecord.levelno
-        if(levelno >= 50):  # CRITICAL / FATAL
+        if levelno >= 50:  # CRITICAL / FATAL
             color = '\x1b[31m'  # red
-        elif(levelno >= 40):  # ERROR
+        elif levelno >= 40:  # ERROR
             color = '\x1b[31m'  # red
-        elif(levelno >= 30):  # WARNING
+        elif levelno >= 30:  # WARNING
             color = '\x1b[33m'  # yellow
-        elif(levelno >= 20):  # INFO
+        elif levelno >= 20:  # INFO
             color = '\x1b[32m'  # green
-        elif(levelno >= 10):  # DEBUG
+        elif levelno >= 10:  # DEBUG
             color = '\x1b[35m'  # pink
         else:  # NOTSET and anything else
             color = '\x1b[0m'  # normal
         myrecord.msg = BOLD + color + str(myrecord.msg) + '\x1b[0m'  # normal
         logging.StreamHandler.emit(self, myrecord)
 
-log_level = logging.INFO
+log_level = logging.DEBUG
 logger = logging.getLogger('PyBombs')
-logger.setLevel(log_level)
 ch = ColoredConsoleHandler()
-ch.setLevel(log_level)
 formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+logger.setLevel(log_level)
+
+if __name__ == "__main__":
+    print "Testing logger: "
+    logger.setLevel(1)
+    logger.log(5, "super-verbose message")
+    logger.debug("debug message")
+    logger.info("info message")
+    logger.warning("warning message")
+    logger.error("error message")
+    logger.critical("critical message")
 
