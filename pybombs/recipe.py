@@ -25,277 +25,201 @@ Recipe representation class.
 
 import os
 import re
-from plex import *
-import pb_logging
 
-debug_en = True
+try:
+    from pybombs import pb_logging
+except ImportError:
+    import pb_logging
+
+try:
+    from plex import *
+except ImportError:
+    from pybombs.plex import *
+
+# structure for a dependency package (name, comparator, version) (for rpm or deb)
+class PBPackageRequirement(object):
+    def __init__(self, name):
+        self.name = name
+        self.compare = None
+        self.version = None
+
+    def ev(self, func):
+        return func(self.name, self.compare, self.version)
+
+    def __str__(self, lvl=0):
+        return " "*lvl + "PackageRequirement({}, {}, {})".format(self.name, self.compare, self.version)
+
+# joining logic for multiple dep packages (for rpms and debs)
+class PBPackageRequirementPair(object):
+    def __init__(self, pkg):
+        self.first = pkg
+        self.second = None
+        self.combiner = None
+
+    def ev(self, func):
+        if self.combiner == "&&":
+            return self.first.ev(func) and self.second.ev(func)
+        elif self.combiner == "||":
+            return self.first.ev(func) or self.second.ev(func)
+
+    def __str__(self, lvl=0):
+        a = " "*lvl + "PBPackageRequirementPair: (%s)"%(self.combiner) + "\n"
+        a = a + " "*lvl + self.first.__str__(1) + "\n"
+        if(self.second):
+            a = a + " "*lvl + self.second.__str__(1)
+        else:
+            a = a + " "*lvl + "None"
+        return a
+
 
 class Recipe(Scanner):
     """
     Represents a recipe. Internally, it's a lexical scanner for the actual
     recipe.
     """
-    def __init__(self, filename, lvars=None):
-        self.log = pb_logging.logger
+    def __init__(self, filename, static=False):
+        self.log = pb_logging.logger.getChild("Recipe")
+        self.static = static
         self.deps = []
         self.srcs = []
-
-
-        if(not lvars):
-            #lvars = vars_copy(vars)
-            lvars = []
-        self.lvars = lvars
-        if debug_en:
-            print "init scanner with lvars = %s"%(lvars)
-        #self.recipe = recipe
-        #self.recipe.scanner = self
-
+        self.satisfy_deb = {}
+        self.install_like = None
+        self.category = None
+        self.satisfy = {}
+        self.scr_configure = ""
+        self.scr_make = ""
+        self.scr_install = ""
+        self.scr_verify = ""
+        self.scr_uninstall = ""
+        self.configuredir = ""
+        self.makedir = ""
+        self.install_dir = ""
+        self.git_branch = "master"
+        self.git_args = ""
+        self.svn_rev = "HEAD"
+        self.git_rev = ""
+        self.currpkg = None
+        self.pkgstack = []
+        self.curr_pkg_type = None
+        self.var = {}
+        # Init recipe scanner:
         if not os.path.exists(filename):
-            print "Missing file %s"%(filename)
-            raise RuntimeError
-        f = open(filename,"r")
-        Scanner.__init__(self, self.lexicon, f, filename)
+            self.log.error("No such recipe file: {}".format(filename))
+            exit(1)
+        recipe_file = open(filename, 'r')
+        Scanner.__init__(self, self.lexicon, recipe_file, filename)
+        # Put scanner into default state:
         self.begin("")
-#        print dir(self)
-#        print self.cur_line
-        if debug_en:
-            print "Parsing "+filename
-        while 1:
+        self.log.debug("Recipe: Parsing {}".format(filename))
+        while True:
             token = Scanner.read(self)
-#            print token
             if token[0] is None:
                 break
-        f.close()
+        recipe_file.close()
 
+    def set_attr(self, arg, key):
+        " Set a simple attribute "
+        self.log.log(1, "Setting attribute {} = {}".format(key, arg))
+        setattr(self, key, arg)
 
-    def var_replace(self, s):
-        #for k in vars.keys():
-        #    s = s.replace("$%s"%(k), vars[k])
-        #for k in self.lvars.keys():
-            #s = s.replace("$%s"%(k), self.lvars[k])
-        #for k in self.lvars.keys():
-            #s = s.replace("$%s"%(k), self.lvars[k])
-        #for k in vars.keys():
-            #s = s.replace("$%s"%(k), vars[k])
-        #return s
-        pass
-
-    def fancy_var_replace(self,s,d):
-        finished = False
-        while not finished:
-            os = s
-            for k in d.keys():
-                s = s.replace("$%s"%(k), d[k])
-            #v.print_v(v.PDEBUG, (s,os))
-            if(os == s):
-                finished = True
-        return s
-
-    def replc(self, m):
-#        print "GOT REPL C: %s"%(str([m.group(1), m.group(2), m.group(3)]))
-        #if m.group(1) == self.tmpcond:
-            #return  m.group(2)
-        #else:
-            #return  m.group(3)
-        pass
-
-    def var_replace_all(self, s):
-        finished = False
-        #lvars = vars_copy(self.lvars)
-        #lvars = []
-        #lvars.update(vars)
-        #s = self.fancy_var_replace(s, lvars)
-        #for k in lvars:
-            #fm = "\{([^\}]*)\}"
-            #rg = r"%s==(\w+)\?%s:%s"%(k,fm,fm)
-            #self.tmpcond = lvars[k]
-            #s = re.sub(rg, self.replc, s)
-        return s
-
-    def config_filter(self, in_string):
-        #prefix = re.compile("-DCMAKE_INSTALL_PREFIX=\S*")
-        #toolchain = re.compile("-DCMAKE_TOOLCHAIN_FILE=\S*")
-        #cmake = re.compile("cmake \S* ")
-        #CC = re.compile("CC=\S* ")
-        #CXX = re.compile("CXX=\S* ")
-        #if str(os.environ.get('PYBOMBS_SDK')) == 'True':
-            #cmk_cmd_match = re.search(cmake, in_string)
-            #if cmk_cmd_match:
-                #idx = in_string.find(cmk_cmd_match.group(0)) + len(cmk_cmd_match.group(0))
-                #in_string = re.sub(prefix, "-DCMAKE_INSTALL_PREFIX=" + config.get('config', 'sdk_prefix'), in_string)
-                #if re.search(toolchain, in_string):
-                    #in_string = re.sub(toolchain, "-DCMAKE_TOOLCHAIN_FILE=" + config.get('config', 'toolchain'), in_string)
-                #else:
-                    #in_string = in_string[:idx] +  "-DCMAKE_TOOLCHAIN_FILE=" + config.get('config', 'toolchain') + ' ' + in_string[idx:]
-                #if re.search(CC, in_string):
-                    #in_string = re.sub(CC, "", in_string)
-                #if re.search(CXX, in_string):
-                    #in_string = re.sub(CXX, "", in_string)
-        print in_string
-        return in_string
-
-    def installed_filter(self, in_string):
-        #installed = re.compile("make install")
-        #if str(os.environ.get('PYBOMBS_SDK')) == 'True':
-            #print in_string
-            #mk_inst_match = re.search(installed, in_string)
-            #if mk_inst_match:
-                #idx = in_string.find(mk_inst_match.group(0)) + len(mk_inst_match.group(0))
-                #in_string = in_string[:idx] +  " DESTDIR=" + config.get('config', 'sandbox') + ' ' + in_string[idx:]
-        print in_string
-        return in_string
+    def mainstate(self, a):
+        " Reset to default state "
+        self.begin("")
 
     def deplist_add(self, pkg):
         " Add pkg to the list of this recipe's dependencies "
+        self.log.log(1, "Added dependency: {}".format(pkg))
         self.deps.append(pkg)
 
-
     def source_add(self, src):
-        self.log.log(0, "Adding source: {0}".format(src))
+        " Add source URI "
+        self.log.log(1, "Adding source: {0}".format(src))
         self.srcs.append(src)
 
-    def pl_pkg(self, e):
-        #npkg = pkgreq(e)
-        #if(self.recipe.currpkg):
-            #self.recipe.currpkg.second = npkg
-        #else:
-            #self.recipe.currpkg = npkg
-        pass
+    def configure_set_static(self, static_cfg_opts):
+        " Add static config options "
+        if self.static:
+            self.log.log(1, "Adding static config options: {0}".format(static_cfg_opts))
+            self.scr_configure = static_cfg_opts
 
-    def pl_par(self, e):
-        pass
-        #if(e == "("):
-            #self.recipe.pkgstack.append(self.recipe.currpkg)
-            #self.recipe.currpkg = None
-        #elif(e == ")"):
-            #prev = self.recipe.pkgstack.pop()
-            #if(not (prev == None)):
-                #prev.second = self.recipe.currpkg
-                #self.recipe.currpkg = prev
-            #else:
-                #self.recipe.currpkg = self.recipe.currpkg
-        #else:
-            #sys.exit(-1)
+    def configure_set(self, cfg_opts):
+        " Add config options "
+        if not self.static or self.scr_configure == "":
+            self.log.log(1, "Adding config options: {0}".format(cfg_opts))
+            self.scr_configure = cfg_opts
 
-    def pl_cmp(self, e):
-        pass
-        #if(self.recipe.currpkg.__class__.__name__ == "pkgreq"):
-            #self.recipe.currpkg.compare = e
-        #else:
-            #self.recipe.currpkg.second.compare = e
+    def install_set_static(self, arg):
+        " Add static install options "
+        if self.static:
+            self.log.log(1, "Adding static install options: {0}".format(arg))
+            self.scr_install = arg
 
-    def pl_ver(self, e):
-        pass
-        #if(self.recipe.currpkg.__class__.__name__ == "pkgreq"):
-            #self.recipe.currpkg.version = e
-        #else:
-            #self.recipe.currpkg.second.version = e
+    def install_set(self, arg):
+        " Add install options "
+        if not self.static or self.scr_install == "":
+            self.log.log(1, "Adding install options: {0}".format(arg))
+            self.scr_install = arg
 
-    def pl_cmb(self, e):
-        pass
-        #assert(self.recipe.currpkg)
-        #self.recipe.currpkg = pr_pair(self.recipe.currpkg)
-        #self.recipe.currpkg.combiner = e
+    def satisfy_begin(self, pkg_type):
+        " Call this when finding a satisfy_*: line "
+        match_obj = re.match(r'satisfy_([a-z]+):', pkg_type)
+        self.curr_pkg_type = str(match_obj.group(1))
+        self.log.log(1, "Found package list for package type {0}".format(self.curr_pkg_type))
+        self.begin("distro_pkg_expr")
 
-    def distro_pkg_expr(self, pkg_expr):
-        if debug_en:
-            print "DEB satisfier EXPR ", e
-            #print self.recipe.currpkg
-        #self.recipe.satisfy_deb = self.recipe.currpkg
-        #self.recipe.clearpkglist()
-        self.begin("")
-
-    def category_set(self,c):
-        if debug_en:
-            print "Setting category: "+c
-        #self.recipe.category = c
-
-    def mainstate(self,a):
-        self.begin("")
-
-    def configure_set_static(self,a):
-        pass
-        #if config.get("config","static") == "True":
-            #self.recipe.scr_configure = a
-
-    def configure_set(self,a):
-        pass
-        #if config.get("config","static") == "False":
-            #self.recipe.scr_configure = a
-        #else:
-            #if self.recipe.scr_configure == "":
-                #self.recipe.scr_configure = a
-
-    def make_set(self,a):
-        #self.recipe.scr_make = a
-        pass
-
-    def install_set_static(self,a):
-        pass
-        #if config.get("config","static") == "True":
-            #self.recipe.scr_install = a
-
-    def install_set(self,a):
-        pass
-        #if config.get("config","static") == "False":
-            #self.recipe.scr_install = a
-        #else:
-            #if self.recipe.scr_install == "":
-                #self.recipe.scr_install = a
-
-    def verify_set(self,a):
-        pass
-        #self.recipe.scr_verify = a
-
-    def uninstall_set(self,a):
-        pass
-        #self.recipe.scr_uninstall = a
-
-    def install_like_set(self,a):
-        pass
-        #self.recipe.install_like = a
-
-    def configuredir(self,a):
-        if debug_en:
-            print "configuredir: %s"%(a)
-        #self.recipe.configuredir = a
-
-    def makedir(self,a):
-        if debug_en:
-            print "makedir: %s"%(a)
-        #self.recipe.makedir = a
-
-    def gitbranch(self,a):
-        if debug_en:
-            print "gitbranch: %s"%(a)
-        #self.recipe.git_branch = a
-
-    def gitargs(self,a):
-        if debug_en:
-            print "gitargs: %s"%(a)
-            print "gitbranch: %s"%(a)
-        #self.recipe.git_args = a
-
-    def gitrev(self,a):
-        if debug_en:
-            print "gitrev: %s"%(a)
-        #self.recipe.gitrev = a
-
-    def svnrev(self,a):
-        if debug_en:
-            print "svnrev: %s"%(a)
-        #self.recipe.svnrev = a
-
-    def installdir(self,a):
-        if debug_en:
-            print "installdir: %s"%(a)
-        #self.recipe.installdir = self.installdir_filter(a)
-
-    def installdir_filter(self, a):
-        if str(os.environ.get('PYBOMBS_SDK')) == 'True':
-            return a + '_sdk'
+    def pl_pkg(self, pkg_name):
+        " Called in a package requirements list, when a package name is found "
+        self.log.log(1, "Adding package with name {}".format(pkg_name))
+        new_pkg = PBPackageRequirement(pkg_name)
+        if self.currpkg is not None:
+            self.currpkg.second = new_pkg
         else:
-            return a
+            self.currpkg = new_pkg
+
+    def pl_par(self, par):
+        " Called in a package requirements list, when parens are found "
+        if par == "(":
+            self.pkgstack.append(self.currpkg)
+            self.currpkg = None
+        elif par == ")":
+            prev = self.pkgstack.pop()
+            if prev is not None:
+                prev.second = self.currpkg
+                self.currpkg = prev
+        else:
+            raise PBException("Error parsing recipe file {}. Invalid parens or something. Weird.".format(self.filename))
+
+    def pl_cmp(self, cmpr):
+        " Called in a package requirements list, when version comparator is found "
+        self.log.log(1, "Adding version comparator {}".format(cmpr))
+        if isinstance(self.currpkg, PBPackageRequirement):
+            self.currpkg.compare = cmpr
+        else:
+            self.currpkg.second.compare = cmpr
+
+    def pl_ver(self, ver):
+        " Called in a package requirements list, when version number is found "
+        self.log.log(1, "Adding version number {}".format(ver))
+        if isinstance(self.currpkg, PBPackageRequirement):
+            self.currpkg.version = ver
+        else:
+            self.currpkg.second.version = ver
+
+    def pl_cmb(self, cmb):
+        " Called in a package requirements list, when a logical combiner (||, &&) is found "
+        self.log.log(1, "Found package combiner {}".format(cmb))
+        if self.currpkg is None:
+            raise PBException("Error parsing recipe file {}. Did not expect combiner here.".format(self.filename))
+        self.currpkg = PBPackageRequirementPair(self.currpkg)
+        self.currpkg.combiner = cmb
+
+    def end_distro_pkg_expr(self, e):
+        " Called when a list of package reqs is finished "
+        self.log.log(1, "End of requirements list for package type {}".format(self.curr_pkg_type))
+        self.satisfy[self.curr_pkg_type] = self.currpkg
+        self.pkgstack = []
+        self.currpkg = None
+        self.begin("")
 
     def inherit(self,a):
         pass
@@ -303,23 +227,8 @@ class Recipe(Scanner):
         #self.lvars = subscanner.lvars
             #die( "attempted to inherit from %s but did not exist"%(a) )
 
-    def variable_begin(self,a):
-        #print "var_begin"
-        #print a
-        m = re.match(r'var\s+([\w\d_]+)\s+(=\!?)\s+"', a)
-        self.varname = str(m.group(1))
-        if(m.group(2) == "="):
-            self.varoverride = False
-        else:
-            self.varoverride = True
-        #print "var = %s "%(self.varname)
-        #print "lvars = %s"%(self.lvars)
-        #if (not self.lvars.has_key(self.varname)) or (self.varoverride):
-            #self.lvars[self.varname] = "";
-            #self.varoverride = True
-        self.begin("variable")
-
-    def variable_set(self,b):
+    def variable_set(self, arg):
+        print 'variable_set(): ', arg
         #if (not self.lvars.has_key(self.varname)) or (self.varoverride):
             #if debug_en:
                 #print "var_set(%s) = %s"%(self.varname,b)
@@ -329,6 +238,22 @@ class Recipe(Scanner):
                 #print "(ignored) var_set(%s) = %s"%(self.varname,b)
         pass
 
+    def variable_begin(self,a):
+        print "var_begin"
+        print a
+        m = re.match(r'var\s+([\w\d_]+)\s+(=\!?)\s+"', a)
+        self.varname = str(m.group(1))
+        if m.group(2) == "=":
+            self.varoverride = False
+        else:
+            self.varoverride = True
+        print self.varoverride
+        print "var = %s "%(self.varname)
+        #print "lvars = %s"%(self.lvars)
+        #if (not self.lvars.has_key(self.varname)) or (self.varoverride):
+            #self.lvars[self.varname] = "";
+            #self.varoverride = True
+        self.begin("variable")
 
     ### Plex: Patterns
     letter   = Range("AZaz")
@@ -369,7 +294,8 @@ class Recipe(Scanner):
         (Str("gitargs:"), Begin("gitargs")),
         (Str("svnrev:"), Begin("svnrev")),
         (Str("gitrev:"), Begin("gitrev")),
-        (Str("satisfy_") + Rep1(letter) + Str(':'), Begin("distro_pkg_expr")),
+        #(Str("satisfy_") + Rep1(letter) + Str(':'), Begin("distro_pkg_expr")),
+        (Str("satisfy_") + Rep1(letter) + Str(':'), satisfy_begin),
         (Str("source:"), Begin("source_uri")),
         (Str("install_like:"), Begin("install_like")),
         (Str("configure") + Rep(space) + Str("{"), Begin("configure")),
@@ -379,7 +305,7 @@ class Recipe(Scanner):
         (Str("install_static") + Rep(space) + Str("{"), Begin("install_static")),
         (Str("verify") + Rep(space) + Str("{"), Begin("verify")),
         (Str("uninstall") + Rep(space) + Str("{"), Begin("uninstall")),
-        (Str("var") + Rep(space) + var_name + Rep(space) + assignments + Rep(space) + Str("\"") , variable_begin ),
+        (Str("var") + Rep(space) + var_name + Rep(space) + assignments + Rep(space) + Str("\""), variable_begin),
         (name, TEXT),
         (number, 'int'),
         (space, IGNORE),
@@ -389,85 +315,86 @@ class Recipe(Scanner):
         # this class.
         State('deplist', [
             (sep, IGNORE), (pkgname, deplist_add), (eol, mainstate),
-            ]),
+        ]),
         State('distro_pkg_expr', [
             (sep, IGNORE),
             (pkgname, pl_pkg),
-            (version,pl_ver),
-            (parens,pl_par),
+            (version, pl_ver),
+            (parens, pl_par),
             (comparators, pl_cmp),
             (combiner, pl_cmb),
-            (Eol, distro_pkg_expr),
+            (Eol, end_distro_pkg_expr),
             ]),
         State('source_uri', [
             (sep, IGNORE), (uri, source_add), (eol, mainstate),
-            ]),
+        ]),
         State('install_like', [
-            (sep, IGNORE), (pkgname, install_like_set), (Str("\n"), mainstate),
-            ]),
+            (sep, IGNORE), (pkgname, lambda scanner, arg: scanner.set_attr(arg, "install_like")), (Str("\n"), mainstate),
+        ]),
         State('cat', [
-            (sep, IGNORE), (pkgname, category_set), (eol, mainstate),
-            ]),
-        State('inherit', [
-            (sep, IGNORE), (pkgname, inherit), (eol, mainstate),
-            ]),
+            (sep, IGNORE), (pkgname, lambda scanner, arg: scanner.set_attr(arg, "category")), (eol, mainstate),
+        ]),
         State('inherit', [
             (sep, IGNORE), (pkgname, inherit), (eol, mainstate),
             ]),
         State('configuredir', [
-            (sep, IGNORE), (uri, configuredir), (eol, mainstate),
-            ]),
+            (sep, IGNORE), (uri, lambda scanner, arg: scanner.set_attr(arg, "configuredir")), (eol, mainstate),
+        ]),
         State('variable', [
             (Rep(AnyBut("\"")), variable_set), (Str("\""), mainstate),
             ]),
         State('makedir', [
-            (sep, IGNORE), (uri, makedir), (eol, mainstate),
-            ]),
+            (sep, IGNORE), (uri, lambda scanner, arg: scanner.set_attr(arg, "makedir")), (eol, mainstate),
+        ]),
         State('gitbranch', [
-            (sep, IGNORE), (gitbranchtype, gitbranch), (eol, mainstate),
-            ]),
+            (sep, IGNORE), (gitbranchtype, lambda scanner, arg: scanner.set_attr(arg, "git_branch")), (eol, mainstate),
+        ]),
         State('gitargs', [
-            (sep, IGNORE), (gitbranchtype, gitargs), (eol, mainstate),
-            ]),
+            (sep, IGNORE), (gitbranchtype, lambda scanner, arg: scanner.set_attr(arg, "git_args")), (eol, mainstate),
+        ]),
         State('gitrev', [
-            (sep, IGNORE), (revtype, gitrev), (eol, mainstate),
-            ]),
+            (sep, IGNORE), (revtype, lambda scanner, arg: scanner.set_attr(arg, "git_rev")), (eol, mainstate),
+        ]),
         State('svnrev', [
-            (sep, IGNORE), (revtype, svnrev), (eol, mainstate),
-            ]),
+            (sep, IGNORE), (revtype, lambda scanner, arg: scanner.set_attr(arg, "svn_rev")), (eol, mainstate),
+        ]),
         State('installdir', [
-            (sep, IGNORE), (uri, installdir), (eol, mainstate),
-            ]),
+            (sep, IGNORE), (uri, lambda scanner, arg: scanner.set_attr(arg, "install_dir")), (eol, mainstate),
+        ]),
         State('configure_static', [
             (Rep(AnyBut("}")), configure_set_static), (Str("}"), mainstate),
-            ]),
+        ]),
         State('configure', [
             (Rep(AnyBut("}")), configure_set), (Str("}"), mainstate),
-            ]),
+        ]),
         State('make', [
-            (Rep(AnyBut("}")), make_set), (Str("}"), mainstate),
-            ]),
+            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg, "scr_make")), (Str("}"), mainstate),
+        ]),
         State('install_static', [
             (Rep(AnyBut("}")), install_set_static), (Str("}"), mainstate),
-            ]),
+        ]),
         State('install', [
             (Rep(AnyBut("}")), install_set), (Str("}"), mainstate),
-            ]),
+        ]),
         State('verify', [
-            (Rep(AnyBut("}")), verify_set), (Str("}"), mainstate),
-            ]),
+            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg, "scr_verify")), (Str("}"), mainstate),
+        ]),
         State('uninstall', [
-            (Rep(AnyBut("}")), uninstall_set), (Str("}"), mainstate),
-            ]),
+            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg, "scr_uninstall")), (Str("}"), mainstate),
+        ]),
         State('comment', [
             (eol, Begin('')),
             (AnyChar, IGNORE)
-            ])
-        ]) # End Lexicon()
+        ])
+    ]) # End Lexicon()
 
 
 if __name__ == "__main__":
-    recipe_filename = '../recipes/gr-specest.lwr'
-    pb_logging.logger.setLevel(0)
+    #recipe_filename = '/home/mbr0wn/src/pybombs/recipes/python.lwr'
+    recipe_filename = '/home/mbr0wn/src/pybombs/recipes/gnuradio.lwr'
+    pb_logging.logger.setLevel(1)
     scanner = Recipe(recipe_filename)
+    for k, v in scanner.satisfy.iteritems():
+        print "{}:".format(k)
+        print str(v)
 
