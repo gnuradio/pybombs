@@ -25,11 +25,14 @@ Recipe representation class.
 
 import os
 import re
+import copy
 
 try:
     from pybombs import pb_logging
+    from pybombs import recipe_manager
 except ImportError:
     import pb_logging
+    import recipe_manager
 
 try:
     from plex import *
@@ -77,8 +80,8 @@ class Recipe(Scanner):
     Represents a recipe. Internally, it's a lexical scanner for the actual
     recipe.
     """
-    def __init__(self, filename, static=False):
-        self.log = pb_logging.logger.getChild("Recipe")
+    def __init__(self, filename, lvars=None, static=False):
+        self.log = pb_logging.logger.getChild("Recipe[{}]".format(os.path.splitext(os.path.basename(filename))[0]))
         self.static = static
         self.deps = []
         self.srcs = []
@@ -101,7 +104,13 @@ class Recipe(Scanner):
         self.currpkg = None
         self.pkgstack = []
         self.curr_pkg_type = None
+        self.varname = None
+        self.varoverride = False
         self.var = {}
+        # Init lvars:
+        self.lvars = {}
+        if lvars is not None:
+            self.lvars = copy.copy(lvars)
         # Init recipe scanner:
         if not os.path.exists(filename):
             self.log.error("No such recipe file: {}".format(filename))
@@ -116,6 +125,7 @@ class Recipe(Scanner):
             if token[0] is None:
                 break
         recipe_file.close()
+        self.log.debug("Recipe: Done Parsing.")
 
     def set_attr(self, arg, key):
         " Set a simple attribute "
@@ -221,39 +231,36 @@ class Recipe(Scanner):
         self.currpkg = None
         self.begin("")
 
-    def inherit(self,a):
-        pass
-        #subscanner = recipescanner(topdir + "/templates/"+a+".lwt", self.recipe, self.lvars)
-        #self.lvars = subscanner.lvars
-            #die( "attempted to inherit from %s but did not exist"%(a) )
+    def inherit(self, recipe_name):
+        " Inherit "
+        filename = recipe_manager.RecipeListManager().get_recipe_filename(recipe_name)
+        self.log.log(1, "Calling subscanner for file {}".format(filename))
+        subscanner = Recipe(filename, lvars=self.lvars, static=self.static)
+        self.lvars = subscanner.lvars
+        self.log.log(1, "Updated lvars: {}".format(self.lvars))
 
-    def variable_set(self, arg):
-        print 'variable_set(): ', arg
-        #if (not self.lvars.has_key(self.varname)) or (self.varoverride):
-            #if debug_en:
-                #print "var_set(%s) = %s"%(self.varname,b)
-            #self.lvars[self.varname] = self.var_replace(b)
-        #else:
-            #if debug_en:
-                #print "(ignored) var_set(%s) = %s"%(self.varname,b)
-        pass
-
-    def variable_begin(self,a):
-        print "var_begin"
-        print a
-        m = re.match(r'var\s+([\w\d_]+)\s+(=\!?)\s+"', a)
-        self.varname = str(m.group(1))
-        if m.group(2) == "=":
+    def variable_begin(self, a):
+        " Beginning of a variable line "
+        match_obj = re.match(r'var\s+([\w\d_]+)\s+(=\!?)\s+"', a)
+        self.varname = str(match_obj.group(1))
+        if match_obj.group(2) == "=":
             self.varoverride = False
         else:
             self.varoverride = True
-        print self.varoverride
-        print "var = %s "%(self.varname)
-        #print "lvars = %s"%(self.lvars)
-        #if (not self.lvars.has_key(self.varname)) or (self.varoverride):
-            #self.lvars[self.varname] = "";
-            #self.varoverride = True
+        self.log.log(1, "Found variable, name == {}, overriding: {}".format(self.varname, self.varoverride))
+        if not self.lvars.has_key(self.varname) or self.varoverride:
+            self.lvars[self.varname] = ""
+            self.varoverride = True
         self.begin("variable")
+
+    def variable_set(self, arg):
+        " After variable_begin(), variable value is set here "
+        if not self.lvars.has_key(self.varname) or self.varoverride:
+            self.log.log(1, "Setting variable {} == {}".format(self.varname, arg))
+            #self.lvars[self.varname] = self.var_replace(b)
+            self.lvars[self.varname] = arg
+        else:
+            self.log.log(1, "Ignoring variable {} == {}".format(self.varname, arg))
 
     ### Plex: Patterns
     letter   = Range("AZaz")
@@ -324,7 +331,7 @@ class Recipe(Scanner):
             (comparators, pl_cmp),
             (combiner, pl_cmb),
             (Eol, end_distro_pkg_expr),
-            ]),
+        ]),
         State('source_uri', [
             (sep, IGNORE), (uri, source_add), (eol, mainstate),
         ]),
@@ -342,7 +349,7 @@ class Recipe(Scanner):
         ]),
         State('variable', [
             (Rep(AnyBut("\"")), variable_set), (Str("\""), mainstate),
-            ]),
+        ]),
         State('makedir', [
             (sep, IGNORE), (uri, lambda scanner, arg: scanner.set_attr(arg, "makedir")), (eol, mainstate),
         ]),
@@ -390,6 +397,7 @@ class Recipe(Scanner):
 
 
 if __name__ == "__main__":
+    #recipe_filename = '/home/mbr0wn/src/pybombs/recipes/gr-specest.lwr'
     #recipe_filename = '/home/mbr0wn/src/pybombs/recipes/python.lwr'
     recipe_filename = '/home/mbr0wn/src/pybombs/recipes/gnuradio.lwr'
     pb_logging.logger.setLevel(1)
@@ -397,4 +405,5 @@ if __name__ == "__main__":
     for k, v in scanner.satisfy.iteritems():
         print "{}:".format(k)
         print str(v)
+    print scanner.lvars
 

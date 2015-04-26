@@ -24,7 +24,7 @@ Recipe Manager: Handles the available recipes
 """
 
 import os
-#import recipe
+import recipe
 import pb_logging
 
 class RecipeListManager(object):
@@ -42,23 +42,24 @@ class RecipeListManager(object):
     - Dir given through command line (-r)
     """
     def __init__(self):
-        self.log = pb_logging.logger
+        self.log = pb_logging.logger.getChild("RecipeListManager")
         self._recipe_list = {}
         self._append_dir('/home/mbr0wn/src/pybombs/recipes')
         self._append_dir('/home/mbr0wn/src/pybombs/recipes2')
 
 
-    def list(self):
-        """
-        Returns a list of all recipes, sorted by category.
+    # TODO not sure if we want to keep this
+    #def list(self):
+        #"""
+        #Returns a list of all recipes, sorted by category.
 
-        The return value is a dict with the following format:
-        {
-            categoryname1: [list of recipe names],
-            categoryname2: [list of recipe names],
-        }
-        """
-        pass
+        #The return value is a dict with the following format:
+        #{
+            #categoryname1: [list of recipe names],
+            #categoryname2: [list of recipe names],
+        #}
+        #"""
+        #pass
 
     def get_recipe_filename(self, name):
         """
@@ -67,14 +68,6 @@ class RecipeListManager(object):
         """
         return self._recipe_list[name][0]
 
-
-    def get_recipe(self, name):
-        """
-        Return a recipe for a recipe with a given name.
-
-        Will throw if 'name' is in fact not a valid PyBOMBS recipe.
-        """
-        pass
 
     def _append_dir(self, dirname):
         """
@@ -96,33 +89,6 @@ class RecipeListManager(object):
                 self._recipe_list[pkgname].insert(0, abs_filename)
             else:
                 self._recipe_list[pkgname] = [abs_filename,]
-
-#def load_all():
-
-    #if(not os.path.isfile("recipes/.git")):
-        #logger.warning("Recipes git submodule not checked out ... lets do that for you");
-        #bashexec("git submodule update --init --recursive")
-        #logger.info("Recipe clone finished...");
-    
-    #global_recipes.clear();
-    #files = os.listdir("recipes");
-    #recipes = [];
-    #v.print_v(v.INFO, "Loading recipes ...")
-    #for f in files:
-        #if(re.match("[\w\d_-]+.lwr$", f)):
-            #recipes.append(f[:-4]);
-
-    #for r in recipes:
-        #if not global_recipes.has_key(r):
-            #try:
-                #global_recipes[r] = recipe(r);
-            #except:
-                #v.print_v(v.WARN, "Failed to load recipe {0}".format(r))
-    #global_recipes['all'] = recipe('all')
-    #global_recipes['all'].category = "pseudo"
-    #global_recipes['all'].depends.extend(recipes)
-    #v.print_v(v.PDEBUG, "Loading recipes ... done")
-
 
 
 if __name__ == "__main__":
