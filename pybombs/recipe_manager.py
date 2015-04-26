@@ -25,6 +25,7 @@ Recipe Manager: Handles the available recipes
 
 import os
 import recipe
+import config_manager
 import pb_logging
 
 class RecipeListManager(object):
@@ -43,23 +44,12 @@ class RecipeListManager(object):
     """
     def __init__(self):
         self.log = pb_logging.logger.getChild("RecipeListManager")
+        self.cfg = config_manager.config_manager
         self._recipe_list = {}
-        self._append_dir('/home/mbr0wn/src/pybombs/recipes')
-        self._append_dir('/home/mbr0wn/src/pybombs/recipes2')
-
-
-    # TODO not sure if we want to keep this
-    #def list(self):
-        #"""
-        #Returns a list of all recipes, sorted by category.
-
-        #The return value is a dict with the following format:
-        #{
-            #categoryname1: [list of recipe names],
-            #categoryname2: [list of recipe names],
-        #}
-        #"""
-        #pass
+        self._locations = []
+        for recipe_loc in self.cfg.get_recipe_locations():
+            self.log.debug("Adding recipe location: {}".format(recipe_loc))
+            self._append_location(recipe_loc)
 
     def get_recipe_filename(self, name):
         """
@@ -69,12 +59,17 @@ class RecipeListManager(object):
         return self._recipe_list[name][0]
 
 
-    def _append_dir(self, dirname):
+    def _append_location(self, dirname):
         """
         Goes through directory 'dirname' and looks at all .lwr files.
-        Adds a list of tuples (pkgname, filename) to the internal
-        recipe cache.
+        Adds the package name as key to the internal list of recipes,
+        then adds the filename into the list.
         """
+        dirname = os.path.expanduser(dirname)
+        if dirname in self._locations:
+            self.log.debug("Duplicate recipe location: {}".format(dirname))
+            return
+        self._locations.append(dirname)
         if not os.path.isdir(dirname):
             self.log.error("'{0}' is not a directory.".format(dirname))
             return
