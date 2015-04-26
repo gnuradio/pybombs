@@ -26,10 +26,6 @@ from optparse import OptionParser, OptionGroup
 #import recipe_loader
 from pybombs import pb_logging
 
-class PBException(BaseException):
-    """ Standard exception for PyBOMBS commands. """
-    pass
-
 class PyBombsCmd(object):
     """
     Base class for all PyBOMBS commands classes.
