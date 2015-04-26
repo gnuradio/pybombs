@@ -31,7 +31,7 @@ import ConfigParser
 import pb_logging
 from pb_exception import PBException
 
-def extract_cfg_items(filename, section):
+def extract_cfg_items(filename, section, throw_ex=True):
     """
     Read section from a config file and return it as a dict.
     Will throw KeyError if section does not exist.
@@ -42,6 +42,8 @@ def extract_cfg_items(filename, section):
         item_list = cfg_parser.items(section)
         item_list = {item[0]: item[1] for item in item_list}
     else:
+        if not throw_ex:
+            return {}
         raise KeyError
     return item_list
 
@@ -58,6 +60,7 @@ class PrefixInfo(object):
         self.src_dir = None
         self.cfg_file = None
         self.inv_file = None
+        self.recipe_dir = None
         item_list = None
         # 1) Find the directory
         if args.prefix is not None: # Either on the command line ...
@@ -89,8 +92,8 @@ class PrefixInfo(object):
         self.log.debug("Prefix dir is: {}".format(self.prefix_dir))
         assert self.prefix_dir is not None
         # 2) Find the config file
+        cfg_subdir = os.path.join(self.prefix_dir, self.prefix_conf_dir)
         if self.cfg_file is None:
-            cfg_subdir = os.path.join(self.prefix_dir, self.prefix_conf_dir)
             if not os.path.isdir(cfg_subdir):
                 self.log.info("Generating prefix config dir {}.".format(cfg_subdir))
                 os.mkdir(cfg_subdir)
@@ -125,6 +128,12 @@ class PrefixInfo(object):
             self.log.info("Creating empty inventory file: {}".format(self.inv_file))
             open(self.inv_file, 'w').write("[config]\n\n[prefix]\n")
         assert self.inv_file is not None
+        # 5) Local recipe directory
+        if item_list.has_key("recipes"):
+            self.recipe_dir = item_list["recipes"]
+        elif os.path.isdir(os.path.join(cfg_subdir, 'recipes')):
+            self.recipe_dir = os.path.join(cfg_subdir, 'recipes')
+        self.log.debug("Prefix-local recipe dir is: {}".format(self.recipe_dir))
 
 
 # Don't instantiate this directly, use the config_manager object
@@ -225,6 +234,23 @@ class ConfigManager(object):
         self._prefix_info = PrefixInfo(args, cfg_files)
         ## Init recipe-lists:
         # Go through cfg files, then env variable, then command line args
+        # From command line:
+        self._recipe_locations = []
+        for r_loc in args.recipes:
+            if r_loc:
+                self._recipe_locations.append(r_loc)
+        # From environment variable:
+        if len(os.environ.get("PYBOMBS_RECIPE_DIR", "").strip()):
+            self._recipe_locations += os.environ.get("PYBOMBS_RECIPE_DIR", "").split(";")
+        # From prefix info:
+        if self._prefix_info.recipe_dir is not None:
+            self._recipe_locations.append(self._prefix_info.recipe_dir)
+        # From config files:
+        for cfg_file in cfg_files:
+            recipe_locations = extract_cfg_items(cfg_file, "recipes", False)
+            for loc in recipe_locations.itervalues():
+                self._recipe_locations.append(loc)
+        self.log.debug("Full list of recipe locations: {}".format(self._recipe_locations))
 
 
     def _append_cfg_from_file(self, cfg_filename):
@@ -293,6 +319,12 @@ class ConfigManager(object):
         """
         return self._prefix_info
 
+    def get_recipe_locations(self):
+        """
+        Returns a list of recipe locations, in order of preference
+        """
+        return self._recipe_locations
+
     def setup_parser(self, parser):
         """
         Initialize an ArgParser with all the args required for this
@@ -324,6 +356,7 @@ class ConfigManager(object):
                 '-r', '--recipes',
                 help="Specify a recipe location. May be used multiple times",
                 action='append',
+                default=[],
         )
         return parser
 
