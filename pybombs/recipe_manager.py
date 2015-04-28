@@ -24,7 +24,6 @@ Recipe Manager: Handles the available recipes
 """
 
 import os
-import recipe
 import config_manager
 import pb_logging
 
@@ -58,6 +57,9 @@ class RecipeListManager(object):
         """
         return self._recipe_list[name][0]
 
+    def list_all(self):
+        """ Returns a list of all recipe names """
+        return self._recipe_list.keys()
 
     def _append_location(self, dirname):
         """
@@ -85,6 +87,7 @@ class RecipeListManager(object):
             else:
                 self._recipe_list[pkgname] = [abs_filename,]
 
+recipe_manager = RecipeListManager()
 
 if __name__ == "__main__":
     rlm = RecipeListManager()

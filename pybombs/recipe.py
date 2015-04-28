@@ -34,10 +34,7 @@ except ImportError:
     import pb_logging
     import recipe_manager
 
-try:
-    from plex import *
-except ImportError:
-    from pybombs.plex import *
+from plex import *
 
 # structure for a dependency package (name, comparator, version) (for rpm or deb)
 class PBPackageRequirement(object):
@@ -119,13 +116,13 @@ class Recipe(Scanner):
         Scanner.__init__(self, self.lexicon, recipe_file, filename)
         # Put scanner into default state:
         self.begin("")
-        self.log.debug("Recipe: Parsing {}".format(filename))
+        self.log.debug("Parsing {}".format(filename))
         while True:
             token = Scanner.read(self)
             if token[0] is None:
                 break
         recipe_file.close()
-        self.log.debug("Recipe: Done Parsing.")
+        self.log.debug("Done Parsing.")
 
     def set_attr(self, arg, key):
         " Set a simple attribute "
@@ -233,7 +230,11 @@ class Recipe(Scanner):
 
     def inherit(self, recipe_name):
         " Inherit "
-        filename = recipe_manager.RecipeListManager().get_recipe_filename(recipe_name)
+        try:
+            filename = recipe_manager.recipe_manager.get_recipe_filename(recipe_name)
+        except KeyError as e:
+            self.log.warn("Recipe attempting to inherit from unknown recipe {}".format(recipe_name))
+            return
         self.log.log(1, "Calling subscanner for file {}".format(filename))
         subscanner = Recipe(filename, lvars=self.lvars, static=self.static)
         self.lvars = subscanner.lvars

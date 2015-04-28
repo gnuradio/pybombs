@@ -251,6 +251,8 @@ class ConfigManager(object):
             for loc in recipe_locations.itervalues():
                 self._recipe_locations.append(loc)
         self.log.debug("Full list of recipe locations: {}".format(self._recipe_locations))
+        ## Set verbosity level:
+        self._verb_offset = args.verbose - args.quiet
 
 
     def _append_cfg_from_file(self, cfg_filename):
@@ -357,6 +359,18 @@ class ConfigManager(object):
                 help="Specify a recipe location. May be used multiple times",
                 action='append',
                 default=[],
+        )
+        parser.add_argument(
+                '-q', '--quiet',
+                help="Reduce the output",
+                action='count',
+                default=0,
+        )
+        parser.add_argument(
+                '-v', '--verbose',
+                help="More output",
+                action='count',
+                default=0,
         )
         return parser
 

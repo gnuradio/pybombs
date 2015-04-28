@@ -27,6 +27,7 @@ import logging
 import copy
 
 BOLD = str('\033[1m')
+OBNOXIOUS = 1
 
 class ColoredConsoleHandler(logging.StreamHandler):
     def emit(self, record):
@@ -44,23 +45,34 @@ class ColoredConsoleHandler(logging.StreamHandler):
             color = '\x1b[32m'  # green
         elif levelno >= 10:  # DEBUG
             color = '\x1b[35m'  # pink
+        elif levelno >= 1:  # OBNOXIOUS
+            color = '\x1b[90m'  # grey
         else:  # NOTSET and anything else
             color = '\x1b[0m'  # normal
         myrecord.msg = BOLD + color + str(myrecord.msg) + '\x1b[0m'  # normal
         logging.StreamHandler.emit(self, myrecord)
 
-log_level = logging.DEBUG
+class PBLogger(logging.getLoggerClass()):
+    def __init__(self, *args, **kwargs):
+        logging.Logger.__init__(self, *args, **kwargs)
+
+    def obnoxious(self, *args, **kwargs):
+        """docstring for obnoxious"""
+        self.log(OBNOXIOUS, *args, **kwargs)
+
+
+logging.setLoggerClass(PBLogger)
 logger = logging.getLogger('PyBombs')
 ch = ColoredConsoleHandler()
 formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-logger.setLevel(log_level)
+logger.setLevel(logging.DEBUG)
 
 if __name__ == "__main__":
     print "Testing logger: "
     logger.setLevel(1)
-    logger.log(5, "super-verbose message")
+    logger.obnoxious("super-verbose message")
     logger.debug("debug message")
     logger.info("info message")
     logger.warning("warning message")

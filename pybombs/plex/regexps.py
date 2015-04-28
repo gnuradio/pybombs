@@ -9,7 +9,7 @@ import string
 import types
 from sys import maxint
 
-from plex import errors
+import errors
 
 #
 #	 Constants
