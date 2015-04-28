@@ -8,11 +8,11 @@
 
 import types
 
-from plex import actions
-from plex import dfa as DFA
-from plex import errors
-from plex import machines
-from plex import regexps
+import actions
+import dfa as DFA
+import errors
+import machines
+import regexps
 
 # debug_flags for Lexicon constructor
 DUMP_NFA = 1

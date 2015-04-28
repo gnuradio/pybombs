@@ -4,9 +4,9 @@ Python Lexical Analyser
 Converting NFA to DFA
 """
 
-from plex import machines
-from plex.machines import LOWEST_PRIORITY
-from plex.transitions import TransitionMap
+import machines
+from machines import LOWEST_PRIORITY
+from transitions import TransitionMap
 
 
 def nfa_to_dfa(old_machine, debug=None):

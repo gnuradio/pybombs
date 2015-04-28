@@ -4,8 +4,8 @@ Python Lexical Analyser
 Scanning an input stream
 """
 
-from plex import errors
-from plex.regexps import BOL, EOL, EOF
+import errors
+from regexps import BOL, EOL, EOF
 
 
 class Scanner:

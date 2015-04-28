@@ -22,9 +22,10 @@
 
 import os
 import re
-from optparse import OptionParser, OptionGroup
-#import recipe_loader
+import argparse
 from pybombs import pb_logging
+from pybombs.config_manager import config_manager
+from pybombs.pb_exception import PBException
 
 class PyBombsCmd(object):
     """
@@ -33,55 +34,112 @@ class PyBombsCmd(object):
     """
     cmds = {}
     hidden = False
-    def __init__(self, cmd=None):
+    def __init__(self, cmd, args, load_recipes=False, require_prefix=True):
         self._cmd = cmd
+        self._args = args
+        self.log = pb_logging.logger.getChild(cmd)
+        self.log.debug("Initializing command class for command {} (class {})".format(cmd, str(self)))
+        self.cfg = config_manager
         if not cmd in self.cmds.keys():
             raise PBException("{} is not a valid name for this command.".format(cmd))
-        self.parser = self.setup_parser()
-        #if load_recipes:
-            #recipe_loader.load_all()
-        self.log = pb_logging.logger
-        # FIXME set logging level
-        self.cfg = config_manager.config_manager
+        if load_recipes:
+            from pybombs import recipe_manager
+            self._recipe_manager = recipe_manager.recipe_manager
+        if require_prefix and self.cfg.get_active_prefix().prefix_dir is None:
+            self.log.error("No prefix specified. Aborting.")
 
-    def get_usage_str(self):
-        """ Returns a 'usage' string specific for this command. """
-        return '%prog [GLOBAL FLAGS] {} [CMD FLAGS] <PATTERN>'.format(self._cmd)
-
-    def setup_parser(self):
-        """ Init the option parser. If derived classes need to add options,
-        override this and call the parent function. """
-        parser = OptionParser(add_help_option=False)
-        parser.usage = self.get_usage_str()
-        ogroup = OptionGroup(parser, "General options")
-        ogroup.add_option("-v", "--verbose", default=False, action="count", help="Increase verbosity")
-        ogroup.add_option("-c", "--continue", dest="_continue", default=False, action="store_true", help="Attempt to continue in-spite of failures")
-        ogroup.add_option("-f", "--force", default=False, action="store_true", help="Force operation to occur")
-        ogroup.add_option("-a", "--all", default=False, action="store_true", help="Apply operation to all packages if applicable")
-        ogroup.add_option("-p", "--prefix", default=None, help="Specify a PyBOMBS prefix directory to use")
-        ogroup.add_option("-r", "--recipes", default=None, help="Specify a directory containing recipes.")
-        opts, args = parser.parse_args()
-        parser.add_option_group(ogroup)
-        return parser
-
-    def setup(self, options, args):
-        """ Initialise all internal variables, such as the module name etc. """
+    @staticmethod
+    def setup_subparser(self, parser, cmd=None):
+        """
+        Set up a subparser for a specific command
+        """
         pass
 
     def run(self):
         """ Override this. """
         raise PBException("run() method not implemented for command {0}!".format(self._cmd))
 
+    #def get_usage_str(self):
+        #""" Returns a 'usage' string specific for this command. """
+        #return '%prog [GLOBAL FLAGS] {} [CMD FLAGS] <PATTERN>'.format(self._cmd)
 
-def get_class_dict(the_globals):
-    " Return a dictionary of the available commands in the form command->class "
-    classdict = {}
+
+    #def setup(self, options, args):
+        #""" Initialise all internal variables, such as the module name etc. """
+        #pass
+
+
+
+#def get_class_dict(the_globals):
+    #" Return a dictionary of the available commands in the form command->class "
+    #classdict = {}
+    #for g in the_globals:
+        #try:
+            #if issubclass(g, PyBombsCmd) and len(g.cmds):
+                #for cmd in g.cmds.keys():
+                    #classdict[cmd] = g
+        #except (TypeError, AttributeError):
+            #pass
+    #return classdict
+
+##############################################################################
+# Argument Parser
+##############################################################################
+def init_arg_parser(cmd_list):
+    """
+    Create a base argument parser
+    """
+    # Set up global options:
+    parser = argparse.ArgumentParser(description='pybombs yo')
+    config_manager.setup_parser(parser)
+    subparsers = parser.add_subparsers(
+            help="PyBOMBS Commands:",
+            dest='command',
+    )
+    # Set up options for each command:
+    cmd_name_list = []
+    for cmd in cmd_list:
+        for cmd_name, cmd_help in cmd.cmds.iteritems():
+            subparser = subparsers.add_parser(cmd_name, help=cmd_help)
+            cmd.setup_subparser(subparser, cmd_name)
+            cmd_name_list.append(cmd_name)
+    cmd_name_list.append('help')
+    return parser
+
+##############################################################################
+# Dispatcher functions
+##############################################################################
+def get_cmd_list(the_globals):
+    """
+    Returns a list of all command classes, excluding PyBombsCmd
+    """
+    cmd_list = []
     for g in the_globals:
         try:
             if issubclass(g, PyBombsCmd) and len(g.cmds):
-                for cmd in g.cmds.keys():
-                    classdict[cmd] = g
+                cmd_list.append(g)
         except (TypeError, AttributeError):
             pass
-    return classdict
+    return cmd_list
 
+def get_cmd_dict(cmd_list):
+    """
+    Create a command: class type dict of all commands
+    """
+    cmd_dict = {}
+    for cmd in cmd_list:
+        for cmd_name in cmd.cmds.iterkeys():
+            cmd_dict[cmd_name] = cmd
+    return cmd_dict
+
+
+def dispatch(the_globals):
+    """
+    Dispatch the actual command class
+    """
+    cmd_list = get_cmd_list(the_globals)
+    parser = init_arg_parser(cmd_list)
+    args = parser.parse_args()
+    cmd_name = args.command
+    cmd_obj = get_cmd_dict(cmd_list)[cmd_name](cmd=cmd_name, args=args)
+    cmd_obj.run()

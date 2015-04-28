@@ -9,7 +9,7 @@ import sys
 from sys import maxint
 from types import TupleType
 
-from plex.transitions import TransitionMap
+from transitions import TransitionMap
 
 LOWEST_PRIORITY = -sys.maxint
 

@@ -29,8 +29,8 @@ see the attached docstrings for more information.
 
 __version__ = '2.0.0'
 
-from plex.actions import TEXT, IGNORE, Begin
-from plex.lexicons import Lexicon, State
-from plex.regexps import RE, Seq, Alt, Rep1, Empty, Str, Any, AnyBut, AnyChar, Range
-from plex.regexps import Opt, Rep, Bol, Eol, Eof, Case, NoCase
-from plex.scanners import Scanner
+from actions import TEXT, IGNORE, Begin
+from lexicons import Lexicon, State
+from regexps import RE, Seq, Alt, Rep1, Empty, Str, Any, AnyBut, AnyChar, Range
+from regexps import Opt, Rep, Bol, Eol, Eof, Case, NoCase
+from scanners import Scanner

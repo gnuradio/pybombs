@@ -22,29 +22,12 @@
 """ PyBOMBS dispatcher. This will figure out which module to call
     and call it. """
 
+import argparse
 from pybombs.commands import *
-from pybombs.commands.cmd_help import get_command_from_argv
-
-def main():
-    """ Here we go. Parse command, choose class and run. """
-    cmd_dict = get_class_dict(globals().values())
-    command = get_command_from_argv(cmd_dict.keys())
-    if command is None:
-        print 'Usage:' + PyBombsHelp.usage
-        exit(2)
-    pb_cmd = cmd_dict[command](command)
-    try:
-        (options, args) = pb_cmd.parser.parse_args()
-        args.pop(0)
-        pb_cmd.setup(options, args)
-        pb_cmd.run()
-    except PBException as err:
-        print >> sys.stderr, err
-        exit(1)
 
 if __name__ == '__main__':
     try:
-        main()
+        dispatch(globals().values())
     except KeyboardInterrupt:
         pass
 
