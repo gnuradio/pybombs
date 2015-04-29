@@ -67,7 +67,7 @@ ch = ColoredConsoleHandler()
 formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(OBNOXIOUS)
 
 if __name__ == "__main__":
     print "Testing logger: "
