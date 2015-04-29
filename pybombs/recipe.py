@@ -78,7 +78,8 @@ class Recipe(Scanner):
     recipe.
     """
     def __init__(self, filename, lvars=None, static=False):
-        self.log = pb_logging.logger.getChild("Recipe[{}]".format(os.path.splitext(os.path.basename(filename))[0]))
+        self.id = os.path.splitext(os.path.basename(filename))[0]
+        self.log = pb_logging.logger.getChild("Recipe[{}]".format(self.id))
         self.static = static
         self.deps = []
         self.srcs = []
