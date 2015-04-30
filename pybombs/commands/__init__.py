@@ -20,8 +20,8 @@
 #
 
 ### List of commands:
-from cmd_base import PyBombsCmd, dispatch
-from cmd_fetch import PyBombsFetch
+from base import PyBombsCmd, dispatch
+from fetch import PyBombsFetch
 #from cmd_install import PyBombsInstall
 # Leave this at the end
 #from cmd_help import PyBombsHelp
