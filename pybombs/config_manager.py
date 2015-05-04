@@ -82,15 +82,14 @@ class PrefixInfo(object):
         if config_section.has_key('srcdir'):
             self.src_dir = config_section['srcdir']
         else:
-            default_src_dir = os.path.join(self.prefix_dir, 'src')
-            if os.path.isdir(default_src_dir):
-                self.src_dir = default_src_dir
+            self.src_dir = os.path.join(self.prefix_dir, 'src')
+            if not os.path.isdir(self.src_dir):
+                self.log.warn("Prefix source dir not found: {}".format(self.inv_file))
         self.log.debug("Prefix source dir is: {}".format(self.src_dir))
         # 5) Find the inventory file
         self.inv_file = os.path.join(self.prefix_dir, self.inv_file_name)
         if not os.path.isfile(self.inv_file):
             self.log.warn("Prefix inventory file not found: {}".format(self.inv_file))
-            self.inv_file = None
         # 6) Local recipe directory
         if config_section.has_key('recipes'):
             self.src_dir = config_section['recipes']
@@ -98,7 +97,8 @@ class PrefixInfo(object):
             default_recipe_dir = os.path.join(self.prefix_dir, 'recipes')
             if os.path.isdir(default_recipe_dir):
                 self.recipe_dir = default_recipe_dir
-        self.log.debug("Prefix-local recipe dir is: {}".format(self.recipe_dir))
+        if self.recipe_dir is not None:
+            self.log.debug("Prefix-local recipe dir is: {}".format(self.recipe_dir))
         # 7) Load environment
         if self.cfg_file is not None:
             self.env = extract_cfg_items(self.cfg_file, 'env', False)
