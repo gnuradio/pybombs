@@ -27,7 +27,8 @@ from pybombs import recipe
 class PyBombsFetch(PyBombsCmd):
     """ Fetch a package """
     cmds = {
-            'fetch': 'Download a packages source code into the current prefixes source directory.'
+        'fetch': 'Download a packages source code into the current prefixes source directory.',
+        'refetch': 'Get a fresh download of a previously downloaded package',
     }
 
     @staticmethod
@@ -54,31 +55,40 @@ class PyBombsFetch(PyBombsCmd):
         )
 
     def __init__(self, cmd, args):
-        PyBombsCmd.__init__(self, cmd, args, load_recipes=True, require_prefix=True)
-        self._args.packages = args.packages[0] # wat?
-        if len(self._args.packages) == 0 and not args.all:
+        PyBombsCmd.__init__(self,
+                cmd, args,
+                load_recipes=True,
+                require_prefix=True,
+                require_inventory=True
+        )
+        self.args.packages = args.packages[0] # wat?
+        if len(self.args.packages) == 0 and not args.all:
             self.log.error("No packages specified.")
             exit(1)
-        if self._args.all:
-            self._args.deps = False
+        if self.args.all:
+            self.args.deps = False
 
     def run(self):
         """ Go, go, go! """
         recipe_list = []
-        if self._args.all:
-            self.log.debug("Loading all recipes")
-            self._args.packages = self._recipe_manager.list_all()
+        if self.args.all:
+            self.log.debug("Loading all recipes!")
+            self.args.packages = self.recipe_manager.list_all()
         try:
-            self.log.debug("Getting recipes for: {}".format(self._args.packages))
-            recipe_list = [recipe.Recipe(self._recipe_manager.get_recipe_filename(x)) for x in self._args.packages if len(x)]
+            self.log.debug("Getting recipes for: {}".format(self.args.packages))
+            recipe_list = [recipe.Recipe(self.recipe_manager.get_recipe_filename(x)) for x in self.args.packages if len(x)]
         except KeyError as e:
             self.log.error("Unknown recipe: {}".format(e))
             exit(1)
         for r in recipe_list:
             if not len(r.srcs):
+                self.log.debug("Package {} has no sources listed.".format(r.id))
                 continue
             self.log.debug("Downloading {}".format(r.srcs[0]))
             fetcher = fetch.make_fetcher(r)
             fetcher.fetch(r)
             fetcher.get_version(r)
+            self.inventory.set_state(r.id, 'fetch')
+        self.inventory.save()
+
 

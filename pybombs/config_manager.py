@@ -61,79 +61,105 @@ class PrefixInfo(object):
         self.cfg_file = None
         self.inv_file = None
         self.recipe_dir = None
-        item_list = None
-        # 1) Find the directory
-        if args.prefix is not None: # Either on the command line ...
-            if not os.path.isdir(args.prefix):
-                raise PBException("Can't open prefix directory: {}".format(args.prefix))
-            self.prefix_dir = args.prefix
-            self.log.debug("Choosing prefix dir from command line: {}".format(self.prefix_dir))
-            if args.prefix_conf is not None:
-                self.cfg_file = args.prefix_conf
-        else: # ... or in one of the config files:
-            for cfg_file in cfg_list:
-                cfg_parser = ConfigParser.ConfigParser()
-                cfg_parser.read(cfg_file)
-                try:
-                    item_list = extract_cfg_items(cfg_file, "prefix")
-                    if not item_list.has_key("dir") or not os.path.isdir(item_list["dir"]):
-                        raise PBException(
-                            "Invalid [prefix] section in file {} (invalid dir specified)"
-                            .format(cfg_file)
-                        )
-                    self.prefix_dir = item_list["dir"]
-                    self.cfg_file = cfg_file
-                    break
-                except KeyError:
-                    continue
+        self.env = {}
+        # 1) Load the config info
+        self._cfg_info = self._load_cfg_info(args, cfg_list)
+        # 2) Find the prefix directory
+        self._find_prefix_dir(args)
         if self.prefix_dir is None:
             self.log.warn("Cannot establish a prefix directory. This may cause issues down the line.")
             return
-        self.log.debug("Prefix dir is: {}".format(self.prefix_dir))
         assert self.prefix_dir is not None
-        # 2) Find the config file
-        cfg_subdir = os.path.join(self.prefix_dir, self.prefix_conf_dir)
-        if self.cfg_file is None:
-            if not os.path.isdir(cfg_subdir):
-                self.log.info("Generating prefix config dir {}.".format(cfg_subdir))
-                os.mkdir(cfg_subdir)
-            self.cfg_file = os.path.join(self.prefix_dir, self.prefix_conf_dir, ConfigManager.cfg_file_name)
+        # 3) Find the config file
+        self.cfg_file = os.path.join(self.prefix_dir, self.prefix_conf_dir, ConfigManager.cfg_file_name)
+        config_section = {}
         if not os.path.isfile(self.cfg_file):
-            self.log.info("Generating skeleton prefix configuration.")
-            open(self.cfg_file, 'w').write("[config]\n\n[prefix]\n")
-        self.log.debug("Prefix config file is: {}".format(self.cfg_file))
-        if item_list is None:
-            try:
-                item_list = extract_cfg_items(self.cfg_file, "prefix")
-            except KeyError:
-                item_list = {}
-        assert self.cfg_file is not None
-        # 3) Find the src dir
-        if item_list.has_key("srcdir"):
-            self.src_dir = item_list["srcdir"]
+            self.log.warn("Prefix configuration file not found: {}".format(self.cfg_file))
+            self.cfg_file = None
         else:
-            self.src_dir = os.path.join(self.prefix_dir, 'src')
+            config_section = extract_cfg_items(self.cfg_file, 'config', False)
+        # 4) Find the src dir
+        if config_section.has_key('srcdir'):
+            self.src_dir = config_section['srcdir']
+        else:
+            default_src_dir = os.path.join(self.prefix_dir, 'src')
+            if os.path.isdir(default_src_dir):
+                self.src_dir = default_src_dir
         self.log.debug("Prefix source dir is: {}".format(self.src_dir))
-        if not os.path.isdir(self.src_dir):
-            self.log.info("Creating src directory: {}".format(self.src_dir))
-            os.mkdir(self.src_dir)
-        assert self.src_dir is not None
-        # 4) Find the inventory file
-        if item_list.has_key("inventory"):
-            self.inv_file = item_list["inventory"]
-        else:
-            self.inv_file = os.path.join(self.prefix_dir, self.prefix_conf_dir, self.inv_file_name)
-        self.log.debug("Prefix inventory file is: {}".format(self.inv_file))
+        # 5) Find the inventory file
+        self.inv_file = os.path.join(self.prefix_dir, self.inv_file_name)
         if not os.path.isfile(self.inv_file):
-            self.log.info("Creating empty inventory file: {}".format(self.inv_file))
-            open(self.inv_file, 'w').write("[config]\n\n[prefix]\n")
-        assert self.inv_file is not None
-        # 5) Local recipe directory
-        if item_list.has_key("recipes"):
-            self.recipe_dir = item_list["recipes"]
-        elif os.path.isdir(os.path.join(cfg_subdir, 'recipes')):
-            self.recipe_dir = os.path.join(cfg_subdir, 'recipes')
+            self.log.warn("Prefix inventory file not found: {}".format(self.inv_file))
+            self.inv_file = None
+        # 6) Local recipe directory
+        if config_section.has_key('recipes'):
+            self.src_dir = config_section['recipes']
+        else:
+            default_recipe_dir = os.path.join(self.prefix_dir, 'recipes')
+            if os.path.isdir(default_recipe_dir):
+                self.recipe_dir = default_recipe_dir
         self.log.debug("Prefix-local recipe dir is: {}".format(self.recipe_dir))
+        # 7) Load environment
+        if self.cfg_file is not None:
+            self.env = extract_cfg_items(self.cfg_file, 'env', False)
+
+
+    def _load_cfg_info(self, args, cfg_list):
+        """
+        Go through all the config files, pull in everything
+        related to prefixes.
+        """
+        cfg_info = {
+            'aliases': {},
+            'cfg_dirs': {}
+        }
+        for cfg_file in reversed(cfg_list):
+            self.log.debug('Inspecting config file: {}'.format(cfg_file))
+            config_section = extract_cfg_items(cfg_file, 'config', False)
+            if config_section.has_key('default_prefix'):
+                cfg_info['default'] = config_section['default_prefix']
+            alias_section = extract_cfg_items(cfg_file, 'alias', False)
+            for k, v in alias_section.iteritems():
+                cfg_info['aliases'][k] = v
+            cfg_dir_section = extract_cfg_items(cfg_file, 'prefix_config', False)
+            for k, v in cfg_dir_section.iteritems():
+                cfg_info['cfg_dirs'][k] = v
+        return cfg_info
+
+
+    def _find_prefix_dir(self, args):
+        """
+        Find the current prefix' directory.
+        Order is:
+        1) From the command line (either an alias, or a directory)
+        2) CWD
+        3) The config option called 'default_prefix'
+
+        If all of these fail, we have no prefix.
+        """
+        if args.prefix is not None: # Either on the command line ...
+            if self._cfg_info['aliases'].has_key(args.prefix):
+                self.log.debug("Resolving prefix alias {}.".format(args.prefix))
+                args.prefix = self._cfg_info['aliases'][args.prefix]
+            if not os.path.isdir(args.prefix):
+                raise PBException("Can't open prefix: {}".format(args.prefix))
+            self.prefix_dir = args.prefix
+            self.log.debug("Choosing prefix dir from command line: {}".format(self.prefix_dir))
+            return
+        if os.getcwd() != os.path.expanduser('~') and os.path.isdir(os.path.join('.', self.prefix_conf_dir)):
+            self.prefix_dir = os.getcwd()
+            self.log.debug('Using CWD as prefix ({})'.format(self.prefix_dir))
+            return
+        if self._cfg_info.has_key('default_prefix'):
+            self.prefix_dir = self._cfg_info['default_prefix']
+            if self._cfg_info['aliases'].has_key(self.prefix_dir):
+                self.log.debug("Resolving prefix alias {}.".format(self.prefix_dir))
+                self.prefix_dir = self._cfg_info['aliases'][args.prefix]
+            self.log.debug('Using default_prefix as prefix ({})'.format(self.prefix_dir))
+            return
+        self.prefix_dir = None
+
+
 
 
 # Don't instantiate this directly, use the config_manager object
@@ -333,44 +359,44 @@ class ConfigManager(object):
         class to operate.
         """
         parser.add_argument(
-                '-p', '--prefix',
-                help="Specify a prefix directory",
+            '-p', '--prefix',
+            help="Specify a prefix directory",
         )
         parser.add_argument(
-                '--prefix-conf',
-                help="Specify a prefix configuration file",
-                type=file,
-                default=None
+            '--prefix-conf',
+            help="Specify a prefix configuration file",
+            type=file,
+            default=None
         )
         parser.add_argument(
-                '--config',
-                help="Set a config.dat option via command line. May be used multiple times",
-                action='append',
-                default=[],
+            '--config',
+            help="Set a config.dat option via command line. May be used multiple times",
+            action='append',
+            default=[],
         )
         parser.add_argument(
-                '--config-file',
-                help="Specify a config file via command line",
-                type=file,
-                default=None,
+            '--config-file',
+            help="Specify a config file via command line",
+            type=file,
+            default=None,
         )
         parser.add_argument(
-                '-r', '--recipes',
-                help="Specify a recipe location. May be used multiple times",
-                action='append',
-                default=[],
+            '-r', '--recipes',
+            help="Specify a recipe location. May be used multiple times",
+            action='append',
+            default=[],
         )
         parser.add_argument(
-                '-q', '--quiet',
-                help="Reduce the output",
-                action='count',
-                default=0,
+            '-q', '--quiet',
+            help="Reduce the output",
+            action='count',
+            default=0,
         )
         parser.add_argument(
-                '-v', '--verbose',
-                help="More output",
-                action='count',
-                default=0,
+            '-v', '--verbose',
+            help="More output",
+            action='count',
+            default=0,
         )
         return parser
 
