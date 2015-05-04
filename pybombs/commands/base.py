@@ -24,6 +24,7 @@ import os
 import re
 import argparse
 from pybombs import pb_logging
+from pybombs import inventory
 from pybombs.config_manager import config_manager
 from pybombs.pb_exception import PBException
 
@@ -34,9 +35,14 @@ class PyBombsCmd(object):
     """
     cmds = {}
     hidden = False
-    def __init__(self, cmd, args, load_recipes=False, require_prefix=True):
-        self._cmd = cmd
-        self._args = args
+    def __init__(self,
+            cmd, args,
+            load_recipes=False,
+            require_prefix=True,
+            require_inventory=True
+        ):
+        self.cmd = cmd
+        self.args = args
         self.log = pb_logging.logger.getChild(cmd)
         self.log.debug("Initializing command class for command {} (class {})".format(cmd, str(self)))
         self.cfg = config_manager
@@ -44,9 +50,15 @@ class PyBombsCmd(object):
             raise PBException("{} is not a valid name for this command.".format(cmd))
         if load_recipes:
             from pybombs import recipe_manager
-            self._recipe_manager = recipe_manager.recipe_manager
-        if require_prefix and self.cfg.get_active_prefix().prefix_dir is None:
-            self.log.error("No prefix specified. Aborting.")
+            self.recipe_manager = recipe_manager.recipe_manager
+        if require_prefix:
+            if self.cfg.get_active_prefix().prefix_dir is None:
+                self.log.error("No prefix specified. Aborting.")
+                exit(1)
+            self.prefix = self.cfg.get_active_prefix()
+        if require_inventory and require_prefix:
+            self.inventory = inventory.Inventory(self.prefix.inv_file)
+            self.inventory.load()
 
     @staticmethod
     def setup_subparser(self, parser, cmd=None):

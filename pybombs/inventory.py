@@ -23,6 +23,7 @@
 Inventory Manager
 """
 
+import pickle
 import pprint
 from pybombs import pb_logging
 
@@ -36,19 +37,19 @@ class Inventory(object):
     Except for save(), none of the methods actually writes to the
     inventory file.
     """
+
     def __init__(
             self,
-            prefix_path,
             inventory_file=None,
-            satisfy=("src",)
         ):
         self._filename = inventory_file
-        self._satisfy = satisfy
         self._contents = {}
-        self.log = pb_logging.logger
+        self.log = pb_logging.logger.getChild("Inventory")
         self.load()
         self._valid_states = {
-            'fetched': 'Package source is in prefix, but not installed.',
+            'fetch': 'Package source is in prefix, but not installed.',
+            'configure': 'Package is downloaded and configured.',
+            'make': 'Package is compiled.',
             'installed': 'Package is installed into current prefix.'
         }
 
@@ -62,21 +63,23 @@ class Inventory(object):
         try:
             self.log.debug("Trying to load inventory file {}...".format(self._filename))
             inv_file = open(self.inv_file, 'rb')
-            self.contents = pickle.load(inv_file)
+            self._contents = pickle.load(inv_file)
             inv_file.close()
         except:
             self.log.debug("No success. Creating empty inventory.")
-            self.contents = {}
+            self._contents = {}
         return
 
     def save(self):
         """
         Save current state of inventory to the inventory file.
-        This will override any existing file with the same name
-        and without warning, even if no such file existed.
+        This will overwrite any existing file with the same name
+        and without warning. If the file didn't exist, it will be
+        created.
         """
+        self.log.debug("Saving inventory to file {}...".format(self._filename))
         inv_file = open(self._filename, 'wb')
-        pickle.dump(self.contents, inv_file)
+        pickle.dump(self._contents, inv_file)
         inv_file.close()
 
 
@@ -84,7 +87,7 @@ class Inventory(object):
         """
         Returns true if the package pkg is in the inventory.
         """
-        return self._contents.has_key()
+        return self._contents.has_key(pkg)
 
     def remove(self, pkg):
         """
@@ -100,7 +103,7 @@ class Inventory(object):
         If pkg does not exist, returns None.
         """
         try:
-            return self.contents[pkg]["state"]
+            return self._contents[pkg]["state"]
         except KeyError:
             return None
 
@@ -109,10 +112,11 @@ class Inventory(object):
         Sets the state of pkg to state.
         If pkg does not exist, add that package to the list.
         """
-        if not state in self._valid_states.keys() :
+        if not state in self.get_valid_states():
             raise ValueError("Invalid state: {}".format(state))
         if not self.has(pkg):
             self._contents[pkg] = {}
+        self.log.debug("Setting state to {}".format(state))
         self._contents[pkg]["state"] = state
 
     def get_valid_states(self):
