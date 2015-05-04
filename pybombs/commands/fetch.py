@@ -85,9 +85,9 @@ class PyBombsFetch(PyBombsCmd):
                 self.log.debug("Package {} has no sources listed.".format(r.id))
                 continue
             self.log.debug("Downloading {}".format(r.srcs[0]))
-            fetcher = fetch.make_fetcher(r)
-            fetcher.fetch(r)
-            fetcher.get_version(r)
+            fetcher = fetch.make_fetcher(r, r.srcs[0])
+            fetcher.fetch(r, r.srcs[0])
+            fetcher.get_version(r, r.srcs[0])
             self.inventory.set_state(r.id, 'fetch')
         self.inventory.save()
 

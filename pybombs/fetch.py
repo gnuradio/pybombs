@@ -81,7 +81,7 @@ class Fetcher(object):
         return os.path.isdir(dst_dir)
 
     def get_version(self, recipe, url):
-        if not self.check_fetched(recipe):
+        if not self.check_fetched(recipe, url):
             self.log.error("Can't return version for {}, not fetched!".format(recipe.id))
         return None
 
@@ -137,7 +137,7 @@ class FetcherGit(Fetcher):
         return True
 
     def get_version(self, recipe, url):
-        if not self.check_fetched(recipe):
+        if not self.check_fetched(recipe, url):
             self.log.error("Can't return version for {}, not fetched!".format(recipe.id))
             return None
         cwd = os.getcwd()
@@ -181,7 +181,7 @@ class FetcherSVN(Fetcher):
 
 
     def get_version(self, recipe, url):
-        if not self.check_fetched(recipe):
+        if not self.check_fetched(recipe, url):
             self.log.error("Can't return version for {}, not fetched!".format(recipe.id))
             return None
         cwd = os.getcwd()
@@ -226,7 +226,7 @@ class FetcherFile(Fetcher):
 
 
     def get_version(self, recipe, url):
-        if not self.check_fetched(recipe):
+        if not self.check_fetched(recipe, url):
             self.log.error("Can't return version for {}, not fetched!".format(recipe.id))
             return None
         cwd = os.getcwd()
