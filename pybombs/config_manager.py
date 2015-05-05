@@ -27,6 +27,7 @@ Used as a central cache for all kinds of settings.
 
 import os
 import argparse
+import subprocess
 import ConfigParser
 import pb_logging
 from pb_exception import PBException
@@ -57,27 +58,40 @@ class PrefixInfo(object):
     def __init__(self, args, cfg_list):
         self.log = pb_logging.logger.getChild("ConfigManager.PrefixInfo")
         self.prefix_dir = None
+        self.prefix_cfg_dir = None
+        self.prefix_src = None
+        self.alias = None
         self.src_dir = None
         self.cfg_file = None
         self.inv_file = None
         self.recipe_dir = None
         self.env = {}
         # 1) Load the config info
-        self._cfg_info = self._load_cfg_info(args, cfg_list)
+        self._cfg_info = self._load_cfg_info(cfg_list)
         # 2) Find the prefix directory
         self._find_prefix_dir(args)
         if self.prefix_dir is None:
             self.log.warn("Cannot establish a prefix directory. This may cause issues down the line.")
             return
         assert self.prefix_dir is not None
+        if self.alias is not None and self._cfg_info['cfg_dirs'].has_key(self.alias):
+            self.prefix_cfg_dir = self._cfg_info['cfg_dirs'][self.alias]
+            self.log.debug("Choosing prefix config dir from alias: {}".format(self.prefix_cfg_dir))
+        elif self._cfg_info['cfg_dirs'].has_key(self.prefix_dir):
+            self.prefix_cfg_dir = self._cfg_info['prefix_config'][self.prefix_dir]
+            self.log.debug("Choosing prefix config dir from path lookup in prefix_config: {}".format(self.prefix_cfg_dir))
+        else:
+            self.prefix_cfg_dir = os.path.join(self.prefix_dir, self.prefix_conf_dir)
+            self.log.debug("Choosing default prefix config dir: {}".format(self.prefix_cfg_dir))
         # 3) Find the config file
-        self.cfg_file = os.path.join(self.prefix_dir, self.prefix_conf_dir, ConfigManager.cfg_file_name)
+        self.cfg_file = os.path.join(self.prefix_cfg_dir, ConfigManager.cfg_file_name)
         config_section = {}
         if not os.path.isfile(self.cfg_file):
             self.log.warn("Prefix configuration file not found: {}".format(self.cfg_file))
             self.cfg_file = None
         else:
             config_section = extract_cfg_items(self.cfg_file, 'config', False)
+        self._cfg_info = self._load_cfg_info([self.cfg_file,], self._cfg_info)
         # 4) Find the src dir
         if config_section.has_key('srcdir'):
             self.src_dir = config_section['srcdir']
@@ -87,7 +101,7 @@ class PrefixInfo(object):
                 self.log.warn("Prefix source dir not found: {}".format(self.inv_file))
         self.log.debug("Prefix source dir is: {}".format(self.src_dir))
         # 5) Find the inventory file
-        self.inv_file = os.path.join(self.prefix_dir, self.inv_file_name)
+        self.inv_file = os.path.join(self.prefix_cfg_dir, self.inv_file_name)
         if not os.path.isfile(self.inv_file):
             self.log.warn("Prefix inventory file not found: {}".format(self.inv_file))
         # 6) Local recipe directory
@@ -100,19 +114,27 @@ class PrefixInfo(object):
         if self.recipe_dir is not None:
             self.log.debug("Prefix-local recipe dir is: {}".format(self.recipe_dir))
         # 7) Load environment
-        if self.cfg_file is not None:
-            self.env = extract_cfg_items(self.cfg_file, 'env', False)
+        # If there's a setup_env option in the current config file, we use that
+        if config_section.has_key('setup_env'):
+            self.log.debug('Loading environment from shell script: {}'.format(config_section['setup_env']))
+            self.env = self._load_environ_from_script(config_section['setup_env'])
+        else:
+            self.env = os.environ
+            for k, v in self._cfg_info['env'].iteritems():
+                self.env[k] = v
 
 
-    def _load_cfg_info(self, args, cfg_list):
+    def _load_cfg_info(self, cfg_list, cfg_info=None):
         """
         Go through all the config files, pull in everything
         related to prefixes.
         """
-        cfg_info = {
-            'aliases': {},
-            'cfg_dirs': {}
-        }
+        if cfg_info is None:
+            cfg_info = {
+                'aliases': {},
+                'cfg_dirs': {},
+                'env': {},
+            }
         for cfg_file in reversed(cfg_list):
             self.log.debug('Inspecting config file: {}'.format(cfg_file))
             config_section = extract_cfg_items(cfg_file, 'config', False)
@@ -124,6 +146,9 @@ class PrefixInfo(object):
             cfg_dir_section = extract_cfg_items(cfg_file, 'prefix_config', False)
             for k, v in cfg_dir_section.iteritems():
                 cfg_info['cfg_dirs'][k] = v
+            env_section = extract_cfg_items(cfg_file, 'env', False)
+            for k, v in env_section.iteritems():
+                cfg_info['env'][k] = v
         return cfg_info
 
 
@@ -140,14 +165,17 @@ class PrefixInfo(object):
         if args.prefix is not None: # Either on the command line ...
             if self._cfg_info['aliases'].has_key(args.prefix):
                 self.log.debug("Resolving prefix alias {}.".format(args.prefix))
+                self.alias = args.prefix
                 args.prefix = self._cfg_info['aliases'][args.prefix]
             if not os.path.isdir(args.prefix):
                 raise PBException("Can't open prefix: {}".format(args.prefix))
             self.prefix_dir = args.prefix
+            self.prefix_src = 'cli'
             self.log.debug("Choosing prefix dir from command line: {}".format(self.prefix_dir))
             return
         if os.getcwd() != os.path.expanduser('~') and os.path.isdir(os.path.join('.', self.prefix_conf_dir)):
             self.prefix_dir = os.getcwd()
+            self.prefix_src = 'cwd'
             self.log.debug('Using CWD as prefix ({})'.format(self.prefix_dir))
             return
         if self._cfg_info.has_key('default_prefix'):
@@ -156,10 +184,39 @@ class PrefixInfo(object):
                 self.log.debug("Resolving prefix alias {}.".format(self.prefix_dir))
                 self.prefix_dir = self._cfg_info['aliases'][args.prefix]
             self.log.debug('Using default_prefix as prefix ({})'.format(self.prefix_dir))
+            self.prefix_src = 'default'
             return
         self.prefix_dir = None
 
 
+    def _load_environ_from_script(self, setup_env_cmd):
+        """
+        Run setup_env_cmd, return the new env
+        FIXME make this portable!
+        """
+        self.log.debug('Loading environment from shell script: {}'.format(setup_env_cmd))
+        # It would be nice if we could do os.path.expandvars() with a custom
+        # env, wouldn't it
+        setup_env_cmd.replace('$PYTHON_PREFIX', self.prefix_dir)
+        setup_env_cmd.replace('${PYTHON_PREFIX}', self.prefix_dir)
+        # TODO add some checks this is a legit script
+        # Damn, I hate just running stuff :/
+        # TODO unportable command:
+        separator = '<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>'
+        get_env_cmd = "{} && echo '{}' && env'".format(setup_env_cmd, separator)
+        # TODO add try/except
+        script_output = subprocess.check_output(get_env_cmd)
+        env_output = script_output.split(separator)[-1]
+        # TODO assumption is that env_output now just holds the env output
+        env_output = env_output.split('\n')
+        env = {}
+        for env_line in env_output:
+            env_line = env_line.strip()
+            if len(env_line) == 0:
+                continue
+            k, v = env_line.split('=', 1)
+            env[k] = v
+        return env
 
 
 # Don't instantiate this directly, use the config_manager object
