@@ -21,7 +21,6 @@
 #
 """ PyBOMBS command: prefix """
 
-import pprint
 from pybombs.commands import PyBombsCmd
 
 class PyBombsPrefix(PyBombsCmd):
@@ -49,6 +48,7 @@ class PyBombsPrefix(PyBombsCmd):
         """ Go, go, go! """
         self.log.info('Prefix dir: {}'.format(self.prefix.prefix_dir))
         print 'Prefix env:'
-        pprint.pprint(self.prefix.env)
+        for k, v in self.prefix.env.iteritems():
+            print "{}={}".format(k, v)
 
 

@@ -31,6 +31,7 @@ import subprocess
 import ConfigParser
 import pb_logging
 from pb_exception import PBException
+import utils
 
 def extract_cfg_items(filename, section, throw_ex=True):
     """
@@ -53,6 +54,7 @@ class PrefixInfo(object):
     Stores information about the current prefix being used.
     """
     prefix_conf_dir = '.pybombs'
+    env_prefix_var = 'PYBOMBS_PREFIX'
     inv_file_name = 'inventory.dat'
 
     def __init__(self, args, cfg_list):
@@ -83,6 +85,9 @@ class PrefixInfo(object):
         else:
             self.prefix_cfg_dir = os.path.join(self.prefix_dir, self.prefix_conf_dir)
             self.log.debug("Choosing default prefix config dir: {}".format(self.prefix_cfg_dir))
+        # TODO: This apparently can cause memory leaks on Mac OS X... figure out
+        # if I care
+        os.environ[self.env_prefix_var] = self.prefix_dir
         # 3) Find the config file
         self.cfg_file = os.path.join(self.prefix_cfg_dir, ConfigManager.cfg_file_name)
         config_section = {}
@@ -118,10 +123,12 @@ class PrefixInfo(object):
         if config_section.has_key('setup_env'):
             self.log.debug('Loading environment from shell script: {}'.format(config_section['setup_env']))
             self.env = self._load_environ_from_script(config_section['setup_env'])
+            # Just in case:
+            self.env["PYBOMBS_PREFIX"] = self.prefix_dir
         else:
             self.env = os.environ
             for k, v in self._cfg_info['env'].iteritems():
-                self.env[k] = v
+                self.env[k] = os.path.expandvars(v.strip())
 
 
     def _load_cfg_info(self, cfg_list, cfg_info=None):
@@ -157,8 +164,9 @@ class PrefixInfo(object):
         Find the current prefix' directory.
         Order is:
         1) From the command line (either an alias, or a directory)
-        2) CWD
-        3) The config option called 'default_prefix'
+        2) Environment variable
+        3) CWD
+        4) The config option called 'default_prefix'
 
         If all of these fail, we have no prefix.
         """
@@ -173,6 +181,10 @@ class PrefixInfo(object):
             self.prefix_src = 'cli'
             self.log.debug("Choosing prefix dir from command line: {}".format(self.prefix_dir))
             return
+        if os.environ.has_key(self.env_prefix_var) and os.path.isdir(os.environ[self.env_prefix_var]):
+            self.prefix_dir = os.environ[self.env_prefix_var]
+            self.prefix_src = 'env'
+            self.log.debug('Using environment variable {} as prefix ({})'.format(self.env_prefix_var, self.prefix_dir))
         if os.getcwd() != os.path.expanduser('~') and os.path.isdir(os.path.join('.', self.prefix_conf_dir)):
             self.prefix_dir = os.getcwd()
             self.prefix_src = 'cwd'

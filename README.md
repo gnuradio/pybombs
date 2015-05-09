@@ -68,8 +68,29 @@ If no prefix can be found, most PyBOMBS operations will not be possible.
 
 ### Configuring a prefixes environment (cross-compiling)
 
-tbw
+#### Setting environment variables directly:
 
+In any config file that is read, a `[env]` section can be added. This
+will set environment variables for any command  (configure, build, make...)
+that is run within PyBOMBS.
+
+Note that this will still use the regular system environment as well, but
+it will overwrite existing variables. Variable expansion can be used, so
+this will keep the original setting:
+
+    [env]
+    LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/path/to/more/libs
+
+#### Using an external script to set the environment
+
+Inside the config section, a shell script can be defined that sets up an
+environment, which will then be used to set up an environment.
+
+Example:
+
+    [config]
+    # Other vars
+    setup_env=/path/to/environment-setup-armv7ahf-vfp-neon-oe-linux-gnueabi
 
 ## Configuration Files
 
