@@ -181,7 +181,7 @@ class ASMain(QtGui.QWidget):
         self.tw.clear();
 
         #categories = ["baseline", "common"]
-        categories = ["common"]
+        categories = ["common", "hardware", "application"]
 
         cbs = {};
 
