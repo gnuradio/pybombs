@@ -21,6 +21,7 @@
 #
 """ PyBOMBS command: prefix """
 
+import pprint
 from pybombs.commands import PyBombsCmd
 
 class PyBombsPrefix(PyBombsCmd):

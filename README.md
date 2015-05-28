@@ -81,6 +81,9 @@ this will keep the original setting:
     [env]
     LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/path/to/more/libs
 
+In all cases, the environment variable `PYBOMBS_PREFIX` is set to the
+current prefix.
+
 #### Using an external script to set the environment
 
 Inside the config section, a shell script can be defined that sets up an
@@ -130,7 +133,5 @@ sys=/home/user/pb-default/
 myrecipes=/usr/local/share/recipes
 morerecipes=/home/user/pb-recipes
 ```
-
-
 
 
