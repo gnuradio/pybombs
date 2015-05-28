@@ -20,7 +20,7 @@
 # Boston, MA 02110-1301, USA.
 #
 """
-System Manager:
+Package Manager:
 """
 
 import os
@@ -38,13 +38,13 @@ compare = lambda x, y, z: operators[z](StrictVersion(x), StrictVersion(y))
 
 # Don't instantiate this directly, use the config_manager object
 # (see below)
-class SystemManager(object):
+class PackageManager(object):
     """
     """
 
     def __init__(self,):
         # Set up logger:
-        self.log = pb_logging.logger.getChild("SystemManager")
+        self.log = pb_logging.logger.getChild("PackageManager")
 
         # Set up a default OS to use.
         self.default = os_modules.Ubuntu()
@@ -82,7 +82,7 @@ class SystemManager(object):
         pkg = self.default.install(name)
 
 # This is what you want to use
-system_manager = SystemManager()
+system_manager = PackageManager()
 
 # Some test code:
 if __name__ == "__main__":

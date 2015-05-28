@@ -275,7 +275,7 @@ class ConfigManager(object):
         'builddocs': ('OFF', 'Build doxygen while compiling packages? options are: ON, OFF'),
         'CC': ('gcc', 'C Compiler Executable [gcc, clang, icc, etc]'),
         'CXX': ('g++', 'C++ Compiler Executable [g++, clang++, icpc, etc]'),
-        'makewidth': ('4', 'Concurrent make threads [1,2,4,8...]')
+        'makewidth': ('4', 'Concurrent make threads [1,2,4,8...]'),
     }
     LAYER_DEFAULT = 0
     LAYER_GLOBALS = 1
