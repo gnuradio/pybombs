@@ -24,6 +24,7 @@ Logging interface: Creates a logger object for use in PyBOMBS commands
 """
 
 import logging
+from logging import CRITICAL, ERROR, WARNING, INFO, DEBUG
 import copy
 
 BOLD = str('\033[1m')
@@ -67,7 +68,8 @@ ch = ColoredConsoleHandler()
 formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-logger.setLevel(OBNOXIOUS)
+#logger.setLevel(OBNOXIOUS)
+logger.setLevel(DEBUG)
 
 if __name__ == "__main__":
     print "Testing logger: "

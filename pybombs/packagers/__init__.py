@@ -20,3 +20,4 @@
 #
 
 from ubuntu import Ubuntu
+from dummy import Dummy

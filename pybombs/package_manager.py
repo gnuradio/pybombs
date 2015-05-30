@@ -20,34 +20,36 @@
 # Boston, MA 02110-1301, USA.
 #
 """
-Package Manager:
+Package Manager: Manages packages (no shit)
 """
 
 import os
-import pb_logging
-from pb_exception import PBException
-
-import os_modules
-
 import operator
 from distutils.version import StrictVersion
+
+import pb_logging
+from pb_exception import PBException
+from pybombs.config_manager import config_manager
+import packagers
 
 operators = {'<=': operator.le, '==': operator.eq, '>=': operator.ge, '!=': operator.ne}
 compare = lambda x, y, z: operators[z](StrictVersion(x), StrictVersion(y))
 
-
-# Don't instantiate this directly, use the config_manager object
-# (see below)
+# TODO: All these methods need to check if the package has a force-source flag set
 class PackageManager(object):
     """
+    Meta-package manager. This will determine, according to our system
+    and the configuration, who takes care of managing packages and
+    then dispatches specific package managers. For example, this might
+    dispatch an apt-get backend on Ubuntu and Debian systems, or a
+    yum backend on Fedora systems.
     """
-
     def __init__(self,):
         # Set up logger:
         self.log = pb_logging.logger.getChild("PackageManager")
-
-        # Set up a default OS to use.
-        self.default = os_modules.Ubuntu()
+        self.cfg = config_manager
+        # Set up a default packager to use.
+        self.default = packagers.Dummy()
 
     # Combine these and just use function pointers?
     def exists(self, name, version=None):
@@ -71,18 +73,27 @@ class PackageManager(object):
 
         # For now, just assume that the comparitor is greater than.
         # Maybe throw an exception here rather than True/False?
-        if version:
+        if version is not None:
             return compare(pkg, version, '>=')
         else:
-            return True
+            return pkg
         return False
 
     def install(self, name):
-        """ Install the given package """
+        """
+        Install the given package
+        """
+        pkg = self.default.install(name)
+
+    def update(self, name):
+        """
+        Update the given package
+        """
         pkg = self.default.install(name)
 
 # This is what you want to use
-system_manager = PackageManager()
+# Do we need this here?
+#package_manager = PackageManager()
 
 # Some test code:
 if __name__ == "__main__":
