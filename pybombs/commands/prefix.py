@@ -25,9 +25,11 @@ import pprint
 from pybombs.commands import PyBombsCmd
 
 class PyBombsPrefix(PyBombsCmd):
-    """ Prefix operations """
+    """
+    Prefix operations
+    """
     cmds = {
-        'prefix': 'pkg stuff', # TODO nicer
+        'prefix': 'Prefix commands', # TODO nicer
     }
 
     @staticmethod
