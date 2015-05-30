@@ -22,21 +22,20 @@
 Packager Module: Dummy Packager
 """
 
+from pybombs.packagers.base import PackagerBase
 from pybombs import pb_logging
 
-class Dummy(object):
+class Dummy(PackagerBase):
+    name = 'dummy'
     """
     This isn't really a packager, this is just a dummy load
     for testing functions that require packagers.
     """
     def __init__(self):
-        self.log = pb_logging.logger.getChild('dummy')
+        PackagerBase.__init__(self)
 
-    def satisfy(self, pkgname, version):
-        pass
-
-    def supported():
-        """ Return true if this platform is detected """
+    def supported(self):
+        """ This is always supported """
         return True
 
     def exists(self, name, throw_ex=True):

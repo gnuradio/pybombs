@@ -24,11 +24,12 @@ OS Module: Ubuntu
 
 import re
 import subprocess
+from pybombs.packagers.base import PackagerBase
 
-
-class Ubuntu(object):
+class Ubuntu(PackagerBase):
+    name = 'apt-get'
     def __init__(self):
-        pass
+        PackagerBase.__init__(self)
 
     def satisfy(self, pkgname, version):
         pass
