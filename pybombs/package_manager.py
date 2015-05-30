@@ -30,6 +30,7 @@ from distutils.version import StrictVersion
 import pb_logging
 from pb_exception import PBException
 from pybombs.config_manager import config_manager
+from pybombs import recipe
 import packagers
 
 operators = {'<=': operator.le, '==': operator.eq, '>=': operator.ge, '!=': operator.ne}
@@ -88,8 +89,9 @@ class PackageManager(object):
         If version is provided, only returns True if the version matches.
         Returns None if package does not exist.
         """
+        r = recipe.get_recipe(name)
         for pkgr in self.get_packagers(name):
-            pkg_version = pkgr.exists(name)
+            pkg_version = pkgr.exists(r)
             if pkg_version is None or not pkg_version:
                 continue
             if required_version is not None:
@@ -107,8 +109,9 @@ class PackageManager(object):
 
         If yes, it returns a version string. Otherwise, returns False.
         """
+        r = recipe.get_recipe(name)
         for pkgr in self.get_packagers(name):
-            pkg_version = pkgr.installed(name)
+            pkg_version = pkgr.installed(r)
             if pkg_version is None or not pkg_version:
                 continue
             if required_version is not None and compare(pkg_version, required_version, '>='):
@@ -117,11 +120,12 @@ class PackageManager(object):
 
     def install(self, name):
         """
-        Install the given package
+        Install the given package. Returns True if successful, False otherwise.
         """
+        r = recipe.get_recipe(name)
         for pkgr in self.get_packagers(name):
             try:
-                install_result = pkgr.install(name)
+                install_result = pkgr.install(r)
             except PBException as e:
                 self.log.error(
                     "Something went wrong while trying to install {} using {}: {}".format(
@@ -135,11 +139,12 @@ class PackageManager(object):
 
     def update(self, name):
         """
-        Update the given package
+        Update the given package. Returns True if successful, False otherwise.
         """
+        r = recipe.get_recipe(name)
         for pkgr in self.get_packagers(name):
             try:
-                update_result = pkgr.update(name)
+                update_result = pkgr.update(r)
             except PBException as e:
                 self.log.error(
                     "Something went wrong while trying to update {} using {}: {}".format(

@@ -26,6 +26,7 @@ Recipe Manager: Handles the available recipes
 import os
 import config_manager
 import pb_logging
+from pybombs.pb_exception import PBException
 
 class RecipeListManager(object):
     """
@@ -55,7 +56,10 @@ class RecipeListManager(object):
         Return the filename of the .lwr file that contains the recipe
         for package called 'name'.
         """
-        return self._recipe_list[name][0]
+        try:
+            return self._recipe_list[name][0]
+        except KeyError:
+            raise PBException("Package {} has no recipe file!".format(name))
 
     def list_all(self):
         """ Returns a list of all recipe names """

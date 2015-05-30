@@ -27,12 +27,9 @@ import os
 import re
 import copy
 
-try:
-    from pybombs import pb_logging
-    from pybombs import recipe_manager
-except ImportError:
-    import pb_logging
-    import recipe_manager
+from pybombs import pb_logging
+from pybombs import recipe_manager
+from pybombs.pb_exception import PBException
 
 from plex import *
 
@@ -233,7 +230,7 @@ class Recipe(Scanner):
         " Inherit "
         try:
             filename = recipe_manager.recipe_manager.get_recipe_filename(recipe_name)
-        except KeyError as e:
+        except PBException as e:
             self.log.warn("Recipe attempting to inherit from unknown recipe {}".format(recipe_name))
             return
         self.log.log(1, "Calling subscanner for file {}".format(filename))
@@ -396,6 +393,13 @@ class Recipe(Scanner):
             (AnyChar, IGNORE)
         ])
     ]) # End Lexicon()
+
+
+def get_recipe(pkgname):
+    """
+    Return a recipe object by its package name.
+    """
+    return Recipe(recipe_manager.recipe_manager.get_recipe_filename(pkgname))
 
 
 if __name__ == "__main__":

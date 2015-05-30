@@ -38,63 +38,23 @@ class Dummy(PackagerBase):
         """ This is always supported """
         return True
 
-    def exists(self, name, throw_ex=True):
+    def exists(self, recipe, throw_ex=True):
         """
         We'll always return version 0.0 here.
         """
-        self.log.info("Pretending that package {} exists.".format(name))
+        self.log.info("Pretending that package {} exists.".format(recipe.id))
         return "0.0"
 
-    def install(self, name, throw_ex=True):
+    def install(self, recipe, throw_ex=True):
         """
         Pseudo-install package
         """
-        self.log.info("Pretending to install package {}.".format(name))
+        self.log.info("Pretending to install package {}.".format(recipe.id))
         return True
 
-    def installed(self, name, throw_ex=True):
+    def installed(self, recipe, throw_ex=True):
         """
         We always pretend the package is not yet installed
         """
         return False
-
-    def execute(self, name):
-        """
-        Checks to see if a package is avaliable in apt-get and returns the verion.
-        If package does not exist, throw an exception.
-        """
-
-        try:
-            if not isinstance(cmd, list):
-                cmd = [cmd]
-            out = subprocess.check_output(cmd)
-            return out
-        except subprocess.CalledProcessError, e:
-            return False
-        except:
-            return False
-
-    # stdout -> return
-    def execute_err(cmd, throw=True):
-        try:
-            if not isinstance(cmd, list):
-                cmd = [cmd]
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=pb_globals.env);
-            (out,err) = p.communicate();
-            return out;
-        except Exception, e:
-            if(throw_ex):
-                raise e;
-            else:
-                return -1;
-
-# Some test code:
-if __name__ == "__main__":
-    print ubuntu.exists("gcc")
-    print ubuntu.installed("gcc")
-    print ubuntu.install("gcc")
-    print ubuntu.exists("test", throw_ex=False)
-    print ubuntu.installed("test", throw_ex=False)
-    print ubuntu.install("test", throw_ex=False)
-    print ubuntu.exists("test")
 

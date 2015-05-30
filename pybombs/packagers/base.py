@@ -40,7 +40,7 @@ class PackagerBase(object):
         """
         raise NotImplementedError()
 
-    def exists(self, name, throw_ex=True):
+    def exists(self, recipe, throw_ex=True):
         """
         Checks to see if a package is available in this packager
         and returns the version as a string.
@@ -49,7 +49,7 @@ class PackagerBase(object):
         """
         raise NotImplementedError()
 
-    def install(self, name, throw_ex=True):
+    def install(self, recipe, throw_ex=True):
         """
         Run the installation process for package 'name'.
 
@@ -60,7 +60,7 @@ class PackagerBase(object):
         """
         raise NotImplementedError()
 
-    def installed(self, name, throw_ex=True):
+    def installed(self, recipe, throw_ex=True):
         """
         Returns the version of package 'name' as a string, or
         False if the package is not installed.
@@ -69,7 +69,8 @@ class PackagerBase(object):
 
 def get_by_name(name):
     """
-    Return a package manager by its name field
+    Return a package manager by its name field. Not meant to be
+    called by the user.
     """
     from pybombs.packagers import *
     for g in locals().values():
@@ -79,3 +80,4 @@ def get_by_name(name):
         except (TypeError, AttributeError):
             pass
     return None
+

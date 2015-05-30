@@ -119,7 +119,7 @@ class PyBombsInstall(PyBombsCmd):
         """
         Recursively add dependencies to the install tree.
         """
-        deps = recipe.Recipe(self.recipe_manager.get_recipe_filename(pkg)).deps
+        deps = recipe.get_recipe(pkg).deps
         deps_to_install = [dep for dep in deps if not dep in install_tree.get_nodes()]
         if len(deps_to_install) == 0:
             return
