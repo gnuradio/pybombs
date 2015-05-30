@@ -23,6 +23,7 @@
 from base import PyBombsCmd, dispatch
 from fetch import PyBombsFetch
 from prefix import PyBombsPrefix
+from install import PyBombsInstall
 #from cmd_install import PyBombsInstall
 # Leave this at the end
 #from cmd_help import PyBombsHelp
