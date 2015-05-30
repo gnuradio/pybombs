@@ -63,7 +63,8 @@ class PackagerBase(object):
     def installed(self, recipe, throw_ex=True):
         """
         Returns the version of package 'name' as a string, or
-        False if the package is not installed.
+        False if the package is not installed. May also return
+        True if a version can't be determined.
         """
         raise NotImplementedError()
 

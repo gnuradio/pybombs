@@ -38,14 +38,12 @@ class Source(PackagerBase):
         self.inventory = inventory.Inventory(self.prefix.inv_file)
         self.inventory.load()
 
-    def exists(self, name, throw_ex=True):
+    def exists(self, recipe, throw_ex=True):
         """
-        Checks to see if a package is available in this packager
-        and returns the version as a string.
-        If not available, return None, or raise an exception if throw_ex
-        is True.
+        This will work whenever any sources are defined.
         """
-        raise NotImplementedError()
+        return len(recipe.srcs) > 0
+
 
     def install(self, name, throw_ex=True):
         """
@@ -60,10 +58,13 @@ class Source(PackagerBase):
 
     def installed(self, name, throw_ex=True):
         """
-        Returns the version of package 'name' as a string, or
-        False if the package is not installed.
+        We read the version number from the inventory. It might not exist,
+        but that's OK.
         """
-        raise NotImplementedError()
+        if self.inventory.has(name) and self.inventory.get_state(name) == 'installed':
+            return self.inventory.get_version(name, True)
+        return False
+
 
 #import pb_logging
 
