@@ -35,6 +35,16 @@ class PyBombsPrefix(PyBombsCmd):
         """
         Set up a subparser for a specific command
         """
+        subparsers = parser.add_subparsers(
+                help="Prefix Commands:",
+                dest='prefix_command',
+        )
+        prefix_cmd_name_list = {
+                'info': 'Display information on the currently used prefix.',
+                'env': 'Print the environment variables used in this prefix.',
+        }
+        for cmd_name, cmd_help in prefix_cmd_name_list.iteritems():
+            subparser = subparsers.add_parser(cmd_name, help=cmd_help)
         return parser
 
     def __init__(self, cmd, args):
@@ -47,9 +57,18 @@ class PyBombsPrefix(PyBombsCmd):
 
     def run(self):
         """ Go, go, go! """
+        if self.args.prefix_command == 'info':
+            self._print_prefix_info()
+        elif self.args.prefix_command == 'env':
+            self._print_prefix_env()
+        else:
+            self.log.error("Illegal prefix command: {}".format(self.args.prefix_command))
+
+    def _print_prefix_info(self):
         self.log.info('Prefix dir: {}'.format(self.prefix.prefix_dir))
+
+    def _print_prefix_env(self):
         print 'Prefix env:'
         for k, v in self.prefix.env.iteritems():
             print "{}={}".format(k, v)
-
 

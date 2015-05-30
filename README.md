@@ -132,6 +132,10 @@ sys=/home/user/pb-default/
 [recipes]
 myrecipes=/usr/local/share/recipes
 morerecipes=/home/user/pb-recipes
+
+# Package flags:
+[packages]
+gnuradio=forcebuild
 ```
 
 
