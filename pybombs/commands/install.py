@@ -79,7 +79,6 @@ class PyBombsInstall(PyBombsCmd):
         ### Step 1: Make a list of packages to install
         # Loop through all packages to install
         for pkg in self.args.packages:
-            print 'adding ', pkg
             # Check is a valid package:
             if not pm.exists(pkg):
                 self.log.error("Package does not exist: {}".format(pkg))

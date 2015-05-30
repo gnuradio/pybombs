@@ -71,29 +71,6 @@ class PyBombsCmd(object):
         """ Override this. """
         raise PBException("run() method not implemented for command {0}!".format(self._cmd))
 
-    #def get_usage_str(self):
-        #""" Returns a 'usage' string specific for this command. """
-        #return '%prog [GLOBAL FLAGS] {} [CMD FLAGS] <PATTERN>'.format(self._cmd)
-
-
-    #def setup(self, options, args):
-        #""" Initialise all internal variables, such as the module name etc. """
-        #pass
-
-
-
-#def get_class_dict(the_globals):
-    #" Return a dictionary of the available commands in the form command->class "
-    #classdict = {}
-    #for g in the_globals:
-        #try:
-            #if issubclass(g, PyBombsCmd) and len(g.cmds):
-                #for cmd in g.cmds.keys():
-                    #classdict[cmd] = g
-        #except (TypeError, AttributeError):
-            #pass
-    #return classdict
-
 ##############################################################################
 # Argument Parser
 ##############################################################################
@@ -144,7 +121,6 @@ def get_cmd_dict(cmd_list):
             cmd_dict[cmd_name] = cmd
     return cmd_dict
 
-
 def dispatch(the_globals):
     """
     Dispatch the actual command class
@@ -155,3 +131,4 @@ def dispatch(the_globals):
     cmd_name = args.command
     cmd_obj = get_cmd_dict(cmd_list)[cmd_name](cmd=cmd_name, args=args)
     cmd_obj.run()
+

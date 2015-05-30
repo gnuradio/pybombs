@@ -22,7 +22,6 @@
 """ PyBOMBS dispatcher. This will figure out which module to call
     and call it. """
 
-import argparse
 from pybombs.commands import *
 
 if __name__ == '__main__':

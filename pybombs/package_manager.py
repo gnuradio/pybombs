@@ -35,7 +35,6 @@ import packagers
 operators = {'<=': operator.le, '==': operator.eq, '>=': operator.ge, '!=': operator.ne}
 compare = lambda x, y, z: operators[z](StrictVersion(x), StrictVersion(y))
 
-# TODO: All these methods need to check if the package has a force-source flag set
 class PackageManager(object):
     """
     Meta-package manager. This will determine, according to our system
@@ -48,57 +47,116 @@ class PackageManager(object):
         # Set up logger:
         self.log = pb_logging.logger.getChild("PackageManager")
         self.cfg = config_manager
-        # Set up a default packager to use.
-        self.default = packagers.Dummy()
+        if self.cfg.get_active_prefix().prefix_dir is None:
+            self.log.error("No prefix specified. Aborting.")
+            exit(1)
+        self.prefix = self.cfg.get_active_prefix()
+        # Create a source package manager
+        self.src = packagers.Source()
+        # Create sorted list of binary package managers
+        requested_packagers = [x.strip() for x in self.cfg.get('packagers').split(',')]
+        binary_pkgrs = []
+        for pkgr in requested_packagers:
+            self.log.debug("Attempting to add binary package manager {}".format(pkgr))
+            p = packagers.get_by_name(pkgr)
+            if p is None:
+                self.log.warn("This binary package manager can't be instantiated: {}".format(pkgr))
+                continue
+            if p.supported():
+                self.log.debug("{} is supported!".format(pkgr))
+                binary_pkgrs.append(p)
+        self._packagers = []
+        for satisfy in self.cfg.get('satisfy_order').split(','):
+            satisfy = satisfy.strip()
+            if satisfy == 'src':
+                self._packagers += [self.src,]
+            elif satisfy == 'native':
+                self._packagers += binary_pkgrs
+            else:
+                raise PBException("Invalid satisfy_order value: {}".format(satisfy))
+        # Now we can use self.packagers, in order, for our commands.
 
-    # Combine these and just use function pointers?
-    def exists(self, name, version=None):
-        """ Check to see if this package exists """
+    def get_packagers(self, pkgname):
+        if self.prefix.packages.has_key(pkgname) and \
+                self.prefix.packages[pkgname].find('forcebuild') != -1:
+            return [self.src,]
+        return self._packagers
 
-        # See if the package exist
-        pkg = self.default.exists(name)
+    def exists(self, name, required_version=None):
+        """
+        Check to see if this package exists.
+        If version is provided, only returns True if the version matches.
+        Returns None if package does not exist.
+        """
+        for pkgr in self.get_packagers(name):
+            pkg_version = pkgr.exists(name)
+            if pkg_version is None or not pkg_version:
+                continue
+            if required_version is not None:
+                if compare(pkg_version, required_version, '>='):
+                    return pkg_version
+                else:
+                    continue
+            else:
+                return pkg_version
+        return None
 
-        # For now, just assume that the comparitor is greater than.
-        # Maybe throw an exception here rather than True/False?
-        if version:
-            return compare(pkg, version, '>=')
-        else:
-            return True
-        return False
+    def installed(self, name, required_version=None):
+        """
+        Check to see if this package is installed.
 
-    def installed(self, name, version=None):
-        """ Check to see if this package is installed """
-
-        pkg = self.default.installed(name)
-
-        # For now, just assume that the comparitor is greater than.
-        # Maybe throw an exception here rather than True/False?
-        if version is not None:
-            return compare(pkg, version, '>=')
-        else:
-            return pkg
+        If yes, it returns a version string. Otherwise, returns False.
+        """
+        for pkgr in self.get_packagers(name):
+            pkg_version = pkgr.installed(name)
+            if pkg_version is None or not pkg_version:
+                continue
+            if required_version is not None and compare(pkg_version, required_version, '>='):
+                return pkg_version
         return False
 
     def install(self, name):
         """
         Install the given package
         """
-        pkg = self.default.install(name)
+        for pkgr in self.get_packagers(name):
+            try:
+                install_result = pkgr.install(name)
+            except PBException as e:
+                self.log.error(
+                    "Something went wrong while trying to install {} using {}: {}".format(
+                        name, pkgr.name, str(e)
+                    )
+                )
+                continue
+            if install_result:
+                return True
+        return False
 
     def update(self, name):
         """
         Update the given package
         """
-        pkg = self.default.install(name)
-
-# This is what you want to use
-# Do we need this here?
-#package_manager = PackageManager()
+        for pkgr in self.get_packagers(name):
+            try:
+                update_result = pkgr.update(name)
+            except PBException as e:
+                self.log.error(
+                    "Something went wrong while trying to update {} using {}: {}".format(
+                        name, pkgr.name, str(e)
+                    )
+                )
+                continue
+            if update_result:
+                return True
+        return False
 
 # Some test code:
 if __name__ == "__main__":
-    #system_manager.detect()
-    print system_manager.default
-    print system_manager.exists('gcc')
-    print system_manager.installed('gcc')
-    print system_manager.install('gcc')
+    config_manager.set('packagers', 'dummy')
+    config_manager.set('satisfy_order', 'native')
+    pm = PackageManager()
+    print pm.exists('gcc')
+    print pm.installed('gcc')
+    print pm.install('gcc')
+

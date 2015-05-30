@@ -129,7 +129,8 @@ class PrefixInfo(object):
             self.env = os.environ
             for k, v in self._cfg_info['env'].iteritems():
                 self.env[k] = os.path.expandvars(v.strip())
-
+        # 8) Package flags
+        self.packages = self._cfg_info['packages']
 
     def _load_cfg_info(self, cfg_list, cfg_info=None):
         """
@@ -141,6 +142,7 @@ class PrefixInfo(object):
                 'aliases': {},
                 'cfg_dirs': {},
                 'env': {},
+                'packages': {},
             }
         for cfg_file in reversed(cfg_list):
             self.log.debug('Inspecting config file: {}'.format(cfg_file))
@@ -156,6 +158,9 @@ class PrefixInfo(object):
             env_section = extract_cfg_items(cfg_file, 'env', False)
             for k, v in env_section.iteritems():
                 cfg_info['env'][k] = v
+            package_section = extract_cfg_items(cfg_file, 'packages', False)
+            for k, v in package_section.iteritems():
+                cfg_info['packages'][k] = v
         return cfg_info
 
 
@@ -276,6 +281,7 @@ class ConfigManager(object):
         'CC': ('gcc', 'C Compiler Executable [gcc, clang, icc, etc]'),
         'CXX': ('g++', 'C++ Compiler Executable [g++, clang++, icpc, etc]'),
         'makewidth': ('4', 'Concurrent make threads [1,2,4,8...]'),
+        'packagers': ('apt-get', 'Priority of non-source package managers'),
     }
     LAYER_DEFAULT = 0
     LAYER_GLOBALS = 1

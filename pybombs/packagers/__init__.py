@@ -19,5 +19,7 @@
 # Boston, MA 02110-1301, USA.
 #
 
+from base import PackagerBase, get_by_name
 from ubuntu import Ubuntu
 from dummy import Dummy
+from source import Source
