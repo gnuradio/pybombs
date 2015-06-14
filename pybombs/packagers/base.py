@@ -40,7 +40,7 @@ class PackagerBase(object):
         """
         raise NotImplementedError()
 
-    def exists(self, recipe, throw_ex=True):
+    def exists(self, recipe):
         """
         Checks to see if a package is available in this packager
         and returns the version as a string.
@@ -49,7 +49,7 @@ class PackagerBase(object):
         """
         raise NotImplementedError()
 
-    def install(self, recipe, throw_ex=True):
+    def install(self, recipe):
         """
         Run the installation process for package 'name'.
 
@@ -60,7 +60,7 @@ class PackagerBase(object):
         """
         raise NotImplementedError()
 
-    def installed(self, recipe, throw_ex=True):
+    def installed(self, recipe):
         """
         Returns the version of package 'name' as a string, or
         False if the package is not installed. May also return
