@@ -218,7 +218,6 @@ def config_get(k):
 
 def config_set(k,v):
     config.set("config",k,v);
-    print "value updated"
 
 def clean(kl):
     if(type(kl) == str):

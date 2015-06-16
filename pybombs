@@ -122,7 +122,7 @@ if len(args) > 0:
     else:
         pybombs_ops.config_set("static","False")
 try:
-    print pybombs_ops.config_get("static")
+    pybombs_ops.config_get("static")
 except:
     pybombs_ops.config_set("static","False")
 
