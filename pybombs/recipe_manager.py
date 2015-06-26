@@ -46,6 +46,7 @@ class RecipeListManager(object):
         self.log = pb_logging.logger.getChild("RecipeListManager")
         self.cfg = config_manager.config_manager
         self._recipe_list = {}
+        self._template_list = {}
         self._locations = []
         for recipe_loc in self.cfg.get_recipe_locations():
             self.log.debug("Adding recipe location: {}".format(recipe_loc))
@@ -61,6 +62,13 @@ class RecipeListManager(object):
         except KeyError:
             raise PBException("Package {} has no recipe file!".format(name))
 
+    def get_template_filename(self, template):
+        """ Returns the filename for the requested template """
+        try:
+            return self._template_list[template][0]
+        except KeyError:
+            raise PBException("Unable to find template {0}!".format(template))
+
     def list_all(self):
         """ Returns a list of all recipe names """
         return self._recipe_list.keys()
@@ -70,6 +78,8 @@ class RecipeListManager(object):
         Goes through directory 'dirname' and looks at all .lwr files.
         Adds the package name as key to the internal list of recipes,
         then adds the filename into the list.
+
+        Also checks for a template directory and adds any templates.
         """
         dirname = os.path.expanduser(dirname)
         if dirname in self._locations:
@@ -80,7 +90,7 @@ class RecipeListManager(object):
             self.log.error("'{0}' is not a directory.".format(dirname))
             return
         self.log.debug("Scanning directory '{0}' for recipes...".format(dirname))
-        # Return list of .lwr files from this dir:
+        # Load list of .lwr files from this dir:
         lwr_files = [f for f in os.listdir(dirname) if os.path.splitext(f)[1] == '.lwr']
         self.log.debug("Found {0} new recipes.".format(len(lwr_files)))
         for f in lwr_files:
@@ -89,11 +99,27 @@ class RecipeListManager(object):
             if pkgname in self._recipe_list.keys():
                 self._recipe_list[pkgname].insert(0, abs_filename)
             else:
-                self._recipe_list[pkgname] = [abs_filename,]
+                self._recipe_list[pkgname] = [abs_filename, ]
+
+        self.log.debug("Looking for template directory")
+        # Load any templates from this directory.
+        template_dir = os.path.join(dirname, "templates")
+        if not os.path.isdir(template_dir):
+            self.log.debug("No template directory found in {0}".format(dirname))
+            return
+        template_files = [f for f in os.listdir(template_dir) if os.path.splitext(f)[1] == '.lwt']
+        for f in template_files:
+            template = os.path.splitext(f)[0]
+            abs_filename = os.path.join(template_dir, f)
+            if template in self._template_list.keys():
+                self._template_list[template].insert(0, abs_filename)
+            else:
+                self._template_list[template] = [abs_filename, ]
+            self.log.debug("Adding template {}".format(abs_filename))
+
 
 recipe_manager = RecipeListManager()
 
 if __name__ == "__main__":
     rlm = RecipeListManager()
     print rlm.get_recipe_filename("gr-specest")
-

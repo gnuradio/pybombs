@@ -32,6 +32,8 @@ from pb_exception import PBException
 import pb_logging
 import config_manager
 
+from pybombs import utils
+
 class Fetcher(object):
     """
     Fetcher Base class.
@@ -308,4 +310,3 @@ def make_fetcher(recipe, url):
     fetcher_dict = get_fetcher_dict()
     url_type = get_url_type(url)
     return fetcher_dict[url_type]()
-

@@ -23,7 +23,7 @@
 utils
 """
 
-from threading import Thread,Event
+from threading import Thread, Event
 import os
 import re
 import shutil
@@ -37,7 +37,8 @@ import subprocess
 import zipfile
 import tarfile
 
-import pb_logging
+from pybombs import pb_logging
+
 
 log = pb_logging.logger.getChild("utils")
 #############################################################################
@@ -49,12 +50,12 @@ def extract(filename):
     """
     if tarfile.is_tarfile(filename):
         archive = tarfile.open(filename)
-        self.log.debug("Untaring {}".format(filename))
+        log.debug("Untaring {}".format(filename))
         archive.extractall()
         archive.close()
         return
     if zipfile.is_zipfile(filename):
-        self.log.debug("Unzipping {}".format(filename))
+        log.debug("Unzipping {}".format(filename))
         archive = zipfile.open(filename)
         archive.extractall()
         archive.close()
