@@ -61,7 +61,6 @@ class Fetcher(object):
         """
         raise RuntimeError("Can't fetch {} from {} -- Function not implemented!".format(recipe.id, url))
 
-
     def refetch(self, recipe, url):
         """
         Do a fetch even though already fetched. Default behaviour is to kill
@@ -73,7 +72,8 @@ class Fetcher(object):
             shutil.rmtree(dst_dir, ignore_errors=True)
             if os.path.isdir(dst_dir):
                 raise PBException("Can't nuke existing directory {}".format(dst_dir))
-        self.fetch(recipe)
+        self.fetch(recipe, url)
+        return True
 
     def check_fetched(self, recipe, url):
         """
@@ -101,6 +101,7 @@ class FetcherGit(Fetcher):
         """
         cwd = os.getcwd()
         os.chdir(self.src_dir)
+        self.log.debug("Using url - {}".format(url))
         self.log.obnoxious("Switching cwd to: {}".format(self.src_dir))
         gitcache = self.cfg.get("git-cache", "")
         if len(gitcache):
@@ -224,6 +225,7 @@ class FetcherFile(Fetcher):
             url = os.path.join("..", url)
         os.symlink(url, os.path.join(self.src_dir, fname))
         utils.extract(fname)
+        os.chdir(cwd)
         return True
 
 
@@ -280,6 +282,7 @@ class FetcherWget(Fetcher):
             print status,
         f.close()
         utils.extract(filename)
+        os.chdir(cwd)
         return True
 
     def get_version(self, recipe, url):

@@ -69,6 +69,7 @@ class PrefixInfo(object):
         self.cfg_file = None
         self.inv_file = None
         self.recipe_dir = None
+        self.target_dir = None
         self.env = {}
         # 1) Load the config info
         self._cfg_info = self._load_cfg_info(cfg_list)
@@ -280,7 +281,7 @@ class ConfigManager(object):
         'CC': ('gcc', 'C Compiler Executable [gcc, clang, icc, etc]'),
         'CXX': ('g++', 'C++ Compiler Executable [g++, clang++, icpc, etc]'),
         'makewidth': ('4', 'Concurrent make threads [1,2,4,8...]'),
-        'packagers': ('apt-get', 'Priority of non-source package managers'),
+        'packagers': ('source', 'Priority of non-source package managers'),
     }
     LAYER_DEFAULT = 0
     LAYER_GLOBALS = 1
