@@ -128,6 +128,31 @@ class Recipe(Scanner):
         recipe_file.close()
         self.log.debug("Done Parsing.")
 
+    def __str__(self):
+        out = "Recipe: {0}".format(str(self.id))
+        out += "\t{0}: {1}\n".format("category", self.category)
+        out += "\t{0}: {1}\n".format("deps", self.deps)
+        out += "\t{0}: {1}\n".format("srcs", self.srcs)
+        out += "\t{0}: {1}\n".format("src_configure", self.src_configure)
+        out += "\t{0}: {1}\n".format("src_make", self.src_make)
+        out += "\t{0}: {1}\n".format("src_install", self.src_install)
+        out += "\t{0}: {1}\n".format("src_verify", self.src_verify)
+        out += "\t{0}: {1}\n".format("src_uninstall", self.src_uninstall)
+        out += "\t{0}: {1}\n".format("configuredir", self.configuredir)
+        out += "\t{0}: {1}\n".format("makedir", self.makedir)
+        out += "\t{0}: {1}\n".format("install_dir", self.install_dir)
+        out += "\t{0}: {1}\n".format("git_branch", self.git_branch)
+        out += "\t{0}: {1}\n".format("git_args", self.git_args)
+        out += "\t{0}: {1}\n".format("svn_rev", self.svn_rev)
+        out += "\t{0}: {1}\n".format("git_rev", self.git_rev)
+        out += "\t{0}: {1}\n".format("currpkg", self.currpkg)
+        out += "\t{0}: {1}\n".format("pkgstack", self.pkgstack)
+        out += "\t{0}: {1}\n".format("curr_pkg_type", self.curr_pkg_type)
+        out += "\t{0}: {1}\n".format("varname", self.varname)
+        out += "\t{0}: {1}\n".format("varoverride", self.varoverride)
+        out += "\t{0}: {1}\n".format("var", self.var)
+        return out
+
     def set_attr(self, arg, key):
         " Set a simple attribute "
         self.log.log(1, "Setting attribute {} = {}".format(key, arg))
