@@ -33,6 +33,7 @@ import pb_logging
 from pb_exception import PBException
 import utils
 
+
 def extract_cfg_items(filename, section, throw_ex=True):
     """
     Read section from a config file and return it as a dict.
@@ -48,6 +49,7 @@ def extract_cfg_items(filename, section, throw_ex=True):
             return {}
         raise KeyError
     return item_list
+
 
 class PrefixInfo(object):
     """
@@ -96,7 +98,7 @@ class PrefixInfo(object):
             self.cfg_file = None
         else:
             config_section = extract_cfg_items(self.cfg_file, 'config', False)
-        self._cfg_info = self._load_cfg_info([self.cfg_file,], self._cfg_info)
+            self._cfg_info = self._load_cfg_info([self.cfg_file,], self._cfg_info)
         # 4) Find the src dir
         if config_section.has_key('srcdir'):
             self.src_dir = config_section['srcdir']
@@ -163,7 +165,6 @@ class PrefixInfo(object):
                 cfg_info['packages'][k] = v
         return cfg_info
 
-
     def _find_prefix_dir(self, args):
         """
         Find the current prefix' directory.
@@ -205,7 +206,6 @@ class PrefixInfo(object):
             return
         self.prefix_dir = None
 
-
     def _load_environ_from_script(self, setup_env_cmd):
         """
         Run setup_env_cmd, return the new env
@@ -240,7 +240,6 @@ class PrefixInfo(object):
 # (see below)
 class ConfigManager(object):
     """
-
     Order of preference, from least relevant to most:
     - Internal defaults
     - Global defaults config file (/etc/pybombs/config.dat)
@@ -355,7 +354,6 @@ class ConfigManager(object):
         ## Set verbosity level:
         self._verb_offset = args.verbose - args.quiet
 
-
     def _append_cfg_from_file(self, cfg_filename):
         """
         Load file filename, interpret it as a config file
@@ -376,7 +374,6 @@ class ConfigManager(object):
             self.log.debug("Empty config data set.")
         return found_cfg
 
-
     def get_pybombs_dir(self, prefix_dir=None):
         """
         Return the PyBOMBS config directory.
@@ -387,7 +384,6 @@ class ConfigManager(object):
             prefix_dir = os.path.expanduser("~")
         return os.path.join(prefix_dir, self.pybombs_dir)
 
-
     def get(self, key, default=None):
         """ Return the value for a given key. """
         for set_of_vals in reversed(self.cfg_cascade):
@@ -397,7 +393,6 @@ class ConfigManager(object):
                 return default
         raise PBException("Invalid configuration key: {}".format(key))
 
-
     def set(self, key, value):
         """
         Set a configuration setting. This is not persistent!
@@ -405,7 +400,6 @@ class ConfigManager(object):
         settings.
         """
         self.cfg_cascade[self.LAYER_VOLATILE][key] = value
-
 
     def get_help(self, key):
         """
@@ -485,4 +479,3 @@ if __name__ == "__main__":
     print config_manager.get("satisfy_order")
     config_manager.set("satisfy_order", "foo, bar")
     print config_manager.get("satisfy_order")
-

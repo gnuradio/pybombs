@@ -164,4 +164,3 @@ if __name__ == "__main__":
     print pm.exists('gcc')
     print pm.installed('gcc')
     print pm.install('gcc')
-

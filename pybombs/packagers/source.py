@@ -239,4 +239,3 @@ class Source(PackagerBase):
                 ##if(confirm("Run VOLK Profile to choose fastest kernels?","Y",5)):
                     ##run_volk_profile();
     ###    global_recipes[pkgname].install();
-

@@ -52,7 +52,6 @@ class PackagerBase(object):
     def install(self, recipe):
         """
         Run the installation process for package 'name'.
-
         May raise an exception if things go terribly wrong.
         Otherwise, return True on success and False if installing
         failed in an expected manner (e.g. the package wasn't available
@@ -81,4 +80,3 @@ def get_by_name(name):
         except (TypeError, AttributeError):
             pass
     return None
-

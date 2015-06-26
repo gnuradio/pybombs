@@ -33,6 +33,7 @@ from pybombs.pb_exception import PBException
 
 from plex import *
 
+
 # structure for a dependency package (name, comparator, version) (for rpm or deb)
 class PBPackageRequirement(object):
     def __init__(self, name):
@@ -45,6 +46,7 @@ class PBPackageRequirement(object):
 
     def __str__(self, lvl=0):
         return " "*lvl + "PackageRequirement({}, {}, {})".format(self.name, self.compare, self.version)
+
 
 # joining logic for multiple dep packages (for rpms and debs)
 class PBPackageRequirementPair(object):
@@ -84,11 +86,11 @@ class Recipe(Scanner):
         self.install_like = None
         self.category = None
         self.satisfy = {}
-        self.scr_configure = ""
-        self.scr_make = ""
-        self.scr_install = ""
-        self.scr_verify = ""
-        self.scr_uninstall = ""
+        self.src_configure = ""
+        self.src_make = ""
+        self.src_install = ""
+        self.src_verify = ""
+        self.src_uninstall = ""
         self.configuredir = ""
         self.makedir = ""
         self.install_dir = ""
@@ -145,25 +147,25 @@ class Recipe(Scanner):
         " Add static config options "
         if self.static:
             self.log.log(1, "Adding static config options: {0}".format(static_cfg_opts))
-            self.scr_configure = static_cfg_opts
+            self.src_configure = static_cfg_opts
 
     def configure_set(self, cfg_opts):
         " Add config options "
-        if not self.static or self.scr_configure == "":
+        if not self.static or self.src_configure == "":
             self.log.log(1, "Adding config options: {0}".format(cfg_opts))
-            self.scr_configure = cfg_opts
+            self.src_configure = cfg_opts
 
     def install_set_static(self, arg):
         " Add static install options "
         if self.static:
             self.log.log(1, "Adding static install options: {0}".format(arg))
-            self.scr_install = arg
+            self.src_install = arg
 
     def install_set(self, arg):
         " Add install options "
-        if not self.static or self.scr_install == "":
+        if not self.static or self.src_install == "":
             self.log.log(1, "Adding install options: {0}".format(arg))
-            self.scr_install = arg
+            self.src_install = arg
 
     def satisfy_begin(self, pkg_type):
         " Call this when finding a satisfy_*: line "
@@ -226,15 +228,21 @@ class Recipe(Scanner):
         self.currpkg = None
         self.begin("")
 
-    def inherit(self, recipe_name):
-        " Inherit "
+    def inherit(self, template):
+        """ Inherit from a given template """
         try:
-            filename = recipe_manager.recipe_manager.get_recipe_filename(recipe_name)
+            filename = recipe_manager.recipe_manager.get_template_filename(template)
+            print filename
         except PBException as e:
-            self.log.warn("Recipe attempting to inherit from unknown recipe {}".format(recipe_name))
+            self.log.warn("Recipe attempting to inherit from unknown template {}".format(template))
             return
         self.log.log(1, "Calling subscanner for file {}".format(filename))
         subscanner = Recipe(filename, lvars=self.lvars, static=self.static)
+        # Get inherited values
+        empty = [v for v in vars(self) if (getattr(self, v) is None or getattr(self, v) == "")]
+        for v in empty:
+            setattr(self, v, getattr(subscanner, v))
+        # Copy the lvars over
         self.lvars = subscanner.lvars
         self.log.log(1, "Updated lvars: {}".format(self.lvars))
 
@@ -374,7 +382,7 @@ class Recipe(Scanner):
             (Rep(AnyBut("}")), configure_set), (Str("}"), mainstate),
         ]),
         State('make', [
-            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg, "scr_make")), (Str("}"), mainstate),
+            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg, "src_make")), (Str("}"), mainstate),
         ]),
         State('install_static', [
             (Rep(AnyBut("}")), install_set_static), (Str("}"), mainstate),
@@ -383,10 +391,10 @@ class Recipe(Scanner):
             (Rep(AnyBut("}")), install_set), (Str("}"), mainstate),
         ]),
         State('verify', [
-            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg, "scr_verify")), (Str("}"), mainstate),
+            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg, "src_verify")), (Str("}"), mainstate),
         ]),
         State('uninstall', [
-            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg, "scr_uninstall")), (Str("}"), mainstate),
+            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg, "src_uninstall")), (Str("}"), mainstate),
         ]),
         State('comment', [
             (eol, Begin('')),
@@ -412,4 +420,3 @@ if __name__ == "__main__":
         print "{}:".format(k)
         print str(v)
     print scanner.lvars
-
