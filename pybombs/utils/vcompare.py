@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 #
 # Copyright 2015 Free Software Foundation, Inc.
 #
@@ -18,8 +19,19 @@
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
 #
+"""
+Version comparison functions
+"""
 
-from base import PackagerBase, get_by_name
-from aptget import AptGet
-from dummy import Dummy
-from source import Source
+import operator
+from distutils.version import StrictVersion
+
+def vcompare(cmp_op, version_x, version_y):
+    """
+    Confirm if version x compares to y given an operator op.
+    """
+    operators = {'<=': operator.le, '==': operator.eq, '>=': operator.ge, '!=': operator.ne}
+    return operators[cmp_op](StrictVersion(version_x), StrictVersion(version_y))
+
+if __name__ == "__main__":
+    print vcompare(">=", "2.3.4", "1.2.3")

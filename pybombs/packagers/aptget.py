@@ -29,6 +29,8 @@ from pybombs.utils import sysutils
 
 class AptGet(PackagerBase):
     name = 'apt-get'
+    pkgtype = 'deb'
+
     def __init__(self):
         PackagerBase.__init__(self)
 
@@ -43,41 +45,86 @@ class AptGet(PackagerBase):
             return False
         return True
 
-    def exists(self, name):
-        """
-        Checks to see if a package is available in apt-get and returns the version.
-        If package does not exist, return False.
-        """
-        try:
-            out = subprocess.check_output(["apt-cache", "showpkg", name])
-            # apt-cache returns nothing on stdout if a package is not found
-            if len(out) >= 0:
-                # Get the versions
-                ver = re.search(r'Versions: \n(\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n', out)
-                return ver.group(2)
-            else:
-                return False
-        except Exception as e:
-            # Non-zero return.
-            log.error("Error running apt-get showpkg")
-        return False
+    #def exists(self, recipe):
+        #"""
+        #Checks to see if a package is available in apt-get and returns the version.
+        #If package does not exist, return False.
+        #"""
+        #return self.get_version_from_apt_cache(recipe.
+        #try:
+            #out = subprocess.check_output(["apt-cache", "showpkg", name])
+            ## apt-cache returns nothing on stdout if a package is not found
+            #if len(out) >= 0:
+                ## Get the versions
+                #ver = re.search(r'Versions: \n(\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n', out).group(2)
+                #self.log.debug("Package {} has version {}".format(recipe.id, ver)
+                #return ver
+            #else:
+                #return False
+        #except Exception as e:
+            ## Non-zero return.
+            #self.log.error("Error running apt-get showpkg")
+        #return False
 
-    def install(self, name):
+    def _package_install(self, pkg_name, comparator=">=", required_version=None):
+        """
+        Call 'apt-get install pkgname' if we can satisfy the version requirements.
+        """
+        available_version = self.get_version_from_apt_cache(pkgname)
+        if required_version is not None and not vcompare(comparator, required_version, available_version):
+            return False
         try:
             sysutils.monitor_process(["sudo", "apt-get", "-y", "install", name])
             return True
         except:
-            log.error("Running apt-get install failed.")
+            self.log.error("Running apt-get install failed.")
         return False
 
-    def installed(self, name):
+    def _package_installed(self, pkg_name, comparator=">=", required_version=None):
+        """
+        See if the installed version of pkgname matches the version requirements.
+        """
+        installed_version = self.get_version_from_dpkg(pkg_name)
+        if not installed_version:
+            return False
+        if required_version is None:
+            return True
+        return vcompare(comparator, required_version, installed_version)
+
+    ### apt-get specific functions:
+    def get_version_from_apt_cache(self, pkgname):
+        """
+        Check which version is available in apt-cache.
+        """
         try:
-            out = subprocess.check_output(["dpkg", "-s", name])
+            out = subprocess.check_output(["apt-cache", "showpkg", pkgname])
+            # apt-cache returns nothing on stdout if a package is not found
+            if len(out) >= 0:
+                # Get the versions
+                ver = re.search(r'Versions: \n(\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n', out).group(2)
+                self.log.debug("Package {} has version {} in apt-cache".format(recipe.id, ver))
+                return ver
+            else:
+                return False
+        except Exception as e:
+            # Non-zero return.
+            self.log.error("Error running apt-get showpkg")
+        return False
+
+    def get_version_from_dpkg(self, pkgname):
+        """
+        Check which version is currently installed.
+        """
+        try:
+            # dpkg -s will return non-zero if package does not exist, thus will throw
+            out = subprocess.check_output(["dpkg", "-s", pkgname])
             # Get the versions
-            ver = re.search(r'Version: (\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n', out)
-            return ver.group(2)
+            #ver = re.search(r'^Version: (?:\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n', out)
+            ver = re.search(r'^Version: (?:\d+:)?(?P<ver>.*)$', out, re.MULTILINE).group('ver')
+            self.log.debug("Package {} has version {} in dpkg".format(pkgname, ver))
+            return ver
         except:
-            log.error("Running dpkg -s failed.")
+            self.log.error("Running dpkg -s failed.")
         return False
 
 # Some test code:

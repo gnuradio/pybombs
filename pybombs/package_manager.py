@@ -23,18 +23,12 @@
 Package Manager: Manages packages (no shit)
 """
 
-import os
-import operator
-from distutils.version import StrictVersion
-
-import pb_logging
-from pb_exception import PBException
+from pybombs import pb_logging
+from pybombs.pb_exception import PBException
 from pybombs.config_manager import config_manager
 from pybombs import recipe
-import packagers
-
-operators = {'<=': operator.le, '==': operator.eq, '>=': operator.ge, '!=': operator.ne}
-compare = lambda x, y, z: operators[z](StrictVersion(x), StrictVersion(y))
+from pybombs import packagers
+from pybombs.utils import vcompare
 
 class PackageManager(object):
     """
@@ -48,18 +42,19 @@ class PackageManager(object):
         # Set up logger:
         self.log = pb_logging.logger.getChild("PackageManager")
         self.cfg = config_manager
-        if self.cfg.get_active_prefix().prefix_dir is None:
-            self.log.error("No prefix specified. Aborting.")
-            exit(1)
-        self.prefix = self.cfg.get_active_prefix()
+        self.prefix_available = self.cfg.get_active_prefix().prefix_dir is not None
+        if self.prefix_available:
+            self.src = packagers.Source()
+            self.prefix = self.cfg.get_active_prefix()
+        else:
+            self.log.debug("No prefix specified. Skipping source package manager.")
         # Create a source package manager
-        self.src = packagers.Source()
         # Create sorted list of binary package managers
         requested_packagers = [x.strip() for x in self.cfg.get('packagers').split(',')]
         binary_pkgrs = []
         for pkgr in requested_packagers:
             self.log.debug("Attempting to add binary package manager {}".format(pkgr))
-            p = packagers.get_by_name(pkgr)
+            p = packagers.get_by_name(pkgr, packagers.__dict__.values())
             if p is None:
                 self.log.warn("This binary package manager can't be instantiated: {}".format(pkgr))
                 continue
@@ -70,7 +65,8 @@ class PackageManager(object):
         for satisfy in self.cfg.get('satisfy_order').split(','):
             satisfy = satisfy.strip()
             if satisfy == 'src':
-                self._packagers += [self.src,]
+                if self.prefix_available:
+                    self._packagers += [self.src,]
             elif satisfy == 'native':
                 self._packagers += binary_pkgrs
             else:
@@ -78,44 +74,54 @@ class PackageManager(object):
         # Now we can use self.packagers, in order, for our commands.
 
     def get_packagers(self, pkgname):
-        if self.prefix.packages.has_key(pkgname) and \
+        """
+        Return a valid list of packagers for a given package.
+        This will take care of cases where e.g. a source packager is
+        required (and then only return that).
+        """
+        # Check if the package flags aren't forcing a source build:
+        if self.prefix_available and \
+                self.prefix.packages.has_key(pkgname) and \
                 self.prefix.packages[pkgname].find('forcebuild') != -1:
             return [self.src,]
         return self._packagers
 
-    def exists(self, name, required_version=None):
-        """
-        Check to see if this package exists.
-        If version is provided, only returns True if the version matches.
-        Returns None if package does not exist.
-        """
-        r = recipe.get_recipe(name)
-        for pkgr in self.get_packagers(name):
-            pkg_version = pkgr.exists(r)
-            if pkg_version is None or not pkg_version:
-                continue
-            if required_version is not None:
-                if compare(pkg_version, required_version, '>='):
-                    return pkg_version
-                else:
-                    continue
-            else:
-                return pkg_version
-        return None
+    #TODO do we need this function?
+    #def exists(self, name, required_version=None):
+        #"""
+        #Check to see if this package exists.
+        #If version is provided, only returns True if the version matches.
+        #Returns None if package does not exist.
+        #"""
+        ## TODO required_version might need to go to the packager
+        #r = recipe.get_recipe(name)
+        #for pkgr in self.get_packagers(name):
+            #pkg_version = pkgr.exists(r)
+            #if pkg_version is None or not pkg_version:
+                #continue
+            #if required_version is not None:
+                #if vcompare('>=', pkg_version, required_version):
+                    #return pkg_version
+                #else:
+                    #continue
+            #else:
+                #return pkg_version
+        #return None
 
-    def installed(self, name, required_version=None):
+    def installed(self, name):
         """
-        Check to see if this package is installed.
+        Check to see if this recipe is installed (identified by its name)
 
-        If yes, it returns a version string. Otherwise, returns False.
+        If yes, it returns True or a version string.
+        Otherwise, returns False.
         """
         r = recipe.get_recipe(name)
         for pkgr in self.get_packagers(name):
             pkg_version = pkgr.installed(r)
             if pkg_version is None or not pkg_version:
                 continue
-            if required_version is not None and compare(pkg_version, required_version, '>='):
-                return pkg_version
+            else:
+                return True
         return False
 
     def install(self, name):
