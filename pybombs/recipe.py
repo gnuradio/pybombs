@@ -38,10 +38,13 @@ from plex import *
 class PBPackageRequirement(object):
     def __init__(self, name):
         self.name = name
-        self.compare = None
+        self.compare = ">="
         self.version = None
 
     def ev(self, func):
+        """
+        Run func() with this requirement
+        """
         return func(self.name, self.compare, self.version)
 
     def __str__(self, lvl=0):
@@ -56,13 +59,15 @@ class PBPackageRequirementPair(object):
         self.combiner = None
 
     def ev(self, func):
-        if self.combiner == "&&":
+        if self.combiner is None or self.second is None:
+            return self.first.ev(func)
+        elif self.combiner == "&&":
             return self.first.ev(func) and self.second.ev(func)
         elif self.combiner == "||":
             return self.first.ev(func) or self.second.ev(func)
 
     def __str__(self, lvl=0):
-        a = " "*lvl + "PBPackageRequirementPair: (%s)"%(self.combiner) + "\n"
+        a = " "*lvl + "PBPackageRequirementPair: ({})\n".format(self.combiner)
         a = a + " "*lvl + self.first.__str__(1) + "\n"
         if(self.second):
             a = a + " "*lvl + self.second.__str__(1)
@@ -82,7 +87,6 @@ class Recipe(Scanner):
         self.static = static
         self.deps = []
         self.srcs = []
-        self.satisfy_deb = {}
         self.install_like = None
         self.category = None
         self.satisfy = {}
@@ -222,7 +226,7 @@ class Recipe(Scanner):
 
     def end_distro_pkg_expr(self, e):
         " Called when a list of package reqs is finished "
-        self.log.log(1, "End of requirements list for package type {}".format(self.curr_pkg_type))
+        self.log.obnoxious("End of requirements list for package type {}".format(self.curr_pkg_type))
         self.satisfy[self.curr_pkg_type] = self.currpkg
         self.pkgstack = []
         self.currpkg = None

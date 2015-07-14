@@ -24,56 +24,92 @@ Packager: Base class
 
 from pybombs import pb_logging
 from pybombs.config_manager import config_manager
+from pybombs.utils import vcompare
 
 class PackagerBase(object):
     """
     Base class for packagers.
     """
     name = None
+    pkgtype = None
+
     def __init__(self):
         self.cfg = config_manager
         self.log = pb_logging.logger.getChild("Packager.{}".format(self.name))
 
     def supported(self):
         """
-        Return true if this platform is detected.
+        Return true if this platform is detected, e.g. on Debian systems
+        return true for the 'apt-get' packager but False for the 'yum' packager.
         """
         raise NotImplementedError()
 
     def exists(self, recipe):
         """
         Checks to see if a package is available in this packager
-        and returns the version as a string.
-        If not available, return None, or raise an exception if throw_ex
-        is True.
+        and returns the version as a string. If no version can be determined,
+        return True.
+        If not available, return None.
         """
         raise NotImplementedError()
 
     def install(self, recipe):
         """
-        Run the installation process for package 'name'.
+        Run the installation process for a package given a recipe.
         May raise an exception if things go terribly wrong.
         Otherwise, return True on success and False if installing
-        failed in an expected manner (e.g. the package wasn't available
+        failed in a controlled manner (e.g. the package wasn't available
         by this package manager).
         """
-        raise NotImplementedError()
+        # If we run this code, the assumption is that we're running a
+        # package manager. The source manager will override this function.
+        self.log.obnoxious("install({})".format(recipe.id))
+        try:
+            satisfy_rule = recipe.satisfy[self.pkgtype]
+        except KeyError as e:
+            self.log.obnoxious("No satisfy rule for package type {}".format(self.pkgtype))
+            return False
+        self.log.obnoxious("Calling ev for recursive installation")
+        return satisfy_rule.ev(self._package_install)
 
     def installed(self, recipe):
         """
-        Returns the version of package 'name' as a string, or
-        False if the package is not installed. May also return
-        True if a version can't be determined.
+        Returns the installed version of package (identified by recipe)
+        as a string, or False if the package is not installed.
+        May also return True if a version can't be determined, but the
+        recipe is installed.
+        """
+        # If we run this code, the assumption is that we're running a
+        # package manager. The source manager will override this function.
+        self.log.obnoxious("Checking if recipe {} is installed".format(recipe.id))
+        try:
+            satisfy_rule = recipe.satisfy[self.pkgtype]
+        except KeyError as e:
+            self.log.obnoxious("No satisfy rule for package type {}".format(self.pkgtype))
+            return False
+        self.log.obnoxious("Calling ev for recursive install state checking")
+        return satisfy_rule.ev(self._package_installed)
+
+    def _package_install(self, pkg_name, comparator=">=", required_version=None):
+        """
+        Installs a specific package through the current package manager.
+        This is typically called by install() to do the actual package
+        install call.
+        Returns False if the version comparison fails.
         """
         raise NotImplementedError()
 
-def get_by_name(name):
+    def _package_installed(self, pkg_name, comparator=">=", required_version=None):
+        """
+        """
+        raise NotImplementedError()
+
+def get_by_name(name, objs):
     """
     Return a package manager by its name field. Not meant to be
     called by the user.
     """
-    from pybombs.packagers import *
-    for g in locals().values():
+    for g in objs:
         try:
             if issubclass(g, PackagerBase) and g.name == name:
                 return g()

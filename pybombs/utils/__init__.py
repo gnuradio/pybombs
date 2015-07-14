@@ -20,3 +20,4 @@
 #
 
 from utils import *
+from vcompare import vcompare
