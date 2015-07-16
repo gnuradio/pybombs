@@ -51,7 +51,16 @@ class PackagerBase(object):
         return True.
         If not available, return None.
         """
-        raise NotImplementedError()
+        # If we run this code, the assumption is that we're running a
+        # package manager. The source manager will override this function.
+        self.log.obnoxious("exists({})".format(recipe.id))
+        try:
+            satisfy_rule = recipe.satisfy[self.pkgtype]
+        except KeyError as e:
+            self.log.debug("No satisfy rule for package type {}".format(self.pkgtype))
+            return False
+        self.log.obnoxious("Calling ev for recursive availability checking")
+        return satisfy_rule.ev(self._package_exists)
 
     def install(self, recipe):
         """
@@ -67,7 +76,7 @@ class PackagerBase(object):
         try:
             satisfy_rule = recipe.satisfy[self.pkgtype]
         except KeyError as e:
-            self.log.obnoxious("No satisfy rule for package type {}".format(self.pkgtype))
+            self.log.debug("No satisfy rule for package type {}".format(self.pkgtype))
             return False
         self.log.obnoxious("Calling ev for recursive installation")
         return satisfy_rule.ev(self._package_install)
@@ -85,7 +94,7 @@ class PackagerBase(object):
         try:
             satisfy_rule = recipe.satisfy[self.pkgtype]
         except KeyError as e:
-            self.log.obnoxious("No satisfy rule for package type {}".format(self.pkgtype))
+            self.log.debug("No satisfy rule for package type {}".format(self.pkgtype))
             return False
         self.log.obnoxious("Calling ev for recursive install state checking")
         return satisfy_rule.ev(self._package_installed)
@@ -104,6 +113,12 @@ class PackagerBase(object):
         """
         raise NotImplementedError()
 
+    def _package_exists(self, pkg_name, comparator=">=", required_version=None):
+        """
+        Check if a pkg_name is installable through this packager.
+        """
+        raise NotImplementedError()
+
 def get_by_name(name, objs):
     """
     Return a package manager by its name field. Not meant to be
@@ -116,3 +131,4 @@ def get_by_name(name, objs):
         except (TypeError, AttributeError):
             pass
     return None
+

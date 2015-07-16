@@ -26,8 +26,9 @@ from pybombs import recipe
 from pybombs import package_manager
 
 RECIPE_INFO_TPL = """
-Recipe name:  {rname}
-Is installed: {installed}
+Recipe name:    {rname}
+Is installed:   {installed}
+Is installable: {installable}
 """.strip()
 
 class PyBombsShow(PyBombsCmd):
@@ -80,9 +81,11 @@ class PyBombsShow(PyBombsCmd):
         Gather info for one recipe and display it.
         """
         self.log.debug("Displaying info for package {}".format(recipe_name))
-        installed = "Yes" if self.package_manager.installed(recipe_name) else "No"
+        installed   = "Yes" if self.package_manager.installed(recipe_name) else "No"
+        installable = "Yes" if self.package_manager.exists(recipe_name) else "No"
         print(RECIPE_INFO_TPL.format(
                 rname=recipe_name,
                 installed=installed,
+                installable=installable,
         ))
 

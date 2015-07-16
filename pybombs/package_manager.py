@@ -86,27 +86,18 @@ class PackageManager(object):
             return [self.src,]
         return self._packagers
 
-    #TODO do we need this function?
-    #def exists(self, name, required_version=None):
-        #"""
-        #Check to see if this package exists.
-        #If version is provided, only returns True if the version matches.
-        #Returns None if package does not exist.
-        #"""
-        ## TODO required_version might need to go to the packager
-        #r = recipe.get_recipe(name)
-        #for pkgr in self.get_packagers(name):
-            #pkg_version = pkgr.exists(r)
-            #if pkg_version is None or not pkg_version:
-                #continue
-            #if required_version is not None:
-                #if vcompare('>=', pkg_version, required_version):
-                    #return pkg_version
-                #else:
-                    #continue
-            #else:
-                #return pkg_version
-        #return None
+    def exists(self, name):
+        """
+        Check to see if this package is available on this platform.
+        Returns True or a version string if yes, False if not.
+        """
+        r = recipe.get_recipe(name)
+        for pkgr in self.get_packagers(name):
+            pkg_version = pkgr.exists(r)
+            if pkg_version is None or not pkg_version:
+                continue
+            return pkg_version
+        return False
 
     def installed(self, name):
         """

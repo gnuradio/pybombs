@@ -19,7 +19,7 @@
 # Boston, MA 02110-1301, USA.
 #
 """
-Packager: apt-get
+Packager: yum
 """
 
 import re
@@ -27,12 +27,12 @@ import subprocess
 from pybombs.packagers.base import PackagerBase
 from pybombs.utils import sysutils
 
-class AptGet(PackagerBase):
+class Yum(PackagerBase):
     """
-    apt-get install xyz
+    yum install xyz
     """
-    name = 'apt-get'
-    pkgtype = 'deb'
+    name = 'yum'
+    pkgtype = 'rpm'
 
     def __init__(self):
         PackagerBase.__init__(self)
@@ -42,15 +42,13 @@ class AptGet(PackagerBase):
         Check if we can even run apt-get.
         Return True if so.
         """
-        if sysutils.which('dpkg') is None \
-            or sysutils.which('apt-cache') is None \
-            or sysutils.which('apt-get') is None:
+        if sysutils.which('yum') is None:
             return False
         return True
 
     def _package_install(self, pkg_name, comparator=">=", required_version=None):
         """
-        Call 'apt-get install pkgname' if we can satisfy the version requirements.
+        Call 'yum install pkgname' if we can satisfy the version requirements.
         """
         available_version = self.get_version_from_apt_cache(pkgname)
         if required_version is not None and not vcompare(comparator, required_version, available_version):
@@ -83,9 +81,9 @@ class AptGet(PackagerBase):
         return available_version
 
     ### apt-get specific functions:
-    def get_version_from_apt_cache(self, pkgname):
+    def get_version_from_yum(self, pkgname):
         """
-        Check which version is available in apt-cache.
+        Check which version is available in yum.
         """
         try:
             out = subprocess.check_output(["apt-cache", "showpkg", pkgname])
@@ -105,19 +103,20 @@ class AptGet(PackagerBase):
             self.log.error("Error running apt-get showpkg")
         return False
 
-    def get_version_from_dpkg(self, pkgname):
-        """
-        Check which version is currently installed.
-        """
-        try:
-            # dpkg -s will return non-zero if package does not exist, thus will throw
-            out = subprocess.check_output(["dpkg", "-s", pkgname])
-            # Get the versions
-            #ver = re.search(r'^Version: (?:\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n', out)
-            ver = re.search(r'^Version: (?:\d+:)?(?P<ver>.*)$', out, re.MULTILINE).group('ver')
-            self.log.debug("Package {} has version {} in dpkg".format(pkgname, ver))
-            return ver
-        except:
-            self.log.error("Running dpkg -s failed.")
-        return False
+    #def get_version_from_dpkg(self, pkgname):
+        #"""
+        #Check which version is currently installed.
+        #"""
+        #try:
+            ## dpkg -s will return non-zero if package does not exist, thus will throw
+            #out = subprocess.check_output(["dpkg", "-s", pkgname])
+            ## Get the versions
+            ##ver = re.search(r'^Version: (?:\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n', out)
+            #ver = re.search(r'^Version: (?:\d+:)?(?P<ver>.*)$', out, re.MULTILINE).group('ver')
+            #self.log.debug("Package {} has version {} in dpkg".format(pkgname, ver))
+            #return ver
+        #except:
+            #self.log.error("Running dpkg -s failed.")
+        #return False
+
 

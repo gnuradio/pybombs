@@ -29,6 +29,9 @@ from pybombs.config_manager import config_manager
 from pybombs.packagers.base import PackagerBase
 
 class Source(PackagerBase):
+    """
+    Source package manager.
+    """
     def __init__(self):
         PackagerBase.__init__(self)
         if self.cfg.get_active_prefix().prefix_dir is None:
@@ -38,16 +41,21 @@ class Source(PackagerBase):
         self.inventory = inventory.Inventory(self.prefix.inv_file)
         self.inventory.load()
 
-    def exists(self, recipe, throw_ex=True):
+    def supported(self):
+        """
+        We can always build source packages.
+        """
+        return True
+
+    def exists(self, recipe):
         """
         This will work whenever any sources are defined.
         """
         return len(recipe.srcs) > 0
 
-
-    def install(self, name, throw_ex=True):
+    def install(self, recipe):
         """
-        Run the installation process for package 'name'.
+        Run the installation process for package 'recipe'.
 
         May raise an exception if things go terribly wrong.
         Otherwise, return True on success and False if installing
@@ -56,7 +64,7 @@ class Source(PackagerBase):
         """
         raise NotImplementedError()
 
-    def installed(self, name, throw_ex=True):
+    def installed(self, recipe):
         """
         We read the version number from the inventory. It might not exist,
         but that's OK.
