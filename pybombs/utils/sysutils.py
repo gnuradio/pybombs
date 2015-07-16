@@ -50,9 +50,22 @@ def which(program):
 
 #def monitor_process_timeout(proc, timeout, shell=False, throw_ex=False):
 
-def monitor_process(args, shell=False, throw_ex=False, env=None):
+def monitor_process(
+            args,
+            shell=False,
+            throw_ex=False,
+            env=None,
+            oproc=None,
+    ):
     """
-    Run a process and monitor it
+    Run a process and monitor it.
+
+    Params:
+    - args: Must be a list (e.g. ['ls', '-l']
+    - shell: If True, run in shell environment
+    - throw_ex: If True, propagate subprocess exceptions
+    - env: A dictionary with environment variables
+    - oproc: An output processor
     """
     # FIXME write this
     log.debug("monitor_process(): Executing command {}".format(" ".join(args)))
