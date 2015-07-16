@@ -61,12 +61,10 @@ class Source(PackagerBase):
 
     def install(self, recipe):
         """
-        Run the installation process for package 'recipe'.
+        Run the source installation process for package 'recipe'.
 
         May raise an exception if things go terribly wrong.
-        Otherwise, return True on success and False if installing
-        failed in an expected manner (e.g. the package wasn't available
-        by this package manager).
+        Otherwise, return True on success and False if installing failed.
         """
 
         # First version
@@ -75,45 +73,44 @@ class Source(PackagerBase):
         # Then change the cwd, call configure and call make.
         # For testing, only install packages with git srcs
 
-        if len(recipe.srcs ) == 0:
-            self.log.warning("Cannot find source uri for package {}".format(recipe.id))
+        if len(recipe.srcs) == 0:
+            self.log.warning("Cannot find a source URI for package {}".format(recipe.id))
             return False
-
-        url = recipe.srcs[0].split("://", 1)[1]
-        self.log.debug(url)
+        self.log.debug("Source URI: {}".format(recipe.srcs[0].split("://", 1)[1]))
         f = make_fetcher(recipe, recipe.srcs[0])
         try:
             if not f.refetch(recipe, recipe.srcs[0]):
-                print "Something is failing here"
+                self.log.warning("Something is failing here")
                 return False
         except Exception:
             self.log.error("Unable to fetch source for package {}".format(recipe.id))
 
-        """if len(recipe.srcs) > 0 and "git://" in recipe.srcs[0]:
-            url = recipe.srcs[0][6:]
-            print "Using url: {0}".format(url)
-            src = Git()
-            src.fetch(recipe, url)
-        """
-
-        builddir = "{top}/src/{package}/{install}".format(
-            top=os.getcwd(),
+        ### Set up the build dir
+        pkg_src_dir = "{src_dir}/{package}".format(
+            src_dir=self.prefix.src_dir,
             package=recipe.id,
-            install=recipe.install_dir
         )
-
-        cwd=os.getcwd()
+        builddir = os.path.join(pkg_src_dir, recipe.install_dir)
+        # The package source dir must exist, or something is wrong.
+        # If the build dir exists, clear it.
+        if not os.path.isdir(pkg_src_dir):
+            self.log.error("There should be a source dir in {}, but there isn't.".format(pkg_src_dir))
+            return False
+        if os.path.exists(os.path.join(pkg_src_dir, builddir)):
+            shutil.rmtree(builddir)
         os.mkdir(builddir)
+        cwd=os.getcwd()
         os.chdir(builddir)
-
-        self.configure(recipe)
-        self.make(recipe)
-        self.make_install(recipe)
-
+        ### Run the build process
+        try:
+            self.configure(recipe)
+            self.make(recipe)
+            self.make_install(recipe)
+        except PBException as e:
+            self.log.error("Problem occured while building package {}:\n{}".format(recipe.id, str(e)))
+            return False
+        ### Housekeeping
         os.chdir(cwd)
-
-        #else:
-        self.log.info("Pretending to install package {}.".format(recipe.id))
         return True
 
     def installed(self, recipe):
@@ -133,19 +130,17 @@ class Source(PackagerBase):
         """
         self.log.debug("Configuring recipe {}".format(recipe.id))
         self.log.debug("Configure command - {0}".format(recipe.src_configure))
-
         self.log.debug("Using lvars - {}".format(recipe.lvars))
-
         self.log.debug("In cwd - {}".format(os.getcwd()))
         pre_cmd = self.var_replace_all(recipe, recipe.src_configure)
         cmd = self.config_filter(pre_cmd)
-        print cmd
+        self.log.debug('Configure command: {}'.format(cmd))
 
         #o_proc = output_proc.OutputProcessorMake(preamble="Configuring: ")
         #pre_filt_command = self.scanner.var_replace_all(self.scr_configure)
         #st = bashexec(self.scanner.config_filter(pre_filt_command), o_proc)
         if subprocess.call(recipe.src_configure, shell=True) != 0:
-            print "Configure failed"
+            self.log.error("Configure failed")
             return False
         return True
         '''
