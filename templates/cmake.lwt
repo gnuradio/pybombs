@@ -22,7 +22,7 @@ makedir: build
 installdir: build
 depends: cmake
 
-var config_opt = ""
+# var config_opt = "-DYOUR_OPTIONS=HERE"
 
 configure { 
     CC=$cc CXX=$cxx cmake .. -DCMAKE_BUILD_TYPE=$cmakebuildtype -DCMAKE_INSTALL_PREFIX=$prefix $config_opt
