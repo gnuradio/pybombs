@@ -233,6 +233,11 @@ class recipescanner(Scanner):
             print "Setting category: "+c;
         self.recipe.category = c;
 
+    def description_set(self,d):
+        if debug_en:
+            print "Setting description: "+d;
+        self.recipe.description = d;
+
     def mainstate(self,a):
         self.begin("")
 
@@ -358,6 +363,7 @@ class recipescanner(Scanner):
     number = Rep1(digit)
     space = Any(" \t\n")
     rspace = Rep(space)
+    freetext = Rep(letter | digit | Any("+@$-._:/()#%[]=' ") | Any('"'))
     comment = Str("{") + Rep(AnyBut("}")) + Str("}")
     sep = Any(", :/");
     eol = Str("\r\n")|Str("\n")|Eof
@@ -373,6 +379,7 @@ class recipescanner(Scanner):
     lexicon = Lexicon([
         (Str("category:"), Begin("cat")),
         (Str("depends:"), Begin("deplist")),
+        (Str("description:"), Begin("descr")),
         (Str("inherit:"), Begin("inherit")),
         (Str("configuredir:"), Begin("configuredir")),
         (Str("makedir:"), Begin("makedir")),
@@ -414,6 +421,9 @@ class recipescanner(Scanner):
             ]),
         State('cat', [
             (sep, IGNORE), (pkgname, category_set), (eol, mainstate),
+            ]),
+        State('descr', [
+            (sep, IGNORE), (freetext, description_set), (eol, mainstate),
             ]),
         State('inherit', [
             (sep, IGNORE), (pkgname, inherit), (eol, mainstate),
@@ -513,6 +523,7 @@ class recipe:
         self.name = name;
         self.clearpkglist();
         self.depends = [];
+        self.description = None;
         self.satisfy_deb = None;
         self.satisfy_rpm = None;
         self.source = [];
@@ -840,4 +851,3 @@ class recipe:
         mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
         st = bashexec(self.scanner.var_replace_all(self.scr_verify));
         self.check_stat(st, "Verify");
-

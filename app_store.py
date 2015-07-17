@@ -48,7 +48,7 @@ class AppList(QtGui.QWidget):
     def cb(self):
         self._cb();
 
-    def addButton(self, name, callback):
+    def addButton(self, name, callback, descr):
         self._cb = callback;
         pkgimg = "img/" + name + ".png";
         if os.path.exists(pkgimg):
@@ -59,6 +59,8 @@ class AppList(QtGui.QWidget):
         icon = QtGui.QIcon(pixmap);
         button = QtGui.QToolButton();
         action = QtGui.QAction( icon, str(name), self );
+        if descr is not None:
+            action.setToolTip(descr)
         action.setStatusTip('Install App')
         button.setDefaultAction(action);
         button.setToolButtonStyle(Qt.ToolButtonTextUnderIcon);
@@ -213,7 +215,7 @@ class ASMain(QtGui.QWidget):
                 else:
                     cbs[c][p] = Installer(self, p);
                     pcidx = 2*cidx;
-                tabw[pcidx].addButton(p, cbs[c][p].cb);
+                tabw[pcidx].addButton(p, cbs[c][p].cb, global_recipes[p].description);
 
         self.cbs = cbs;
 
