@@ -200,6 +200,8 @@ def pkginfo(pn):
 
     print "Package Info for:    %s"%(pkg.name);
     print "Package Category:    %s"%(pkg.category);
+    if pkg.description:
+        print "Package Description:%s"%(pkg.description);
     print "Package Deps:        %s"%(str(pkg.depends));
     
     print "";
