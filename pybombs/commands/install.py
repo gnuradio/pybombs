@@ -70,24 +70,24 @@ class PyBombsInstall(PyBombsCmd):
             exit(1)
         self.update_if_exists = (cmd == 'update' or self.args.update)
         self.fail_if_not_exists = (cmd == 'update')
+        self.pm = package_manager.PackageManager()
 
     def run(self):
         """ Go, go, go! """
         install_tree = simple_tree.SimpleTree()
-        pm = package_manager.PackageManager()
         packages_to_update = []
         ### Step 1: Make a list of packages to install
         # Loop through all packages to install
         for pkg in self.args.packages:
             # Check is a valid package:
-            if not pm.exists(pkg):
+            if not self.pm.exists(pkg):
                 self.log.error("Package does not exist: {}".format(pkg))
                 exit(1)
             # Check if we already covered this package
             if pkg in install_tree.get_nodes():
                 continue
             # Check if package is already installed:
-            if not pm.installed(pkg):
+            if not self.pm.installed(pkg):
                 if self.fail_if_not_exists:
                     self.log.error("Package {} is not installed. Aborting.".format(pkg))
                     exit(1)
@@ -105,15 +105,15 @@ class PyBombsInstall(PyBombsCmd):
         ### Step 2: Recursively install, starting at the leaf nodes
         while not install_tree.empty():
             pkg = install_tree.pop_leaf_node()
-            if not pm.exists(pkg):
+            if not self.pm.exists(pkg):
                 self.log.error("Package {} can't be found!".format(pkg))
                 exit(1)
             if pkg in packages_to_update:
                 self.log.debug("Updating package: {}".format(pkg))
-                pm.update(pkg)
+                self.pm.update(pkg)
             else:
                 self.log.debug("Installing package: {}".format(pkg))
-                pm.install(pkg)
+                self.pm.install(pkg)
 
     def _add_deps_recursive(self, install_tree, pkg):
         """
@@ -128,6 +128,10 @@ class PyBombsInstall(PyBombsCmd):
             if isinstance(dep, list):
                 # I honestly have no clue why this happens, yet sometimes
                 # it does.
+                continue
+            if not self.update_if_exists and self.pm.installed(dep):
+                # We don't need to extend nodes if the package is already
+                # installed
                 continue
             self._add_deps_recursive(install_tree, dep)
 
