@@ -233,6 +233,11 @@ class recipescanner(Scanner):
             print "Setting category: "+c;
         self.recipe.category = c;
 
+    def description_set(self,d):
+        if debug_en:
+            print "Setting description: "+d;
+        self.recipe.description = d;
+
     def mainstate(self,a):
         self.begin("")
 
@@ -373,6 +378,7 @@ class recipescanner(Scanner):
     lexicon = Lexicon([
         (Str("category:"), Begin("cat")),
         (Str("depends:"), Begin("deplist")),
+        (Str("description:"), Begin("descr")),
         (Str("inherit:"), Begin("inherit")),
         (Str("configuredir:"), Begin("configuredir")),
         (Str("makedir:"), Begin("makedir")),
@@ -414,6 +420,9 @@ class recipescanner(Scanner):
             ]),
         State('cat', [
             (sep, IGNORE), (pkgname, category_set), (eol, mainstate),
+            ]),
+        State('descr', [
+            (sep, IGNORE), (pkgname, description_set), (eol, mainstate),
             ]),
         State('inherit', [
             (sep, IGNORE), (pkgname, inherit), (eol, mainstate),
@@ -513,6 +522,7 @@ class recipe:
         self.name = name;
         self.clearpkglist();
         self.depends = [];
+        self.description = "";
         self.satisfy_deb = None;
         self.satisfy_rpm = None;
         self.source = [];
