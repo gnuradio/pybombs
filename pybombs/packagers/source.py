@@ -25,9 +25,12 @@ Packager: Source packages
 import os
 import re
 import copy
-import subprocess
+import shutil
 from pybombs import pb_logging
 from pybombs import inventory
+from pybombs.utils import subproc
+from pybombs.utils import output_proc
+from pybombs.pb_exception import PBException
 from pybombs.fetch import make_fetcher
 from pybombs.config_manager import config_manager
 from pybombs.packagers.base import PackagerBase
@@ -66,25 +69,24 @@ class Source(PackagerBase):
         May raise an exception if things go terribly wrong.
         Otherwise, return True on success and False if installing failed.
         """
-
-        # First version
-        # Setup a fetch object and call refetch.
-        # - For now, always pull a new version
-        # Then change the cwd, call configure and call make.
-        # For testing, only install packages with git srcs
-
         if len(recipe.srcs) == 0:
             self.log.warning("Cannot find a source URI for package {}".format(recipe.id))
             return False
+        ### Fetch sources:
         self.log.debug("Source URI: {}".format(recipe.srcs[0].split("://", 1)[1]))
-        f = make_fetcher(recipe, recipe.srcs[0])
-        try:
-            if not f.refetch(recipe, recipe.srcs[0]):
-                self.log.warning("Something is failing here")
-                return False
-        except Exception:
-            self.log.error("Unable to fetch source for package {}".format(recipe.id))
-
+        fetched = False
+        for src in recipe.srcs:
+            fetcher = make_fetcher(recipe, src)
+            try:
+                if not fetcher.refetch(recipe, src):
+                    self.log.warning("Fetching source {} failed.".format(src))
+                    continue
+                fetched = True
+                break
+            except Exception:
+                self.log.error("Unable to fetch source for package {}".format(recipe.id))
+        if not fetched:
+            self.log.error("Unable to fetch.")
         ### Set up the build dir
         pkg_src_dir = "{src_dir}/{package}".format(
             src_dir=self.prefix.src_dir,
@@ -99,15 +101,15 @@ class Source(PackagerBase):
         if os.path.exists(os.path.join(pkg_src_dir, builddir)):
             shutil.rmtree(builddir)
         os.mkdir(builddir)
-        cwd=os.getcwd()
+        cwd = os.getcwd()
         os.chdir(builddir)
         ### Run the build process
         try:
             self.configure(recipe)
             self.make(recipe)
             self.make_install(recipe)
-        except PBException as e:
-            self.log.error("Problem occured while building package {}:\n{}".format(recipe.id, str(e)))
+        except PBException as err:
+            self.log.error("Problem occured while building package {}:\n{}".format(recipe.id, str(err)))
             return False
         ### Housekeeping
         os.chdir(cwd)
@@ -118,8 +120,8 @@ class Source(PackagerBase):
         We read the version number from the inventory. It might not exist,
         but that's OK.
         """
-        if self.inventory.has(name) and self.inventory.get_state(name) == 'installed':
-            return self.inventory.get_version(name, True)
+        if self.inventory.has(recipe.id) and self.inventory.get_state(recipe.id) == 'installed':
+            return self.inventory.get_version(recipe.id, True)
         return False
 
     def configure(self, recipe, try_again=False):
@@ -135,25 +137,24 @@ class Source(PackagerBase):
         pre_cmd = self.var_replace_all(recipe, recipe.src_configure)
         cmd = self.config_filter(pre_cmd)
         self.log.debug('Configure command: {}'.format(cmd))
-
-        #o_proc = output_proc.OutputProcessorMake(preamble="Configuring: ")
+        o_proc = None
+        if self.log.getEffectiveLevel() < pb_logging.OBNOXIOUS and not try_again:
+            o_proc = output_proc.OutputProcessorMake(preamble="Configuring: ")
         #pre_filt_command = self.scanner.var_replace_all(self.scr_configure)
         #st = bashexec(self.scanner.config_filter(pre_filt_command), o_proc)
-        if subprocess.call(recipe.src_configure, shell=True) != 0:
-            self.log.error("Configure failed")
-            return False
-        return True
-        '''
-        # If configuration fails:
+        if subproc.monitor_process(cmd, shell=True, oproc=o_proc) == 0:
+            self.log.debug("Configure successful.")
+            return True
+        # OK, something went wrong.
         if try_again == False:
-            #v.print_v(v.ERROR, "Configuration failed. Re-trying with higher verbosity.")
-            self.make(try_again=True)
+            self.log.warning("Configuration failed. Re-trying with higher verbosity.")
+            return self.configure(recipe, try_again=True)
         else:
-            #v.print_v(v.ERROR, "Configuration failed. See output above for error messages.")
-            raise PBRecipeException("Configuration failed")
-        '''
+            self.log.error("Configuration failed after running at least twice.")
+            raise PBException("Configuration failed")
 
-    def make(self, recipe,  try_again=False):
+
+    def make(self, recipe, try_again=False):
         """
         Build this recipe.
         If try_again is set, it will assume the build failed before
@@ -162,60 +163,44 @@ class Source(PackagerBase):
         """
         self.log.debug("Building recipe {}".format(recipe.id))
         self.log.debug("In cwd - {}".format(os.getcwd()))
-        #v.print_v(v.PDEBUG, "make")
-        #if v.VERBOSITY_LEVEL >= v.DEBUG or try_again:
-        #    o_proc = None
-        #else:
-        #    o_proc = output_proc.OutputProcessorMake(preamble="Building:    ")
-        # Stash the makewidth so we can set it back later
-
+        o_proc = None
+        if self.log.getEffectiveLevel() < pb_logging.OBNOXIOUS and not try_again:
+            o_proc = output_proc.OutputProcessorMake(preamble="Building: ")
         cmd = self.var_replace_all(recipe, recipe.src_make)
         self.log.debug("Make command - {0}".format(cmd))
-        if subprocess.call(cmd, shell=True) != 0:
-            self.log.error("Make failed")
-            return False
-        '''
-        makewidth = self.scanner.lvars['makewidth']
-        if try_again:
-            self.scanner.lvars['makewidth'] = '1'
-        st = bashexec(self.scanner.var_replace_all(self.scr_make), o_proc)
-        self.scanner.lvars['makewidth'] = makewidth
-        if st == 0:
-            return
-        '''
-        """
-        # If build fails, try again with more output:
+        if subproc.monitor_process(cmd, shell=True, oproc=o_proc) == 0:
+            self.log.debug("Make successful")
+            return True
+        # OK, something bad happened.
+        # Stash the makewidth so we can set it back later:
+        makewidth = recipe.lvars['makewidth']
         if try_again == False:
-            v.print_v(v.ERROR, "Build failed. Re-trying with reduced makewidth and higher verbosity.")
-            self.make(try_again=True)
+            recipe.lvars['makewidth'] = '1'
+            self.make(recipe, try_again=True)
+            recipe.lvars['makewidth'] = makewidth
         else:
-            v.print_v(v.ERROR, "Build failed. See output above for error messages.")
-            raise PBRecipeException("Build failed.")
-        """
+            self.log.error("Build failed. See output above for error messages.")
+            raise PBException("Build failed.")
 
     def make_install(self, recipe):
-        # perform installation, file copy
+        """
+        Run 'make install' or whatever copies the files to the right place.
+        """
         self.log.debug("Installing package {}".format(recipe.id))
         self.log.debug("In cwd - {}".format(os.getcwd()))
-        #v.print_v(v.PDEBUG, "make")
-        #if v.VERBOSITY_LEVEL >= v.DEBUG or try_again:
-        #    o_proc = None
-        #else:
-        #    o_proc = output_proc.OutputProcessorMake(preamble="Building:    ")
-        # Stash the makewidth so we can set it back later
-
         pre_cmd = self.var_replace_all(recipe, recipe.src_install)
         cmd = self.install_filter(pre_cmd)
         self.log.debug("Install command - {0}".format(cmd))
+        o_proc = None
+        if self.log.getEffectiveLevel() < pb_logging.OBNOXIOUS:
+            o_proc = output_proc.OutputProcessorMake(preamble="Installing: ")
+        if subproc.monitor_process(cmd, shell=True, oproc=o_proc) == 0:
+            self.log.debug("Installation successful")
+            return True
+        self.log.error("Make failed")
+        return False
 
-        #if v.VERBOSITY_LEVEL >= v.DEBUG:
-        #    o_proc = None
-        #else:
-        #    o_proc = output_proc.OutputProcessorMake(preamble="Installing: ")
 
-        if subprocess.call(cmd, shell=True) != 0:
-            self.log.error("Make failed")
-            return False
 
     def var_replace(self,s, lvars):
         #for k in vars.keys():
@@ -238,7 +223,7 @@ class Source(PackagerBase):
             os = s
             for k in d.keys():
                 s = s.replace("$%s"%(k), d[k])
-            v.print_v(v.PDEBUG, (s,os))
+            self.log.debug(s,os)
             if(os == s):
                 finished = True
         return s
@@ -285,14 +270,15 @@ class Source(PackagerBase):
 
     # Not really sure what this is for from the original
     def install_filter(self, in_string):
-        installed = re.compile("make install")
-        if str(os.environ.get('PYBOMBS_SDK')) == 'True':
-            print in_string
-            mk_inst_match = re.search(installed, in_string)
-            if mk_inst_match:
-                idx = in_string.find(mk_inst_match.group(0)) + len(mk_inst_match.group(0))
-                in_string = in_string[:idx] +  " DESTDIR=" + config.get('config', 'sandbox') + ' ' + in_string[idx:]
         return in_string
+        #installed = re.compile("make install")
+        #if str(os.environ.get('PYBOMBS_SDK')) == 'True':
+            #print in_string
+            #mk_inst_match = re.search(installed, in_string)
+            #if mk_inst_match:
+                #idx = in_string.find(mk_inst_match.group(0)) + len(mk_inst_match.group(0))
+                #in_string = in_string[:idx] +  " DESTDIR=" + config.get('config', 'sandbox') + ' ' + in_string[idx:]
+        #return in_string
 
 
 

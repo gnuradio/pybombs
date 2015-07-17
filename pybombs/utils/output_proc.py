@@ -28,9 +28,9 @@ import sys
 from subprocess import Popen, PIPE, STDOUT
 from threading  import Thread
 try:
-    from queue import Queue, Empty
+    from Queue import Queue, Empty
 except ImportError:
-    from queue import Queue, Empty  # python 3.x
+    from queue import Queue, Empty  # Py3k
 
 READ_TIMEOUT = 0.1 # s
 ROTATION_ANIM = ('-', '\\', '|', '/',)
