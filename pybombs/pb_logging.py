@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #
 # Copyright 2015 Free Software Foundation, Inc.
 #
@@ -58,7 +58,7 @@ class PBLogger(logging.getLoggerClass()):
         logging.Logger.__init__(self, *args, **kwargs)
 
     def obnoxious(self, *args, **kwargs):
-        """docstring for obnoxious"""
+        """ Extends logging for super-high verbosity """
         self.log(OBNOXIOUS, *args, **kwargs)
 
 
