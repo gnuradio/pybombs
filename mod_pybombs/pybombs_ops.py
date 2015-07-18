@@ -191,6 +191,9 @@ def pkglist():
                     state = inv.state(pkg);
                     satisfier = "inventory"
                 print "%25s %12s %10s %20s %s"%( pkg, state, satisfier, version, source );
+            descr = global_recipes[pkg].description
+            if descr:
+                print "\t%s\n" % descr
 
 def pkginfo(pn):
     try:
