@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #
 # Copyright 2015 Free Software Foundation, Inc.
 #
@@ -281,7 +281,7 @@ class ConfigManager(object):
         'CC': ('gcc', 'C Compiler Executable [gcc, clang, icc, etc]'),
         'CXX': ('g++', 'C++ Compiler Executable [g++, clang++, icpc, etc]'),
         'makewidth': ('4', 'Concurrent make threads [1,2,4,8...]'),
-        'packagers': ('source', 'Priority of non-source package managers'),
+        'packagers': ('apt-get', 'Priority of non-source package managers'),
     }
     LAYER_DEFAULT = 0
     LAYER_GLOBALS = 1
