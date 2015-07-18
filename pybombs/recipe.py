@@ -75,7 +75,6 @@ class PBPackageRequirementPair(object):
             a = a + " "*lvl + "None"
         return a
 
-
 class Recipe(Scanner):
     """
     Represents a recipe. Internally, it's a lexical scanner for the actual
@@ -432,11 +431,17 @@ class Recipe(Scanner):
     ]) # End Lexicon()
 
 
+recipe_cache = {}
 def get_recipe(pkgname):
     """
     Return a recipe object by its package name.
     """
-    return Recipe(recipe_manager.recipe_manager.get_recipe_filename(pkgname))
+    if recipe_cache.has_key(pkgname):
+        pb_logging.logger.getChild("get_recipe").debug("Woohoo, this one's already cached.")
+        return recipe_cache[pkgname]
+    r = Recipe(recipe_manager.recipe_manager.get_recipe_filename(pkgname))
+    recipe_cache[pkgname] = r
+    return r
 
 
 if __name__ == "__main__":

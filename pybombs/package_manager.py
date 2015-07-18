@@ -43,12 +43,12 @@ class PackageManager(object):
         self.log = pb_logging.logger.getChild("PackageManager")
         self.cfg = config_manager
         self.prefix_available = self.cfg.get_active_prefix().prefix_dir is not None
+        # Create a source package manager
         if self.prefix_available:
             self.src = packagers.Source()
             self.prefix = self.cfg.get_active_prefix()
         else:
             self.log.debug("No prefix specified. Skipping source package manager.")
-        # Create a source package manager
         # Create sorted list of binary package managers
         requested_packagers = [x.strip() for x in self.cfg.get('packagers').split(',')]
         binary_pkgrs = []
@@ -71,7 +71,18 @@ class PackageManager(object):
                 self._packagers += binary_pkgrs
             else:
                 raise PBException("Invalid satisfy_order value: {}".format(satisfy))
+        self.log.debug("Using packagers: {}".format([x.name for x in self._packagers]))
         # Now we can use self.packagers, in order, for our commands.
+
+    def check_package_flag(self, pkgname, flag):
+        """
+        See if package 'pkgname' has 'flag' set.
+        """
+        if self.prefix_available and \
+                self.prefix.packages.has_key(pkgname) and \
+                self.prefix.packages[pkgname].find(flag) != -1:
+            return True
+        return False
 
     def get_packagers(self, pkgname):
         """
@@ -80,9 +91,10 @@ class PackageManager(object):
         required (and then only return that).
         """
         # Check if the package flags aren't forcing a source build:
-        if self.prefix_available and \
-                self.prefix.packages.has_key(pkgname) and \
-                self.prefix.packages[pkgname].find('forcebuild') != -1:
+        if self.check_package_flag(pkgname, 'forcebuild'):
+            if not self.prefix_available:
+                self.log.error("Package {} requires source-build, but no prefix is specified. Aborting.")
+                exit(1)
             return [self.src,]
         return self._packagers
 
@@ -91,6 +103,8 @@ class PackageManager(object):
         Check to see if this package is available on this platform.
         Returns True or a version string if yes, False if not.
         """
+        if self.check_package_flag(name, 'forceinstalled'):
+            return True
         r = recipe.get_recipe(name)
         for pkgr in self.get_packagers(name):
             pkg_version = pkgr.exists(r)
@@ -106,7 +120,12 @@ class PackageManager(object):
         If yes, it returns True or a version string.
         Otherwise, returns False.
         """
+        self.log.debug("Checking if package {} is installed.".format(name))
         r = recipe.get_recipe(name)
+        if self.check_package_flag(name, 'forceinstalled'):
+            self.log.debug("Package {} is assumed installed.".format(name))
+            # TODO maybe we can figure out a version string
+            return True
         for pkgr in self.get_packagers(name):
             pkg_version = pkgr.installed(r)
             if pkg_version is None or not pkg_version:
@@ -119,6 +138,10 @@ class PackageManager(object):
         """
         Install the given package. Returns True if successful, False otherwise.
         """
+        if self.check_package_flag(name, 'forceinstalled'):
+            self.log.debug("Package {} is assumed installed.".format(name))
+            # TODO maybe we can figure out a version string
+            return True
         r = recipe.get_recipe(name)
         for pkgr in self.get_packagers(name):
             try:

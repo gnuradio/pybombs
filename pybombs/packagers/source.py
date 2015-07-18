@@ -36,6 +36,8 @@ from pybombs.config_manager import config_manager
 from pybombs.packagers.base import PackagerBase
 
 class Source(PackagerBase):
+    name = "source"
+
     """
     Source package manager.
     """

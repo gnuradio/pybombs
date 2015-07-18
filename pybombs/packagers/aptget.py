@@ -26,6 +26,7 @@ import re
 import subprocess
 from pybombs.packagers.base import PackagerBase
 from pybombs.utils import sysutils
+from pybombs.utils.vcompare import vcompare
 
 class AptGet(PackagerBase):
     """
@@ -52,11 +53,11 @@ class AptGet(PackagerBase):
         """
         Call 'apt-get install pkgname' if we can satisfy the version requirements.
         """
-        available_version = self.get_version_from_apt_cache(pkgname)
+        available_version = self.get_version_from_apt_cache(pkg_name)
         if required_version is not None and not vcompare(comparator, required_version, available_version):
             return False
         try:
-            sysutils.monitor_process(["sudo", "apt-get", "-y", "install", name])
+            sysutils.monitor_process(["sudo", "apt-get", "-y", "install", pkg_name])
             return True
         except:
             self.log.error("Running apt-get install failed.")
@@ -111,13 +112,17 @@ class AptGet(PackagerBase):
         """
         try:
             # dpkg -s will return non-zero if package does not exist, thus will throw
-            out = subprocess.check_output(["dpkg", "-s", pkgname])
+            out = subprocess.check_output(["dpkg", "-s", pkgname], stderr=subprocess.STDOUT)
             # Get the versions
             #ver = re.search(r'^Version: (?:\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n', out)
-            ver = re.search(r'^Version: (?:\d+:)?(?P<ver>.*)$', out, re.MULTILINE).group('ver')
+            ver = re.search(r'^Version: (?:\d+:)?(?P<ver>[0-9.]*)$', out, re.MULTILINE).group('ver')
             self.log.debug("Package {} has version {} in dpkg".format(pkgname, ver))
             return ver
-        except:
+        except subprocess.CalledProcessError:
+            # This usually means the packet is not installed
+            return False
+        except Exception as e:
+            print str(e)
             self.log.error("Running dpkg -s failed.")
         return False
 

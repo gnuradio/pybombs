@@ -44,7 +44,7 @@ class PyBombsCmd(object):
         self.cmd = cmd
         self.args = args
         self.log = pb_logging.logger.getChild(cmd)
-        self.log.debug("Initializing command class for command {} (class {})".format(cmd, str(self)))
+        self.log.debug("Initializing command class for command {}".format(cmd))
         self.cfg = config_manager
         if not cmd in self.cmds.keys():
             raise PBException("{} is not a valid name for this command.".format(cmd))
@@ -69,7 +69,7 @@ class PyBombsCmd(object):
 
     def run(self):
         """ Override this. """
-        raise PBException("run() method not implemented for command {0}!".format(self._cmd))
+        raise PBException("run() method not implemented for command {1}!".format(self._cmd))
 
 ##############################################################################
 # Argument Parser
