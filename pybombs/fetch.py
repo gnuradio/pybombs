@@ -52,6 +52,9 @@ class Fetcher(object):
         if self.check_fetched(recipe, url):
             self.log.info("Already fetched: {}".format(recipe.id))
             return True
+        if not os.path.isdir(self.src_dir):
+            self.log.debug("Source dir does not exist! Trying to create {}".format(self.src_dir))
+            os.mkdir(self.src_dir)
         self.log.debug("Fetching {}".format(url))
         return self._fetch(recipe, url.split("://", 1)[1])
 
@@ -100,6 +103,7 @@ class FetcherGit(Fetcher):
         git clone (or git pull TODO)
         """
         cwd = os.getcwd()
+        print self.src_dir
         os.chdir(self.src_dir)
         self.log.debug("Using url - {}".format(url))
         self.log.obnoxious("Switching cwd to: {}".format(self.src_dir))
