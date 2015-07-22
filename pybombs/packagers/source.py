@@ -60,8 +60,8 @@ class Source(PackagerBase):
         """
         This will work whenever any sources are defined.
         """
-        self.log.info("Pretending that package {} exists.".format(recipe.id))
-        print recipe
+        # Return a pseudo-version
+        # TODO check if we can get something better from the inventory
         return "0.0"
 
     def install(self, recipe):

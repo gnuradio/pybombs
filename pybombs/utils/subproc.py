@@ -32,7 +32,7 @@ def monitor_process(
             shell=False,
             throw_ex=False,
             env=None,
-            oproc=None,
+            o_proc=None,
     ):
     """
     Run a process and monitor it. If it is cancelled, perform
