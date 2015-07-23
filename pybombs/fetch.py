@@ -105,7 +105,6 @@ class FetcherGit(Fetcher):
         git clone (or git pull TODO)
         """
         cwd = os.getcwd()
-        print self.src_dir
         os.chdir(self.src_dir)
         self.log.debug("Using url - {}".format(url))
         self.log.obnoxious("Switching cwd to: {}".format(self.src_dir))

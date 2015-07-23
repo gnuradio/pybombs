@@ -48,7 +48,6 @@ class Source(PackagerBase):
             exit(1)
         self.prefix = self.cfg.get_active_prefix()
         self.inventory = inventory.Inventory(self.prefix.inv_file)
-        self.inventory.load()
 
     def supported(self):
         """
@@ -75,13 +74,17 @@ class Source(PackagerBase):
             self.log.warning("Cannot find a source URI for package {}".format(recipe.id))
             return False
         try:
-            self.log.debug("State on package {} is {}".format(recipe.id, self.inventory.get_state(recipe.id)))
+            initial_state = self.inventory.get_state(recipe.id)
+            if initial_state is None:
+                initial_state = 0
+            self.log.debug("State on package {} is {}".format(recipe.id, initial_state))
             # First, make sure we have the sources
-            if not (self.inventory.get_state(recipe.id) > self.inventory.STATE_FETCHED):
-                self.log.obnoxious("Running fetch for recipe {}".format(recipe.id))
+            if self.inventory.get_state(recipe.id) < self.inventory.STATE_FETCHED:
                 self.fetch(recipe)
                 self.inventory.set_state(recipe.id, self.inventory.STATE_FETCHED)
                 self.inventory.save()
+            else:
+                self.log.debug("Package {} is already fetched.".format(recipe.id))
             # Set up the build dir
             pkg_src_dir = "{src_dir}/{package}".format(
                 src_dir=self.prefix.src_dir,
@@ -100,21 +103,24 @@ class Source(PackagerBase):
             cwd = os.getcwd()
             os.chdir(builddir)
             ### Run the build process
-            if not (self.inventory.get_state(recipe.id) > self.inventory.STATE_CONFIGURED):
-                self.log.obnoxious("Running configure for recipe {}".format(recipe.id))
+            if self.inventory.get_state(recipe.id) < self.inventory.STATE_CONFIGURED:
                 self.configure(recipe)
                 self.inventory.set_state(recipe.id, self.inventory.STATE_CONFIGURED)
                 self.inventory.save()
-            if not (self.inventory.get_state(recipe.id) > self.inventory.STATE_BUILT):
-                self.log.obnoxious("Running make for recipe {}".format(recipe.id))
+            else:
+                self.log.debug("Package {} is already configured.".format(recipe.id))
+            if self.inventory.get_state(recipe.id) < self.inventory.STATE_BUILT:
                 self.make(recipe)
                 self.inventory.set_state(recipe.id, self.inventory.STATE_BUILT)
                 self.inventory.save()
-            if not (self.inventory.get_state(recipe.id) > self.inventory.STATE_INSTALLED):
-                self.log.obnoxious("Running install for recipe {}".format(recipe.id))
+            else:
+                self.log.debug("Package {} is already built.".format(recipe.id))
+            if self.inventory.get_state(recipe.id) < self.inventory.STATE_INSTALLED:
                 self.make_install(recipe)
                 self.inventory.set_state(recipe.id, self.inventory.STATE_INSTALLED)
                 self.inventory.save()
+            else:
+                self.log.debug("Package {} is already installed.".format(recipe.id))
         except PBException as err:
             os.chdir(cwd)
             self.log.error("Problem occured while building package {}:\n{}".format(recipe.id, str(err)))
@@ -137,7 +143,7 @@ class Source(PackagerBase):
     # goes wrong.
     #########################################################################
     def fetch(self, recipe):
-        self.log.debug("Source URI: {}".format(recipe.srcs[0].split("://", 1)[1]))
+        self.log.debug("Fetching from source URI: {}".format(recipe.srcs[0].split("://", 1)[1]))
         fetched = False
         for src in recipe.srcs:
             fetcher = make_fetcher(recipe, src)
@@ -163,14 +169,12 @@ class Source(PackagerBase):
         and we're trying to run it again.
         """
         self.log.debug("Configuring recipe {}".format(recipe.id))
-        self.log.debug("Configure command - {0}".format(recipe.src_configure))
         self.log.debug("Using lvars - {}".format(recipe.lvars))
         self.log.debug("In cwd - {}".format(os.getcwd()))
         pre_cmd = self.var_replace_all(recipe, recipe.src_configure)
         cmd = self.config_filter(pre_cmd)
-        self.log.debug('Configure command: {}'.format(cmd))
         o_proc = None
-        if self.log.getEffectiveLevel() < pb_logging.OBNOXIOUS and not try_again:
+        if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
             o_proc = output_proc.OutputProcessorMake(preamble="Configuring: ")
         #pre_filt_command = self.scanner.var_replace_all(self.scr_configure)
         #st = bashexec(self.scanner.config_filter(pre_filt_command), o_proc)
@@ -195,11 +199,9 @@ class Source(PackagerBase):
         """
         self.log.debug("Building recipe {}".format(recipe.id))
         self.log.debug("In cwd - {}".format(os.getcwd()))
-        o_proc = None
-        if self.log.getEffectiveLevel() < pb_logging.OBNOXIOUS and not try_again:
+        if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
             o_proc = output_proc.OutputProcessorMake(preamble="Building: ")
         cmd = self.var_replace_all(recipe, recipe.src_make)
-        self.log.debug("Make command - {0}".format(cmd.strip()))
         if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
             self.log.debug("Make successful")
             return True
@@ -222,29 +224,14 @@ class Source(PackagerBase):
         self.log.debug("In cwd - {}".format(os.getcwd()))
         pre_cmd = self.var_replace_all(recipe, recipe.src_install)
         cmd = self.install_filter(pre_cmd)
-        self.log.debug("Install command - {1}".format(cmd))
         o_proc = None
-        if self.log.getEffectiveLevel() < pb_logging.OBNOXIOUS:
+        if self.log.getEffectiveLevel() >= pb_logging.DEBUG:
             o_proc = output_proc.OutputProcessorMake(preamble="Installing: ")
         if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
             self.log.debug("Installation successful")
             return True
         self.log.error("Make failed")
         return False
-
-    def var_replace(self,s, lvars):
-        #for k in vars.keys():
-        #    s = s.replace("$%s"%(k), vars[k])
-        for k in lvars.keys():
-            s = s.replace("$%s"%(k), str(lvars[k]))
-        #for k in lvars.keys():
-        #    s = s.replace("$%s"%(k), lvars[k])
-        options = self.cfg.cfg_cascade[0]
-        self.log.debug("Options --> {}".format(options))
-        options['prefix'] = "{}/target".format(self.prefix.prefix_dir)
-        for k in options.keys():
-            s = s.replace("$%s"%(k).lower(), str(options[k]))
-        return s
 
     ### NOT BEING USED ###
     def fancy_var_replace(self,s,d):
@@ -265,11 +252,26 @@ class Source(PackagerBase):
         else:
             return  m.group(3)
 
+    def var_replace(self,s, lvars):
+        #for k in vars.keys():
+        #    s = s.replace("$%s"%(k), vars[k])
+        for k in lvars.keys():
+            s = s.replace("$%s"%(k), str(lvars[k]))
+        #for k in lvars.keys():
+        #    s = s.replace("$%s"%(k), lvars[k])
+        options = self.cfg.cfg_cascade[0]
+        self.log.debug("Options --> {}".format(options))
+        options['prefix'] = "{}/target".format(self.prefix.prefix_dir)
+        for k in options.keys():
+            s = s.replace("$%s"%(k).lower(), str(options[k]))
+        return s
+
     def var_replace_all(self, recipe, s):
+        """
+        Replace all the $variables in string 's' with the lvars
+        from 'recipe'.
+        """
         lvars = copy.copy(recipe.lvars)
-        print 'lvars pre update: ', lvars
-        lvars.update(vars(self.cfg))
-        print 'lvars post update: ', lvars
         s = self.var_replace(s, lvars)
         for k in lvars:
             fm = "\{([^\}]*)\}"

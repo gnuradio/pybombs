@@ -46,7 +46,7 @@ def monitor_process(
     - oproc: An output processor
     """
     log = logger.getChild("monitor_process")
-    log.debug("monitor_process(): Executing command {}".format(args))
+    log.debug("monitor_process(): Executing command `{}'".format(str(args).strip()))
     extra_popen_args = {}
     use_oproc = False
     if isinstance(o_proc, output_proc.OutputProcessor):

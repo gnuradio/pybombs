@@ -278,8 +278,8 @@ class ConfigManager(object):
             'CMAKE_BUILD_TYPE args to pass to cmake projects, options are: Debug, Release, RelWithDebInfo, MinSizeRel'
         ),
         'builddocs': ('OFF', 'Build doxygen while compiling packages? options are: ON, OFF'),
-        'CC': ('gcc', 'C Compiler Executable [gcc, clang, icc, etc]'),
-        'CXX': ('g++', 'C++ Compiler Executable [g++, clang++, icpc, etc]'),
+        'cc': ('', 'C Compiler Executable [gcc, clang, icc, etc]'),
+        'cxx': ('', 'C++ Compiler Executable [g++, clang++, icpc, etc]'),
         'makewidth': ('4', 'Concurrent make threads [1,2,4,8...]'),
         'packagers': ('apt-get', 'Priority of non-source package managers'),
     }
@@ -398,8 +398,8 @@ class ConfigManager(object):
         for set_of_vals in reversed(self.cfg_cascade):
             if key in set_of_vals.keys():
                 return set_of_vals[key]
-            elif default is not None:
-                return default
+        if default is not None:
+            return default
         raise PBException("Invalid configuration key: {}".format(key))
 
     def set(self, key, value):
@@ -436,6 +436,16 @@ class ConfigManager(object):
         Returns the location of the .lwt files
         """
         return self._template_dir
+
+    def get_default_lvars(self):
+        lvars = {}
+        for key in ('makewidth', 'cc', 'cxx', 'config_opt', 'install_opt', 'cmakebuildtype'):
+            lvars[key] = self.get(key, '')
+        prefix_dir = ''
+        if self.get_active_prefix().prefix_dir is not None:
+            prefix_dir = self.get_active_prefix().prefix_dir
+        lvars['prefix'] = prefix_dir
+        return lvars
 
     def setup_parser(self, parser):
         """
