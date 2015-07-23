@@ -292,13 +292,19 @@ class ConfigManager(object):
     LAYER_VOLATILE = 6
 
     def __init__(self,):
-        ## Set up logger:
-        self.log = pb_logging.logger.getChild("ConfigManager")
         ## Get command line args:
         parser = argparse.ArgumentParser(add_help=False)
         self.setup_parser(parser)
         args = parser.parse_known_args()[0]
         cfg_files = []
+        ## Set verbosity level:
+        verb_offset = args.verbose - args.quiet
+        verb_level = pb_logging.logger.getEffectiveLevel() - 10 * verb_offset
+        if verb_level < pb_logging.OBNOXIOUS:
+            verb_level = pb_logging.OBNOXIOUS
+        pb_logging.logger.setLevel(verb_level)
+        ## Set up logger:
+        self.log = pb_logging.logger.getChild("ConfigManager")
         ## Setup cfg_cascade:
         # self.cfg_cascade is a list of dicts. The higher the index,
         # the more important the dict.
@@ -331,6 +337,9 @@ class ConfigManager(object):
         self.cfg_cascade.append({})
         # After this, no more dicts should be appended to cfg_cascade.
         assert len(self.cfg_cascade) == self.LAYER_VOLATILE + 1
+        # Find recipe templates:
+        self._template_dir = os.path.join(os.path.dirname(pb_logging.__file__), 'templates')
+        self.log.debug("Template directory: {}".format(self._template_dir))
         ## Init prefix:
         self._prefix_info = PrefixInfo(args, cfg_files)
         ## Init recipe-lists:
@@ -352,8 +361,7 @@ class ConfigManager(object):
             for loc in recipe_locations.itervalues():
                 self._recipe_locations.append(loc)
         self.log.debug("Full list of recipe locations: {}".format(self._recipe_locations))
-        ## Set verbosity level:
-        self._verb_offset = args.verbose - args.quiet
+
 
     def _append_cfg_from_file(self, cfg_filename):
         """
@@ -422,6 +430,12 @@ class ConfigManager(object):
         Returns a list of recipe locations, in order of preference
         """
         return self._recipe_locations
+
+    def get_template_dir(self):
+        """
+        Returns the location of the .lwt files
+        """
+        return self._template_dir
 
     def setup_parser(self, parser):
         """

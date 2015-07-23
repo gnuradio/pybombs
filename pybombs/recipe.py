@@ -179,25 +179,25 @@ class Recipe(Scanner):
     def configure_set_static(self, static_cfg_opts):
         " Add static config options "
         if self.static:
-            self.log.log(1, "Adding static config options: {0}".format(static_cfg_opts))
+            self.log.log(1, "Adding static config options: {0}".format(static_cfg_opts.strip()))
             self.src_configure = static_cfg_opts
 
     def configure_set(self, cfg_opts):
         " Add config options "
         if not self.static or self.src_configure == "":
-            self.log.log(1, "Adding config options: {0}".format(cfg_opts))
+            self.log.log(1, "Adding config options: {0}".format(cfg_opts.strip()))
             self.src_configure = cfg_opts
 
     def install_set_static(self, arg):
         " Add static install options "
         if self.static:
-            self.log.log(1, "Adding static install options: {0}".format(arg))
+            self.log.log(1, "Adding static install options: {0}".format(arg.strip()))
             self.src_install = arg
 
     def install_set(self, arg):
         " Add install options "
         if not self.static or self.src_install == "":
-            self.log.log(1, "Adding install options: {0}".format(arg))
+            self.log.log(1, "Adding install options: {0}".format(arg.strip()))
             self.src_install = arg
 
     def satisfy_begin(self, pkg_type):
@@ -265,7 +265,7 @@ class Recipe(Scanner):
         """ Inherit from a given template """
         try:
             filename = recipe_manager.recipe_manager.get_template_filename(template)
-            print filename
+            self.log.obnoxious("Loading template file: {}".format(filename))
         except PBException as e:
             self.log.warn("Recipe attempting to inherit from unknown template {}".format(template))
             return
@@ -277,7 +277,7 @@ class Recipe(Scanner):
             setattr(self, v, getattr(subscanner, v))
         # Copy the lvars over
         self.lvars = subscanner.lvars
-        self.log.log(1, "Updated lvars: {}".format(self.lvars))
+        self.log.obnoxious("Updated lvars: {}".format(self.lvars))
 
     def variable_begin(self, a):
         " Beginning of a variable line "
