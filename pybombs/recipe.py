@@ -159,6 +159,9 @@ class Recipe(Scanner):
         out += "\t{0}: {1}\n".format("var", self.var)
         return out
 
+    def is_oot(self):
+        return self.category == 'common'
+
     def set_attr(self, arg, key):
         " Set a simple attribute "
         self.log.log(1, "Setting attribute {} = {}".format(key.strip(), arg.strip()))

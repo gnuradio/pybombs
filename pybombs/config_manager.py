@@ -58,6 +58,8 @@ class PrefixInfo(object):
     prefix_conf_dir = '.pybombs'
     env_prefix_var = 'PYBOMBS_PREFIX'
     inv_file_name = 'inventory.dat'
+    default_package_flags = {'gnuradio': 'forcebuild'}
+    default_category_flags = {'common': 'forcebuild'}
 
     def __init__(self, args, cfg_list):
         self.log = pb_logging.logger.getChild("ConfigManager.PrefixInfo")
@@ -133,7 +135,8 @@ class PrefixInfo(object):
             for k, v in self._cfg_info['env'].iteritems():
                 self.env[k] = os.path.expandvars(v.strip())
         # 8) Package flags
-        self.packages = self._cfg_info['packages']
+        self.packages   = self._cfg_info['packages']
+        self.categories = self._cfg_info['categories']
 
     def _load_cfg_info(self, cfg_list, cfg_info=None):
         """
@@ -145,7 +148,8 @@ class PrefixInfo(object):
                 'aliases': {},
                 'cfg_dirs': {},
                 'env': {},
-                'packages': {},
+                'packages': self.default_package_flags,
+                'categories': self.default_category_flags,
             }
         for cfg_file in reversed(cfg_list):
             self.log.debug('Inspecting config file: {}'.format(cfg_file))
