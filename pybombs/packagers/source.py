@@ -80,8 +80,9 @@ class Source(PackagerBase):
         for src in recipe.srcs:
             fetcher = make_fetcher(recipe, src)
             try:
-                if not fetcher.refetch(recipe, src):
-                    self.log.warning("Fetching source {} failed.".format(src))
+                fetch_result = fetcher.refetch(recipe, src)
+                if not fetch_result:
+                    self.log.warning("Fetching source {0} failed.".format(src))
                     continue
                 fetched = True
                 break
@@ -89,6 +90,8 @@ class Source(PackagerBase):
                 self.log.error("Unable to fetch source for package {}".format(recipe.id))
         if not fetched:
             self.log.error("Unable to fetch.")
+        self.inventory.set_state(recipe.id, "fetch")
+        self.inventory.save()
         ### Set up the build dir
         pkg_src_dir = "{src_dir}/{package}".format(
             src_dir=self.prefix.src_dir,
@@ -108,8 +111,14 @@ class Source(PackagerBase):
         ### Run the build process
         try:
             self.configure(recipe)
+            self.inventory.set_state(recipe.id, "configure")
+            self.inventory.save()
             self.make(recipe)
+            self.inventory.set_state(recipe.id, "make")
+            self.inventory.save()
             self.make_install(recipe)
+            self.inventory.set_state(recipe.id, "installed")
+            self.inventory.save()
         except PBException as err:
             self.log.error("Problem occured while building package {}:\n{}".format(recipe.id, str(err)))
             return False
@@ -144,7 +153,7 @@ class Source(PackagerBase):
             o_proc = output_proc.OutputProcessorMake(preamble="Configuring: ")
         #pre_filt_command = self.scanner.var_replace_all(self.scr_configure)
         #st = bashexec(self.scanner.config_filter(pre_filt_command), o_proc)
-        if subproc.monitor_process(cmd, shell=True, oproc=o_proc) == 0:
+        if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
             self.log.debug("Configure successful.")
             return True
         # OK, something went wrong.
@@ -170,7 +179,7 @@ class Source(PackagerBase):
             o_proc = output_proc.OutputProcessorMake(preamble="Building: ")
         cmd = self.var_replace_all(recipe, recipe.src_make)
         self.log.debug("Make command - {0}".format(cmd))
-        if subproc.monitor_process(cmd, shell=True, oproc=o_proc) == 0:
+        if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
             self.log.debug("Make successful")
             return True
         # OK, something bad happened.
@@ -192,17 +201,15 @@ class Source(PackagerBase):
         self.log.debug("In cwd - {}".format(os.getcwd()))
         pre_cmd = self.var_replace_all(recipe, recipe.src_install)
         cmd = self.install_filter(pre_cmd)
-        self.log.debug("Install command - {0}".format(cmd))
+        self.log.debug("Install command - {1}".format(cmd))
         o_proc = None
         if self.log.getEffectiveLevel() < pb_logging.OBNOXIOUS:
             o_proc = output_proc.OutputProcessorMake(preamble="Installing: ")
-        if subproc.monitor_process(cmd, shell=True, oproc=o_proc) == 0:
+        if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
             self.log.debug("Installation successful")
             return True
         self.log.error("Make failed")
         return False
-
-
 
     def var_replace(self,s, lvars):
         #for k in vars.keys():
