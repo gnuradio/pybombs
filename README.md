@@ -64,7 +64,8 @@ Prefixes are selected by the following rules, in this order:
 2. The current directory
 3. The default prefix as defined by the `default_prefix` config switch
 
-If no prefix can be found, most PyBOMBS operations will not be possible.
+If no prefix can be found, most PyBOMBS operations will not be possible,
+but some will still work.
 
 ### Configuring a prefixes environment (cross-compiling)
 
@@ -136,6 +137,14 @@ morerecipes=/home/user/pb-recipes
 # Package flags:
 [packages]
 gnuradio=forcebuild
-```
 
+# Like package flags, but applies flags to all packages
+# in a certain category. 'common' is all OOTs.
+[categories]
+common=forcebuild
+
+# Environment variables
+[env]
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/path/to/more/libs
+```
 
