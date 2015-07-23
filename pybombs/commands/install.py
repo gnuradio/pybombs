@@ -107,7 +107,7 @@ class PyBombsInstall(PyBombsCmd):
             pkg = install_tree.pop_leaf_node()
             if not self.pm.exists(pkg):
                 self.log.error("Package {} can't be found!".format(pkg))
-                exit(1)
+                exit(2)
             if pkg in packages_to_update:
                 self.log.debug("Updating package: {}".format(pkg))
                 self.pm.update(pkg)
