@@ -37,6 +37,10 @@ class Inventory(object):
     Except for save(), none of the methods actually writes to the
     inventory file.
     """
+    STATE_FETCHED    = 10
+    STATE_CONFIGURED = 20
+    STATE_BUILT      = 30
+    STATE_INSTALLED  = 30
 
     def __init__(
             self,
@@ -47,10 +51,10 @@ class Inventory(object):
         self.log = pb_logging.logger.getChild("Inventory")
         self.load()
         self._valid_states = {
-            'fetch': 'Package source is in prefix, but not installed.',
-            'configure': 'Package is downloaded and configured.',
-            'make': 'Package is compiled.',
-            'installed': 'Package is installed into current prefix.'
+            self.STATE_FETCHED:    'Package source is in prefix, but not installed.',
+            self.STATE_CONFIGURED: 'Package is downloaded and configured.',
+            self.STATE_BUILT:      'Package is compiled.',
+            self.STATE_INSTALLED:  'Package is installed into current prefix.'
         }
 
     def load(self):

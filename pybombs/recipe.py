@@ -159,7 +159,7 @@ class Recipe(Scanner):
 
     def set_attr(self, arg, key):
         " Set a simple attribute "
-        self.log.log(1, "Setting attribute {} = {}".format(key, arg))
+        self.log.log(1, "Setting attribute {} = {}".format(key.strip(), arg.strip()))
         setattr(self, key, arg)
 
     def mainstate(self, a):
