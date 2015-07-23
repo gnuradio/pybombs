@@ -40,7 +40,7 @@ class Inventory(object):
     STATE_FETCHED    = 10
     STATE_CONFIGURED = 20
     STATE_BUILT      = 30
-    STATE_INSTALLED  = 30
+    STATE_INSTALLED  = 40
 
     def __init__(
             self,
@@ -66,7 +66,7 @@ class Inventory(object):
         """
         try:
             self.log.debug("Trying to load inventory file {}...".format(self._filename))
-            inv_file = open(self.inv_file, 'rb')
+            inv_file = open(self._filename, 'rb')
             self._contents = pickle.load(inv_file)
             inv_file.close()
         except:

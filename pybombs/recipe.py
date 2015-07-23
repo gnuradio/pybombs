@@ -30,6 +30,7 @@ import copy
 from pybombs import pb_logging
 from pybombs import recipe_manager
 from pybombs.pb_exception import PBException
+from pybombs.config_manager import config_manager
 
 from plex import *
 
@@ -113,8 +114,9 @@ class Recipe(Scanner):
         self.varoverride = False
         self.var = {}
         # Init lvars:
-        self.lvars = {}
-        if lvars is not None:
+        if lvars is None:
+            self.lvars = config_manager.get_default_lvars()
+        else:
             self.lvars = copy.copy(lvars)
         # Init recipe scanner:
         if not os.path.exists(filename):
