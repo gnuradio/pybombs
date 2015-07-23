@@ -47,7 +47,9 @@ class Fetcher(object):
 
     def fetch(self, recipe, url):
         """
-        Do the fetch
+        Do the fetch. If version info is available, return that.
+        Only return False or None if something goes wrong. May
+        throw.
         """
         if self.check_fetched(recipe, url):
             self.log.info("Already fetched: {}".format(recipe.id))
@@ -67,7 +69,7 @@ class Fetcher(object):
     def refetch(self, recipe, url):
         """
         Do a fetch even though already fetched. Default behaviour is to kill
-        the dir and do a new fetch.
+        the dir and do a new fetch. Returns the fetch result.
         """
         dst_dir = os.path.join(self.src_dir, recipe.id)
         if os.path.isdir(dst_dir):
@@ -75,8 +77,8 @@ class Fetcher(object):
             shutil.rmtree(dst_dir, ignore_errors=True)
             if os.path.isdir(dst_dir):
                 raise PBException("Can't nuke existing directory {}".format(dst_dir))
-        self.fetch(recipe, url)
-        return True
+            # TODO We should update the inventory here
+        return self.fetch(recipe, url)
 
     def check_fetched(self, recipe, url):
         """

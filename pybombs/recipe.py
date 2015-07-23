@@ -33,9 +33,12 @@ from pybombs.pb_exception import PBException
 
 from plex import *
 
-
-# structure for a dependency package (name, comparator, version) (for rpm or deb)
 class PBPackageRequirement(object):
+    """
+    Store info on a dependency package:
+    - Package name (typically deb or rpm or something like that)
+    - Version + Comparator
+    """
     def __init__(self, name):
         self.name = name
         self.compare = ">="
@@ -51,8 +54,10 @@ class PBPackageRequirement(object):
         return " "*lvl + "PackageRequirement({}, {}, {})".format(self.name, self.compare, self.version)
 
 
-# joining logic for multiple dep packages (for rpms and debs)
 class PBPackageRequirementPair(object):
+    """
+    Joining logic for multiple dep packages (rpms, debs, etc.)
+    """
     def __init__(self, pkg):
         self.first = pkg
         self.second = None
@@ -264,7 +269,7 @@ class Recipe(Scanner):
         except PBException as e:
             self.log.warn("Recipe attempting to inherit from unknown template {}".format(template))
             return
-        self.log.log(1, "Calling subscanner for file {}".format(filename))
+        self.log.obnoxious("Calling subscanner for file {}".format(filename))
         subscanner = Recipe(filename, lvars=self.lvars, static=self.static)
         # Get inherited values
         empty = [v for v in vars(self) if (getattr(self, v) is None or getattr(self, v) == "")]
@@ -437,7 +442,7 @@ def get_recipe(pkgname):
     Return a recipe object by its package name.
     """
     if recipe_cache.has_key(pkgname):
-        pb_logging.logger.getChild("get_recipe").debug("Woohoo, this one's already cached.")
+        pb_logging.logger.getChild("get_recipe").debug("Woohoo, this one's already cached ({})".format(pkgname))
         return recipe_cache[pkgname]
     r = Recipe(recipe_manager.recipe_manager.get_recipe_filename(pkgname))
     recipe_cache[pkgname] = r
