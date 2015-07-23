@@ -54,26 +54,22 @@ class SimpleTree(object):
         self.prune()
         return len(self._tree) == 0
 
-    def pop_leaf_node(self, base_node=None, child_node=None):
+    def pop_leaf_node(self, subtree=None):
         """
         Pops any leaf node and returns its value.
         """
-        if base_node is None:
+        if subtree is None:
             if self.empty():
                 return None
-            return self.pop_leaf_node(self._tree, self._tree[0])
-        if self.is_node(child_node):
-            base_node.remove(child_node)
-            return child_node
-        elif self.is_subtree(child_node) and len(child_node) == 0:
-            base_node.remove(child_node)
-            return None
-        ret_val = self.pop_leaf_node(child_node, child_node[0])
-        if ret_val is None and len(base_node) > 0:
-            base_node.remove(child_node)
-            if len(base_node) > 0:
-                return self.pop_leaf_node(base_node, base_node[0])
-        return ret_val
+            return self.pop_leaf_node(self._tree)
+        self.prune(subtree)
+        for node in subtree:
+            if self.is_subtree(node):
+                return self.pop_leaf_node(node)
+        # No more subtrees available, so return any leaf node:
+        leaf_node = subtree[0]
+        subtree.remove(leaf_node)
+        return leaf_node
 
     def prune(self, node=None):
         """
