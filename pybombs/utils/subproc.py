@@ -23,7 +23,7 @@
 Subprocess utils
 """
 
-from subprocess import Popen, PIPE
+import subprocess
 from pybombs.pb_logging import logger
 from pybombs.utils import output_proc
 
@@ -46,7 +46,7 @@ def monitor_process(
     - oproc: An output processor
     """
     log = logger.getChild("monitor_process")
-    log.debug("monitor_process(): Executing command {}".format(" ".join(args)))
+    log.debug("monitor_process(): Executing command {}".format(args))
     extra_popen_args = {}
     use_oproc = False
     if isinstance(o_proc, output_proc.OutputProcessor):

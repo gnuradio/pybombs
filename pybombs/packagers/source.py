@@ -74,52 +74,49 @@ class Source(PackagerBase):
         if len(recipe.srcs) == 0:
             self.log.warning("Cannot find a source URI for package {}".format(recipe.id))
             return False
-        ### Fetch sources:
-        self.log.debug("Source URI: {}".format(recipe.srcs[0].split("://", 1)[1]))
-        fetched = False
-        for src in recipe.srcs:
-            fetcher = make_fetcher(recipe, src)
-            try:
-                fetch_result = fetcher.refetch(recipe, src)
-                if not fetch_result:
-                    self.log.warning("Fetching source {0} failed.".format(src))
-                    continue
-                fetched = True
-                break
-            except Exception:
-                self.log.error("Unable to fetch source for package {}".format(recipe.id))
-        if not fetched:
-            self.log.error("Unable to fetch.")
-        self.inventory.set_state(recipe.id, "fetch")
-        self.inventory.save()
-        ### Set up the build dir
-        pkg_src_dir = "{src_dir}/{package}".format(
-            src_dir=self.prefix.src_dir,
-            package=recipe.id,
-        )
-        builddir = os.path.join(pkg_src_dir, recipe.install_dir)
-        # The package source dir must exist, or something is wrong.
-        # If the build dir exists, clear it.
-        if not os.path.isdir(pkg_src_dir):
-            self.log.error("There should be a source dir in {}, but there isn't.".format(pkg_src_dir))
-            return False
-        if os.path.exists(os.path.join(pkg_src_dir, builddir)):
-            shutil.rmtree(builddir)
-        os.mkdir(builddir)
-        cwd = os.getcwd()
-        os.chdir(builddir)
-        ### Run the build process
         try:
-            self.configure(recipe)
-            self.inventory.set_state(recipe.id, "configure")
-            self.inventory.save()
-            self.make(recipe)
-            self.inventory.set_state(recipe.id, "make")
-            self.inventory.save()
-            self.make_install(recipe)
-            self.inventory.set_state(recipe.id, "installed")
-            self.inventory.save()
+            self.log.debug("State on package {} is {}".format(recipe.id, self.inventory.get_state(recipe.id)))
+            # First, make sure we have the sources
+            if not (self.inventory.get_state(recipe.id) > self.inventory.STATE_FETCHED):
+                self.log.obnoxious("Running fetch for recipe {}".format(recipe.id))
+                self.fetch(recipe)
+                self.inventory.set_state(recipe.id, self.inventory.STATE_FETCHED)
+                self.inventory.save()
+            # Set up the build dir
+            pkg_src_dir = "{src_dir}/{package}".format(
+                src_dir=self.prefix.src_dir,
+                package=recipe.id,
+            )
+            builddir = os.path.join(pkg_src_dir, recipe.install_dir)
+            # The package source dir must exist, or something is wrong.
+            if not os.path.isdir(pkg_src_dir):
+                self.log.error("There should be a source dir in {}, but there isn't.".format(pkg_src_dir))
+                return False
+            if os.path.exists(os.path.join(pkg_src_dir, builddir)):
+                #shutil.rmtree(builddir)
+                self.log.debug("Build dir already exists: {}".format(builddir))
+            else:
+                os.mkdir(builddir)
+            cwd = os.getcwd()
+            os.chdir(builddir)
+            ### Run the build process
+            if not (self.inventory.get_state(recipe.id) > self.inventory.STATE_CONFIGURED):
+                self.log.obnoxious("Running configure for recipe {}".format(recipe.id))
+                self.configure(recipe)
+                self.inventory.set_state(recipe.id, self.inventory.STATE_CONFIGURED)
+                self.inventory.save()
+            if not (self.inventory.get_state(recipe.id) > self.inventory.STATE_BUILT):
+                self.log.obnoxious("Running make for recipe {}".format(recipe.id))
+                self.make(recipe)
+                self.inventory.set_state(recipe.id, self.inventory.STATE_BUILT)
+                self.inventory.save()
+            if not (self.inventory.get_state(recipe.id) > self.inventory.STATE_INSTALLED):
+                self.log.obnoxious("Running install for recipe {}".format(recipe.id))
+                self.make_install(recipe)
+                self.inventory.set_state(recipe.id, self.inventory.STATE_INSTALLED)
+                self.inventory.save()
         except PBException as err:
+            os.chdir(cwd)
             self.log.error("Problem occured while building package {}:\n{}".format(recipe.id, str(err)))
             return False
         ### Housekeeping
@@ -134,6 +131,30 @@ class Source(PackagerBase):
         if self.inventory.has(recipe.id) and self.inventory.get_state(recipe.id) == 'installed':
             return self.inventory.get_version(recipe.id, True)
         return False
+
+    #########################################################################
+    # Build methods: All of these must raise a PBException when something
+    # goes wrong.
+    #########################################################################
+    def fetch(self, recipe):
+        self.log.debug("Source URI: {}".format(recipe.srcs[0].split("://", 1)[1]))
+        fetched = False
+        for src in recipe.srcs:
+            fetcher = make_fetcher(recipe, src)
+            try:
+                # refetch is fine, because this only gets called when the
+                # state indicates it was not previously fetched, so a source
+                # dir has no business existing at this time
+                fetch_result = fetcher.refetch(recipe, src)
+                if not fetch_result:
+                    self.log.warning("Fetching source {0} failed.".format(src))
+                    continue
+                fetched = True
+                break
+            except Exception:
+                self.log.error("Unable to fetch source for package {}".format(recipe.id))
+        if not fetched:
+            raise PBException("Unable to fetch recipe {}".format(recipe.id))
 
     def configure(self, recipe, try_again=False):
         """
@@ -178,7 +199,7 @@ class Source(PackagerBase):
         if self.log.getEffectiveLevel() < pb_logging.OBNOXIOUS and not try_again:
             o_proc = output_proc.OutputProcessorMake(preamble="Building: ")
         cmd = self.var_replace_all(recipe, recipe.src_make)
-        self.log.debug("Make command - {0}".format(cmd))
+        self.log.debug("Make command - {0}".format(cmd.strip()))
         if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
             self.log.debug("Make successful")
             return True
@@ -245,9 +266,10 @@ class Source(PackagerBase):
             return  m.group(3)
 
     def var_replace_all(self, recipe, s):
-        finished = False
         lvars = copy.copy(recipe.lvars)
+        print 'lvars pre update: ', lvars
         lvars.update(vars(self.cfg))
+        print 'lvars post update: ', lvars
         s = self.var_replace(s, lvars)
         for k in lvars:
             fm = "\{([^\}]*)\}"
