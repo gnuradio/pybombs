@@ -101,12 +101,12 @@ class RecipeListManager(object):
             else:
                 self._recipe_list[pkgname] = [abs_filename, ]
 
-        self.log.debug("Looking for template directory")
+        self.log.debug("Loading templates.")
         # Load any templates from this directory.
-        template_dir = os.path.join(dirname, "templates")
+        template_dir = self.cfg.get_template_dir()
         if not os.path.isdir(template_dir):
-            self.log.debug("No template directory found in {0}".format(dirname))
-            return
+            self.log.error("No template directory found at {0}".format(dirname))
+            exit(1)
         template_files = [f for f in os.listdir(template_dir) if os.path.splitext(f)[1] == '.lwt']
         for f in template_files:
             template = os.path.splitext(f)[0]
@@ -115,7 +115,7 @@ class RecipeListManager(object):
                 self._template_list[template].insert(0, abs_filename)
             else:
                 self._template_list[template] = [abs_filename, ]
-            self.log.debug("Adding template {}".format(abs_filename))
+            self.log.obnoxious("Adding template {}".format(abs_filename))
 
 
 recipe_manager = RecipeListManager()
