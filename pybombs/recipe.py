@@ -276,13 +276,13 @@ class Recipe(Scanner):
             self.log.warn("Recipe attempting to inherit from unknown template {}".format(template))
             return
         self.log.obnoxious("Calling subscanner for file {}".format(filename))
-        subscanner = Recipe(filename, lvars=self.lvars, static=self.static)
-        # Get inherited values
+        sub_recipe = Recipe(filename, lvars=self.lvars, static=self.static)
+        # We inherit those values that *aren't* set already by our own recipe
         empty = [v for v in vars(self) if (getattr(self, v) is None or getattr(self, v) == "")]
         for v in empty:
-            setattr(self, v, getattr(subscanner, v))
-        # Copy the lvars over
-        self.lvars = subscanner.lvars
+            setattr(self, v, getattr(sub_recipe, v))
+        # Copy the lvars over:
+        self.lvars = sub_recipe.lvars
         self.log.obnoxious("Updated lvars: {}".format(self.lvars))
 
     def variable_begin(self, a):
@@ -302,11 +302,10 @@ class Recipe(Scanner):
     def variable_set(self, arg):
         " After variable_begin(), variable value is set here "
         if not self.lvars.has_key(self.varname) or self.varoverride:
-            self.log.log(1, "Setting variable {} == {}".format(self.varname, arg))
-            #self.lvars[self.varname] = self.var_replace(b)
+            self.log.obnoxious("Setting variable {} == {}".format(self.varname, arg))
             self.lvars[self.varname] = arg
         else:
-            self.log.log(1, "Ignoring variable {} == {}".format(self.varname, arg))
+            self.log.obnoxious("Ignoring variable {} == {}".format(self.varname, arg))
 
     ### Plex: Patterns
     letter   = Range("AZaz")
