@@ -123,7 +123,7 @@ class Source(PackagerBase):
                 self.log.debug("Package {} is already installed.".format(recipe.id))
         except PBException as err:
             os.chdir(cwd)
-            self.log.error("Problem occured while building package {}:\n{}".format(recipe.id, str(err)))
+            self.log.error("Problem occured while building package {}:\n{}".format(recipe.id, str(err).strip()))
             return False
         ### Housekeeping
         os.chdir(cwd)
@@ -199,6 +199,7 @@ class Source(PackagerBase):
         """
         self.log.debug("Building recipe {}".format(recipe.id))
         self.log.debug("In cwd - {}".format(os.getcwd()))
+        o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
             o_proc = output_proc.OutputProcessorMake(preamble="Building: ")
         cmd = self.var_replace_all(recipe, recipe.src_make)

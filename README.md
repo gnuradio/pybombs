@@ -126,8 +126,10 @@ default=/home/user/src/pb-prefix/
 sys=/usr/local
 
 # Prefix configuration directories:
-[prefix_config]
+[prefix_config_dir]
 sys=/home/user/pb-default/
+# Typically, you don't need this, because the prefix configuration
+# directory is in <PREFIX/.pybombs
 
 # Recipe locations:
 [recipes]
