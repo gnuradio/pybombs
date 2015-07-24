@@ -91,6 +91,7 @@ class Recipe(Scanner):
         self.log = pb_logging.logger.getChild("Recipe[{}]".format(self.id))
         self.static = static
         self.deps = []
+        self.description = None
         self.srcs = []
         self.install_like = None
         self.category = None
@@ -319,6 +320,7 @@ class Recipe(Scanner):
     number   = Rep1(digit)
     space    = Any(" \t\n")
     rspace   = Rep(space)
+    freetext = Rep(letter | digit | Any("+@$-._:/()#%[]=' ") | Any('"'))
     comment  = Str("{") + Rep(AnyBut("}")) + Str("}")
     sep      = Any(", :/")
     eol      = Str("\r\n")|Str("\n")|Eof
@@ -338,6 +340,7 @@ class Recipe(Scanner):
         # the state 'statename'.
         (Str("category:"), Begin("cat")),
         (Str("depends:"), Begin("deplist")),
+        (Str("description:"), Begin("descr")),
         (Str("inherit:"), Begin("inherit")),
         (Str("configuredir:"), Begin("configuredir")),
         (Str("makedir:"), Begin("makedir")),
@@ -386,9 +389,12 @@ class Recipe(Scanner):
         State('cat', [
             (sep, IGNORE), (pkgname, lambda scanner, arg: scanner.set_attr(arg, "category")), (eol, mainstate),
         ]),
+        State('descr', [
+            (sep, IGNORE), (freetext, lambda scanner, arg: scanner.set_attr(arg, "description")), (eol, mainstate),
+        ]),
         State('inherit', [
             (sep, IGNORE), (pkgname, inherit), (eol, mainstate),
-            ]),
+        ]),
         State('configuredir', [
             (sep, IGNORE), (uri, lambda scanner, arg: scanner.set_attr(arg, "configuredir")), (eol, mainstate),
         ]),

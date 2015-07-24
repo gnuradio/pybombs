@@ -81,15 +81,18 @@ class PrefixInfo(object):
             self.log.warn("Cannot establish a prefix directory. This may cause issues down the line.")
             return
         assert self.prefix_dir is not None
-        if self.alias is not None and self._cfg_info['cfg_dirs'].has_key(self.alias):
-            self.prefix_cfg_dir = self._cfg_info['cfg_dirs'][self.alias]
+        if self.alias is not None and self._cfg_info['prefix_config_dir'].has_key(self.alias):
+            self.prefix_cfg_dir = self._cfg_info['prefix_config_dir'][self.alias]
             self.log.debug("Choosing prefix config dir from alias: {}".format(self.prefix_cfg_dir))
-        elif self._cfg_info['cfg_dirs'].has_key(self.prefix_dir):
-            self.prefix_cfg_dir = self._cfg_info['prefix_config'][self.prefix_dir]
-            self.log.debug("Choosing prefix config dir from path lookup in prefix_config: {}".format(self.prefix_cfg_dir))
+        elif self._cfg_info['prefix_config_dir'].has_key(self.prefix_dir):
+            self.prefix_cfg_dir = self._cfg_info['prefix_config_dir'][self.prefix_dir]
+            self.log.debug("Choosing prefix config dir from path lookup in prefix_config_dir: {}".format(self.prefix_cfg_dir))
         else:
             self.prefix_cfg_dir = os.path.join(self.prefix_dir, self.prefix_conf_dir)
             self.log.debug("Choosing default prefix config dir: {}".format(self.prefix_cfg_dir))
+        if not os.path.isdir(self.prefix_cfg_dir):
+            self.log.debug("Config dir does not yet exist, creating it.")
+            os.mkdir(self.prefix_cfg_dir)
         # TODO: This apparently can cause memory leaks on Mac OS X... figure out
         # if I care
         os.environ[self.env_prefix_var] = self.prefix_dir
@@ -108,7 +111,7 @@ class PrefixInfo(object):
         else:
             self.src_dir = os.path.join(self.prefix_dir, 'src')
             if not os.path.isdir(self.src_dir):
-                self.log.warn("Prefix source dir not found: {}".format(self.inv_file))
+                self.log.warn("Prefix source dir not found: {}".format(self.src_dir))
         self.log.debug("Prefix source dir is: {}".format(self.src_dir))
         # 5) Find the inventory file
         self.inv_file = os.path.join(self.prefix_cfg_dir, self.inv_file_name)
@@ -134,9 +137,9 @@ class PrefixInfo(object):
             self.env = os.environ
             for k, v in self._cfg_info['env'].iteritems():
                 self.env[k] = os.path.expandvars(v.strip())
-        # 8) Package flags
-        self.packages   = self._cfg_info['packages']
-        self.categories = self._cfg_info['categories']
+        # 8) Keep relevant config sections as attributes
+        for k, v in self._cfg_info.iteritems():
+            setattr(self, k, v)
 
     def _load_cfg_info(self, cfg_list, cfg_info=None):
         """
@@ -145,47 +148,41 @@ class PrefixInfo(object):
         """
         if cfg_info is None:
             cfg_info = {
-                'aliases': {},
-                'cfg_dirs': {},
+                'prefix_aliases': {},
+                'prefix_config_dir': {},
                 'env': {},
                 'packages': self.default_package_flags,
                 'categories': self.default_category_flags,
             }
         for cfg_file in reversed(cfg_list):
             self.log.debug('Inspecting config file: {}'.format(cfg_file))
+            # Default prefix is a special case:
             config_section = extract_cfg_items(cfg_file, 'config', False)
             if config_section.has_key('default_prefix'):
-                cfg_info['default'] = config_section['default_prefix']
-            alias_section = extract_cfg_items(cfg_file, 'alias', False)
-            for k, v in alias_section.iteritems():
-                cfg_info['aliases'][k] = v
-            cfg_dir_section = extract_cfg_items(cfg_file, 'prefix_config', False)
-            for k, v in cfg_dir_section.iteritems():
-                cfg_info['cfg_dirs'][k] = v
-            env_section = extract_cfg_items(cfg_file, 'env', False)
-            for k, v in env_section.iteritems():
-                cfg_info['env'][k] = v
-            package_section = extract_cfg_items(cfg_file, 'packages', False)
-            for k, v in package_section.iteritems():
-                cfg_info['packages'][k] = v
+                cfg_info['default_prefix'] = config_section['default_prefix']
+            # All the rest are full [sections] that we copy verbatim:
+            for cfg_section_key in cfg_info.keys():
+                cfg_section_data = extract_cfg_items(cfg_file, cfg_section_key, False)
+                for k, v in cfg_section_data.iteritems():
+                    cfg_info[cfg_section_key][k] = v
         return cfg_info
 
     def _find_prefix_dir(self, args):
         """
         Find the current prefix' directory.
         Order is:
-        1) From the command line (either an alias, or a directory)
-        2) Environment variable
-        3) CWD
+        1) From the command line (-p switch; either an alias, or a directory)
+        2) Environment variable (see env_prefix_var)
+        3) CWD (if it has a .pybombs subdir and is not the home directory)
         4) The config option called 'default_prefix'
 
         If all of these fail, we have no prefix.
         """
-        if args.prefix is not None: # Either on the command line ...
-            if self._cfg_info['aliases'].has_key(args.prefix):
+        if args.prefix is not None:
+            if self._cfg_info['prefix_aliases'].has_key(args.prefix):
                 self.log.debug("Resolving prefix alias {}.".format(args.prefix))
                 self.alias = args.prefix
-                args.prefix = self._cfg_info['aliases'][args.prefix]
+                args.prefix = self._cfg_info['prefix_aliases'][args.prefix]
             if not os.path.isdir(args.prefix):
                 raise PBException("Can't open prefix: {}".format(args.prefix))
             self.prefix_dir = args.prefix
@@ -203,9 +200,9 @@ class PrefixInfo(object):
             return
         if self._cfg_info.has_key('default_prefix'):
             self.prefix_dir = self._cfg_info['default_prefix']
-            if self._cfg_info['aliases'].has_key(self.prefix_dir):
+            if self._cfg_info['prefix_aliases'].has_key(self.prefix_dir):
                 self.log.debug("Resolving prefix alias {}.".format(self.prefix_dir))
-                self.prefix_dir = self._cfg_info['aliases'][args.prefix]
+                self.prefix_dir = self._cfg_info['prefix_aliases'][self.prefix_dir]
             self.log.debug('Using default_prefix as prefix ({})'.format(self.prefix_dir))
             self.prefix_src = 'default'
             return
