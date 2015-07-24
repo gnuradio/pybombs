@@ -301,7 +301,7 @@ class Recipe(Scanner):
 
     def variable_set(self, arg):
         " After variable_begin(), variable value is set here "
-        if not self.lvars.has_key(self.varname) or self.varoverride:
+        if not self.lvars.has_key(self.varname) or self.lvars[self.varname] == '' or self.varoverride:
             self.log.obnoxious("Setting variable {} == {}".format(self.varname, arg))
             self.lvars[self.varname] = arg
         else:
