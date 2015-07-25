@@ -438,16 +438,6 @@ class ConfigManager(object):
         """
         return self._template_dir
 
-    def get_default_lvars(self):
-        lvars = {}
-        for key in ('makewidth', 'cc', 'cxx', 'config_opt', 'install_opt', 'cmakebuildtype'):
-            lvars[key] = self.get(key, '')
-        prefix_dir = ''
-        if self.get_active_prefix().prefix_dir is not None:
-            prefix_dir = self.get_active_prefix().prefix_dir
-        lvars['prefix'] = prefix_dir
-        return lvars
-
     def setup_parser(self, parser):
         """
         Initialize an ArgParser with all the args required for this

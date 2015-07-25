@@ -116,7 +116,7 @@ class Recipe(Scanner):
         self.var = {}
         # Init lvars:
         if lvars is None:
-            self.lvars = config_manager.get_default_lvars()
+            self.lvars = {}
         else:
             self.lvars = copy.copy(lvars)
         # Init recipe scanner:

@@ -207,12 +207,9 @@ class Source(PackagerBase):
             self.log.debug("Make successful")
             return True
         # OK, something bad happened.
-        # Stash the makewidth so we can set it back later:
-        makewidth = recipe.lvars['makewidth']
         if try_again == False:
             recipe.lvars['makewidth'] = '1'
             self.make(recipe, try_again=True)
-            recipe.lvars['makewidth'] = makewidth
         else:
             self.log.error("Build failed. See output above for error messages.")
             raise PBException("Build failed.")
@@ -234,51 +231,33 @@ class Source(PackagerBase):
         self.log.error("Make failed")
         return False
 
-    ### NOT BEING USED ###
-    def fancy_var_replace(self,s,d):
-        finished = False
-        while not finished:
-            os = s
-            for k in d.keys():
-                s = s.replace("$%s"%(k), d[k])
-            self.log.debug(s,os)
-            if(os == s):
-                finished = True
-        return s
-
-    def replc(self, m):
-#        print "GOT REPL C: %s"%(str([m.group(1), m.group(2), m.group(3)]))
-        if m.group(1) == self.tmpcond:
-            return  m.group(2)
-        else:
-            return  m.group(3)
-
-    def var_replace(self,s, lvars):
-        #for k in vars.keys():
-        #    s = s.replace("$%s"%(k), vars[k])
-        for k in lvars.keys():
-            s = s.replace("$%s"%(k), str(lvars[k]))
-        #for k in lvars.keys():
-        #    s = s.replace("$%s"%(k), lvars[k])
-        options = self.cfg.cfg_cascade[0]
-        self.log.debug("Options --> {}".format(options))
-        options['prefix'] = "{}/target".format(self.prefix.prefix_dir)
-        for k in options.keys():
-            s = s.replace("$%s"%(k).lower(), str(options[k]))
-        return s
+    def var_replace(self, mo, lvars):
+        """
+        Expects arguments to be matchobjects for strings starting with $.
+        Returns the variable replacement value.
+        """
+        var_name = mo.group(0)
+        assert(len(var_name) > 1 and var_name[0] == '$')
+        var_name = var_name[1:] # Strip $
+        if var_name == 'prefix': # This is special
+            return self.prefix.prefix_dir
+        if lvars.has_key(var_name):
+            return lvars[var_name]
+        return self.cfg.get(var_name, '')
 
     def var_replace_all(self, recipe, s):
         """
         Replace all the $variables in string 's' with the lvars
-        from 'recipe'.
+        from 'recipe'. If keys are not in lvars, try config options.
+        Default to empty strings.
         """
-        lvars = copy.copy(recipe.lvars)
-        s = self.var_replace(s, lvars)
-        for k in lvars:
-            fm = "\{([^\}]*)\}"
-            rg = r"%s==(\w+)\?%s:%s"%(k,fm,fm)
-            self.tmpcond = lvars[k]
-            s = re.sub(rg, self.replc, s)
+        # Starts with a $, unless preceded by \
+        var_re = re.compile(r'(?<!\\)\$[a-z][a-z0-9_]*')
+        var_repl = lambda mo: self.var_replace(mo, recipe.lvars)
+        s = var_re.sub(var_repl, s)
+        # PyBOMBS1 supported a conditional replacement mechanism,
+        # where variable==FOO?{a}:{b} would return a if variables
+        # matches FOO, or b otherwise. We'll leave this out for now.
         return s
 
     def config_filter(self, in_string):
