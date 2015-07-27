@@ -20,12 +20,10 @@
 #
 
 ### List of commands:
-from base import PyBombsCmd, dispatch
-from fetch import PyBombsFetch
-from prefix import PyBombsPrefix
-from install import PyBombsInstall
-from show import PyBombsShow
-#from cmd_install import PyBombsInstall
+from base import CommandBase, dispatch
+from fetch import Fetch
+from prefix import Prefix
+from install import Install
+from show import Show
 # Leave this at the end
-#from cmd_help import PyBombsHelp
-
+#from help import Help

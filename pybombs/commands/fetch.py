@@ -20,11 +20,11 @@
 #
 """ PyBOMBS command: fetch """
 
-from pybombs.commands import PyBombsCmd
+from pybombs.commands import CommandBase
 from pybombs import fetch
 from pybombs import recipe
 
-class PyBombsFetch(PyBombsCmd):
+class Fetch(CommandBase):
     """ Fetch a package """
     cmds = {
         'fetch': 'Download a packages source code into the current prefixes source directory.',
@@ -55,7 +55,7 @@ class PyBombsFetch(PyBombsCmd):
         )
 
     def __init__(self, cmd, args):
-        PyBombsCmd.__init__(self,
+        CommandBase.__init__(self,
                 cmd, args,
                 load_recipes=True,
                 require_prefix=True,
@@ -90,5 +90,3 @@ class PyBombsFetch(PyBombsCmd):
             fetcher.get_version(r, r.srcs[0])
             self.inventory.set_state(r.id, 'fetch')
         self.inventory.save()
-
-

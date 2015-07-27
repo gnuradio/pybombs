@@ -21,14 +21,14 @@
 """ PyBOMBS command: install """
 
 import copy
-from pybombs.commands import PyBombsCmd
+from pybombs.commands import CommandBase
 from pybombs import simple_tree
 from pybombs import recipe
 from pybombs import package_manager
 from pybombs.fetchers.base import FetcherBase
 
 
-class PyBombsInstall(PyBombsCmd):
+class Install(CommandBase):
     """ Install or update a package """
     cmds = {
         'install': 'Install listed packages',
@@ -60,7 +60,7 @@ class PyBombsInstall(PyBombsCmd):
             )
 
     def __init__(self, cmd, args):
-        PyBombsCmd.__init__(self,
+        CommandBase.__init__(self,
                 cmd, args,
                 load_recipes=True,
                 require_prefix=True,
