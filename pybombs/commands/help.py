@@ -38,7 +38,7 @@ def print_class_descriptions():
     desclist = []
     for gvar in globals().values():
         try:
-            if issubclass(gvar, PyBombsCmd) \
+            if issubclass(gvar, CommandBase) \
                     and PyBombsHelp.cmds != gvar.cmds \
                     and not gvar.hidden:
                 for cmd_name, cmd_help in gvar.cmds.iteritems():
@@ -51,7 +51,7 @@ def print_class_descriptions():
         print '  %-8s  %s' % description
 
 
-class PyBombsHelp(PyBombsCmd):
+class Help(CommandBase):
     """ Show some help. """
     cmds = {'help': 'Show help'}
     usage = """
@@ -63,7 +63,7 @@ class PyBombsHelp(PyBombsCmd):
     """
 
     def __init__(self, cmd=None):
-        PyBombsCmd.__init__(self, cmd)
+        CommandBase.__init__(self, cmd)
 
     def setup(self, options, args):
         " No setup necessary here. "
@@ -81,4 +81,3 @@ class PyBombsHelp(PyBombsCmd):
             print_class_descriptions()
             return
         cmd_dict[help_requested_for]().setup_parser().print_help()
-

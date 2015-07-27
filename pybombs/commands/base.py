@@ -28,7 +28,7 @@ from pybombs import inventory
 from pybombs.config_manager import config_manager
 from pybombs.pb_exception import PBException
 
-class PyBombsCmd(object):
+class CommandBase(object):
     """
     Base class for all PyBOMBS commands classes.
     All PyBOMBS command classes must derive from this.
@@ -105,7 +105,7 @@ def get_cmd_list(the_globals):
     cmd_list = []
     for g in the_globals:
         try:
-            if issubclass(g, PyBombsCmd) and len(g.cmds):
+            if issubclass(g, CommandBase) and len(g.cmds):
                 cmd_list.append(g)
         except (TypeError, AttributeError):
             pass
@@ -131,4 +131,3 @@ def dispatch(the_globals):
     cmd_name = args.command
     cmd_obj = get_cmd_dict(cmd_list)[cmd_name](cmd=cmd_name, args=args)
     cmd_obj.run()
-

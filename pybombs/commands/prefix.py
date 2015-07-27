@@ -22,9 +22,9 @@
 """ PyBOMBS command: prefix """
 
 import pprint
-from pybombs.commands import PyBombsCmd
+from pybombs.commands import CommandBase
 
-class PyBombsPrefix(PyBombsCmd):
+class Prefix(CommandBase):
     """
     Prefix operations
     """
@@ -50,7 +50,7 @@ class PyBombsPrefix(PyBombsCmd):
         return parser
 
     def __init__(self, cmd, args):
-        PyBombsCmd.__init__(self,
+        CommandBase.__init__(self,
                 cmd, args,
                 load_recipes=True,
                 require_prefix=True,
@@ -73,4 +73,3 @@ class PyBombsPrefix(PyBombsCmd):
         print 'Prefix env:'
         for k, v in self.prefix.env.iteritems():
             print "{}={}".format(k, v)
-

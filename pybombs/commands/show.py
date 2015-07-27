@@ -20,7 +20,7 @@
 #
 """ PyBOMBS command: show """
 
-from pybombs.commands import PyBombsCmd
+from pybombs.commands import CommandBase
 from pybombs import simple_tree
 from pybombs import recipe
 from pybombs import package_manager
@@ -31,7 +31,7 @@ Is installed:   {installed}
 Is installable: {installable}
 """.strip()
 
-class PyBombsShow(PyBombsCmd):
+class Show(CommandBase):
     """ Show information about a package """
     cmds = {
         'show': 'Show information about a recipe',
@@ -56,7 +56,7 @@ class PyBombsShow(PyBombsCmd):
         )
 
     def __init__(self, cmd, args):
-        PyBombsCmd.__init__(self,
+        CommandBase.__init__(self,
                 cmd, args,
                 load_recipes=True,
                 require_prefix=False,
@@ -88,4 +88,3 @@ class PyBombsShow(PyBombsCmd):
                 installed=installed,
                 installable=installable,
         ))
-
