@@ -117,9 +117,11 @@ class PrefixInfo(object):
         self.inv_file = os.path.join(self.prefix_cfg_dir, self.inv_file_name)
         if not os.path.isfile(self.inv_file):
             self.log.warn("Prefix inventory file not found: {}".format(self.inv_file))
-        # 6) Local recipe directory
+        # 6) Prefix-specific recipes. There's two places for these:
+        # - A 'recipes/' subdirectory
+        # - Anything declared in the config.dat file inside the prefix
         if config_section.has_key('recipes'):
-            self.src_dir = config_section['recipes']
+            self.recipe_dir = config_section['recipes']
         else:
             default_recipe_dir = os.path.join(self.prefix_dir, 'recipes')
             if os.path.isdir(default_recipe_dir):
@@ -151,6 +153,7 @@ class PrefixInfo(object):
                 'prefix_aliases': {},
                 'prefix_config_dir': {},
                 'env': {},
+                'recipes': {},
                 'packages': self.default_package_flags,
                 'categories': self.default_category_flags,
             }
@@ -262,14 +265,6 @@ class ConfigManager(object):
             'native, src',
             'Order in which to attempt installations when available, options are: src, native'
         ),
-        'forcepkgs': (
-            '',
-            'Comma separated list of package names to assume are already installed'
-        ),
-        'forcebuild ': (
-            'gnuradio,uhd,gr-air-modes,gr-osmosdr,gr-iqbal,gr-fcdproplus,uhd,rtl-sdr,osmo-sdr,hackrf,gqrx,bladerf,airspy',
-            'Comma separated list of package names to always build from source'
-        ),
         'timeout': (
             '30',
             'Time the monitor thread waits (in seconds) before retrying downloads'
@@ -283,6 +278,10 @@ class ConfigManager(object):
         'cxx': ('', 'C++ Compiler Executable [g++, clang++, icpc, etc]'),
         'makewidth': ('4', 'Concurrent make threads [1,2,4,8...]'),
         'packagers': ('apt-get', 'Priority of non-source package managers'),
+        'recipe_cache': (
+            os.path.join('~', self.pybombs_dir, 'recipes'),
+            'Priority of non-source package managers'
+        ),
     }
     LAYER_DEFAULT = 0
     LAYER_GLOBALS = 1
@@ -316,9 +315,9 @@ class ConfigManager(object):
         if self._append_cfg_from_file(global_cfg):
             cfg_files.insert(0, global_cfg)
         # Home directory:
-        local_cfg = os.path.join(self.get_pybombs_dir(), self.cfg_file_name)
-        if self._append_cfg_from_file(local_cfg):
-            cfg_files.insert(0, local_cfg)
+        self.local_cfg = os.path.join(self.get_pybombs_dir(), self.cfg_file_name)
+        if self._append_cfg_from_file(self.local_cfg):
+            cfg_files.insert(0, self.local_cfg)
         # Current prefix (don't know that yet -- so skip for now)
         self.cfg_cascade.append({})
         # Config file specified on command line:
@@ -347,6 +346,7 @@ class ConfigManager(object):
         # Go through cfg files, then env variable, then command line args
         # From command line:
         self._recipe_locations = []
+        self._named_recipe_locations = {}
         for r_loc in args.recipes:
             if r_loc:
                 self._recipe_locations.append(r_loc)
