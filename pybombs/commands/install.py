@@ -25,6 +25,8 @@ from pybombs.commands import PyBombsCmd
 from pybombs import simple_tree
 from pybombs import recipe
 from pybombs import package_manager
+from pybombs.fetchers.base import FetcherBase
+
 
 class PyBombsInstall(PyBombsCmd):
     """ Install or update a package """
@@ -134,4 +136,3 @@ class PyBombsInstall(PyBombsCmd):
                 # installed
                 continue
             self._add_deps_recursive(install_tree, dep)
-

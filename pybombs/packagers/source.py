@@ -31,7 +31,7 @@ from pybombs import inventory
 from pybombs.utils import subproc
 from pybombs.utils import output_proc
 from pybombs.pb_exception import PBException
-from pybombs.fetch import make_fetcher
+from pybombs.fetchers.base import FetcherBase, make_fetcher
 from pybombs.config_manager import config_manager
 from pybombs.packagers.base import PackagerBase
 
@@ -70,6 +70,7 @@ class Source(PackagerBase):
         May raise an exception if things go terribly wrong.
         Otherwise, return True on success and False if installing failed.
         """
+        cwd = os.getcwd()
         if len(recipe.srcs) == 0:
             self.log.warning("Cannot find a source URI for package {}".format(recipe.id))
             return False
@@ -100,7 +101,7 @@ class Source(PackagerBase):
                 self.log.debug("Build dir already exists: {}".format(builddir))
             else:
                 os.mkdir(builddir)
-            cwd = os.getcwd()
+
             os.chdir(builddir)
             ### Run the build process
             if self.inventory.get_state(recipe.id) < self.inventory.STATE_CONFIGURED:
@@ -157,7 +158,8 @@ class Source(PackagerBase):
                     continue
                 fetched = True
                 break
-            except Exception:
+            except Exception as e:
+                self.log.error(e)
                 self.log.error("Unable to fetch source for package {}".format(recipe.id))
         if not fetched:
             raise PBException("Unable to fetch recipe {}".format(recipe.id))
