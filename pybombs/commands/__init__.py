@@ -25,5 +25,6 @@ from fetch import Fetch
 from prefix import Prefix
 from install import Install
 from show import Show
+from recipes import Recipes
 # Leave this at the end
 #from help import Help

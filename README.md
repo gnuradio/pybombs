@@ -96,6 +96,51 @@ Example:
     # Other vars
     setup_env=/path/to/environment-setup-armv7ahf-vfp-neon-oe-linux-gnueabi
 
+## Recipes
+
+### Recipe Format
+
+tbw
+
+### Recipe Management
+
+Recipes can be stored in multiple locations, which easily allows to store
+separate recipe lists for specific projects.
+
+If the same recipe can be found in more than one location, it will be
+chosen from the most specific. The precise order is:
+- Recipe locations specified on the command line (Using the `-r` switch)
+- From the environment variable `PYBOMBS_RECIPE_DIR`
+- The current prefix (if available)
+- Global recipe locations
+
+This mechanism can be used to override recipes for certain prefixes. For
+example, the `gnuradio.lwt` file could be copied and adapted to use a
+different branch than the default recipe does.
+
+Recipe management can be mostly done through the command line using
+the `pybombs recipes` command -- editing configuration files is possible,
+but often not necessary. Run
+
+    pybombs help recipes
+
+for further information on the `pybombs recipes` command.
+
+#### Remote and Local Recipe Locations
+
+Recipe locations can be either local directories (in this case, PyBOMBS will
+simply read any .lwr file from this directory, without traversing into
+subdirectories), or a remote location.
+Remote locations can be:
+- git repositories
+- http locations
+
+Remote locations are copied into a local directory, so PyBOMBS can read the .lwr
+files locally. This local cache of recipes are stored in the same directory
+as the location of the corresponding config file (e.g., if `~/.pybombs/config.dat`
+declare a recipe called 'myrecipes', the local cache will be in
+`~/.pybombs/recipes/myrecipes`).
+
 ## Configuration Files
 
 Typically, there are four ways to configure PyBOMBS:
@@ -129,12 +174,13 @@ sys=/usr/local
 [prefix_config_dir]
 sys=/home/user/pb-default/
 # Typically, you don't need this, because the prefix configuration
-# directory is in <PREFIX/.pybombs
+# directory is in <PREFIX>/.pybombs
 
 # Recipe locations:
 [recipes]
 myrecipes=/usr/local/share/recipes
 morerecipes=/home/user/pb-recipes
+remoterecipes=git+git://url/to/repo
 
 # Package flags:
 [packages]

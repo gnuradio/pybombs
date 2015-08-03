@@ -25,6 +25,7 @@ and reading/setting values.
 Used as a central cache for all kinds of settings.
 """
 
+import re
 import os
 import argparse
 import subprocess
@@ -106,26 +107,24 @@ class PrefixInfo(object):
             config_section = extract_cfg_items(self.cfg_file, 'config', False)
             self._cfg_info = self._load_cfg_info([self.cfg_file,], self._cfg_info)
         # 4) Find the src dir
-        if config_section.has_key('srcdir'):
-            self.src_dir = config_section['srcdir']
+        self.src_dir = config_section.get('srcdir', os.path.join(self.prefix_dir, 'src'))
+        if not os.path.isdir(self.src_dir):
+            self.log.warn("Prefix source dir not found: {}".format(self.src_dir))
+            self.src_dir = None
         else:
-            self.src_dir = os.path.join(self.prefix_dir, 'src')
-            if not os.path.isdir(self.src_dir):
-                self.log.warn("Prefix source dir not found: {}".format(self.src_dir))
-        self.log.debug("Prefix source dir is: {}".format(self.src_dir))
+            self.log.debug("Prefix source dir is: {}".format(self.src_dir))
         # 5) Find the inventory file
         self.inv_file = os.path.join(self.prefix_cfg_dir, self.inv_file_name)
         if not os.path.isfile(self.inv_file):
             self.log.warn("Prefix inventory file not found: {}".format(self.inv_file))
-        # 6) Local recipe directory
-        if config_section.has_key('recipes'):
-            self.src_dir = config_section['recipes']
-        else:
-            default_recipe_dir = os.path.join(self.prefix_dir, 'recipes')
-            if os.path.isdir(default_recipe_dir):
-                self.recipe_dir = default_recipe_dir
-        if self.recipe_dir is not None:
+        # 6) Prefix-specific recipes. There's two places for these:
+        # - A 'recipes/' subdirectory
+        # - Anything declared in the config.dat file inside the prefix
+        self.recipe_dir = config_section.get('recipes', os.path.join(self.prefix_dir, 'recipes'))
+        if os.path.isdir(self.recipe_dir):
             self.log.debug("Prefix-local recipe dir is: {}".format(self.recipe_dir))
+        else:
+            self.recipe_dir = None
         # 7) Load environment
         # If there's a setup_env option in the current config file, we use that
         if config_section.has_key('setup_env'):
@@ -151,6 +150,7 @@ class PrefixInfo(object):
                 'prefix_aliases': {},
                 'prefix_config_dir': {},
                 'env': {},
+                'recipes': {},
                 'packages': self.default_package_flags,
                 'categories': self.default_category_flags,
             }
@@ -206,6 +206,7 @@ class PrefixInfo(object):
             self.log.debug('Using default_prefix as prefix ({})'.format(self.prefix_dir))
             self.prefix_src = 'default'
             return
+        self.prefix_src = None
         self.prefix_dir = None
 
     def _load_environ_from_script(self, setup_env_cmd):
@@ -252,6 +253,7 @@ class ConfigManager(object):
     global_base_dir = "/etc/pybombs" # TODO we may want to change this
     cfg_file_name = "config.dat"
     pybombs_dir = ".pybombs"
+    recipe_cache_dir = 'recipes'
 
     # Default values + Help text:
     defaults = {
@@ -261,14 +263,6 @@ class ConfigManager(object):
         'satisfy_order': (
             'native, src',
             'Order in which to attempt installations when available, options are: src, native'
-        ),
-        'forcepkgs': (
-            '',
-            'Comma separated list of package names to assume are already installed'
-        ),
-        'forcebuild ': (
-            'gnuradio,uhd,gr-air-modes,gr-osmosdr,gr-iqbal,gr-fcdproplus,uhd,rtl-sdr,osmo-sdr,hackrf,gqrx,bladerf,airspy',
-            'Comma separated list of package names to always build from source'
         ),
         'timeout': (
             '30',
@@ -316,9 +310,10 @@ class ConfigManager(object):
         if self._append_cfg_from_file(global_cfg):
             cfg_files.insert(0, global_cfg)
         # Home directory:
-        local_cfg = os.path.join(self.get_pybombs_dir(), self.cfg_file_name)
-        if self._append_cfg_from_file(local_cfg):
-            cfg_files.insert(0, local_cfg)
+        self.local_cfg_dir = self.get_pybombs_dir()
+        self.local_cfg = os.path.join(self.local_cfg_dir, self.cfg_file_name)
+        if self._append_cfg_from_file(self.local_cfg):
+            cfg_files.insert(0, self.local_cfg)
         # Current prefix (don't know that yet -- so skip for now)
         self.cfg_cascade.append({})
         # Config file specified on command line:
@@ -347,6 +342,8 @@ class ConfigManager(object):
         # Go through cfg files, then env variable, then command line args
         # From command line:
         self._recipe_locations = []
+        self._named_recipe_locations = {}
+        self._named_recipe_sources = {}
         for r_loc in args.recipes:
             if r_loc:
                 self._recipe_locations.append(r_loc)
@@ -356,12 +353,18 @@ class ConfigManager(object):
         # From prefix info:
         if self._prefix_info.recipe_dir is not None:
             self._recipe_locations.append(self._prefix_info.recipe_dir)
-        # From config files:
-        for cfg_file in cfg_files:
+        # From config files (from here, recipe locations are named):
+        for cfg_file in reversed(cfg_files):
             recipe_locations = extract_cfg_items(cfg_file, "recipes", False)
-            for loc in recipe_locations.itervalues():
-                self._recipe_locations.append(loc)
+            for name, uri in recipe_locations.iteritems():
+                local_recipe_dir = self.resolve_recipe_uri(
+                    uri, name, os.path.join(os.path.split(cfg_file)[0], 'recipes')
+                )
+                self._recipe_locations.append(local_recipe_dir)
+                self._named_recipe_locations[name] = uri
+                self._named_recipe_sources[name] = cfg_file
         self.log.debug("Full list of recipe locations: {}".format(self._recipe_locations))
+        self.log.debug("Named recipe locations: {}".format(self._named_recipe_locations))
 
 
     def _append_cfg_from_file(self, cfg_filename):
@@ -432,11 +435,36 @@ class ConfigManager(object):
         """
         return self._recipe_locations
 
+    def get_named_recipe_locations(self):
+        """
+        Returns a dictionary of named recipe locations. Note that
+        these are not resolved locations.
+        """
+        return self._named_recipe_locations
+
+    def get_named_recipe_source(self, recipe_alias):
+        """
+        Returns the path of the config file which declared a recipe by name.
+        """
+        return self._named_recipe_sources[recipe_alias]
+
     def get_template_dir(self):
         """
         Returns the location of the .lwt files
         """
         return self._template_dir
+
+    def resolve_recipe_uri(self, uri, name, cache_dir):
+        """
+        Turn a recipe URI into a directory.
+
+        There's two ways this goes: Either, the recipe URI
+        is already a directory, then return that. Or it's a remote
+        URI; in that case, return the cache directory.
+        """
+        if re.match(r'^[a-z]{3,4}\+', uri) is None:
+            return uri
+        return os.path.join(cache_dir, name)
 
     def setup_parser(self, parser):
         """
