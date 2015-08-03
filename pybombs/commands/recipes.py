@@ -25,10 +25,10 @@ import re
 import os
 import ConfigParser
 import shutil
-from pybombs.commands import PyBombsCmd
+from pybombs.commands import CommandBase
 from pybombs.utils import subproc
 
-class PyBombsRecipes(PyBombsCmd):
+class Recipes(CommandBase):
     """
     Manage recipe lists
     """
@@ -84,7 +84,7 @@ class PyBombsRecipes(PyBombsCmd):
 
 
     def __init__(self, cmd, args):
-        PyBombsCmd.__init__(self,
+        CommandBase.__init__(self,
                 cmd, args,
                 load_recipes=False,
                 require_prefix=False,
@@ -190,11 +190,9 @@ class PyBombsRecipes(PyBombsCmd):
                 exit(1)
         if target_dir is None:
             target_dir = os.path.join(
-                os.path.split(
-                    self.cfg.get_named_recipe_source(self.args.alias),
+                os.path.split(self.cfg.get_named_recipe_source(self.args.alias))[0],
                     self.cfg.recipe_cache_dir,
                     self.args.alias
-                )
             )
         # If this is local, we need to do nothing
         if not any([uri.find('{proto}+'.format(proto=x)) for x in self.remote_location_types]):
