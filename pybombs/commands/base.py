@@ -51,17 +51,18 @@ class PyBombsCmd(object):
         if load_recipes:
             from pybombs import recipe_manager
             self.recipe_manager = recipe_manager.recipe_manager
-        if require_prefix:
-            if self.cfg.get_active_prefix().prefix_dir is None:
-                self.log.error("No prefix specified. Aborting.")
-                exit(1)
+        self.prefix = None
+        if self.cfg.get_active_prefix().prefix_dir is not None:
             self.prefix = self.cfg.get_active_prefix()
+        elif require_prefix:
+            self.log.error("No prefix specified. Aborting.")
+            exit(1)
         if require_inventory and require_prefix:
             self.inventory = inventory.Inventory(self.prefix.inv_file)
             self.inventory.load()
 
     @staticmethod
-    def setup_subparser(self, parser, cmd=None):
+    def setup_subparser(parser, cmd=None):
         """
         Set up a subparser for a specific command
         """

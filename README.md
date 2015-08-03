@@ -139,8 +139,7 @@ Remote locations are copied into a local directory, so PyBOMBS can read the .lwr
 files locally. This local cache of recipes are stored in the same directory
 as the location of the corresponding config file (e.g., if `~/.pybombs/config.dat`
 declare a recipe called 'myrecipes', the local cache will be in
-`~/.pybombs/recipes/myrecipes`). To control the location of the cache, use the
-`recipe_cache` option in the `[config]` section.
+`~/.pybombs/recipes/myrecipes`).
 
 ## Configuration Files
 
