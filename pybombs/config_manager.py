@@ -206,6 +206,7 @@ class PrefixInfo(object):
             self.log.debug('Using default_prefix as prefix ({})'.format(self.prefix_dir))
             self.prefix_src = 'default'
             return
+        self.prefix_src = None
         self.prefix_dir = None
 
     def _load_environ_from_script(self, setup_env_cmd):
@@ -252,6 +253,7 @@ class ConfigManager(object):
     global_base_dir = "/etc/pybombs" # TODO we may want to change this
     cfg_file_name = "config.dat"
     pybombs_dir = ".pybombs"
+    recipe_cache_dir = 'recipes'
 
     # Default values + Help text:
     defaults = {
@@ -275,10 +277,6 @@ class ConfigManager(object):
         'cxx': ('', 'C++ Compiler Executable [g++, clang++, icpc, etc]'),
         'makewidth': ('4', 'Concurrent make threads [1,2,4,8...]'),
         'packagers': ('apt-get', 'Priority of non-source package managers'),
-        'recipe_cache': (
-            os.path.join('~', pybombs_dir, 'recipes'),
-            'Priority of non-source package managers'
-        ),
     }
     LAYER_DEFAULT = 0
     LAYER_GLOBALS = 1
@@ -312,7 +310,8 @@ class ConfigManager(object):
         if self._append_cfg_from_file(global_cfg):
             cfg_files.insert(0, global_cfg)
         # Home directory:
-        self.local_cfg = os.path.join(self.get_pybombs_dir(), self.cfg_file_name)
+        self.local_cfg_dir = self.get_pybombs_dir()
+        self.local_cfg = os.path.join(self.local_cfg_dir, self.cfg_file_name)
         if self._append_cfg_from_file(self.local_cfg):
             cfg_files.insert(0, self.local_cfg)
         # Current prefix (don't know that yet -- so skip for now)
@@ -344,6 +343,7 @@ class ConfigManager(object):
         # From command line:
         self._recipe_locations = []
         self._named_recipe_locations = {}
+        self._named_recipe_sources = {}
         for r_loc in args.recipes:
             if r_loc:
                 self._recipe_locations.append(r_loc)
@@ -361,7 +361,8 @@ class ConfigManager(object):
                     uri, name, os.path.join(os.path.split(cfg_file)[0], 'recipes')
                 )
                 self._recipe_locations.append(local_recipe_dir)
-                self._named_recipe_locations[name] = local_recipe_dir
+                self._named_recipe_locations[name] = uri
+                self._named_recipe_sources[name] = cfg_file
         self.log.debug("Full list of recipe locations: {}".format(self._recipe_locations))
         self.log.debug("Named recipe locations: {}".format(self._named_recipe_locations))
 
@@ -433,6 +434,19 @@ class ConfigManager(object):
         Returns a list of recipe locations, in order of preference
         """
         return self._recipe_locations
+
+    def get_named_recipe_locations(self):
+        """
+        Returns a dictionary of named recipe locations. Note that
+        these are not resolved locations.
+        """
+        return self._named_recipe_locations
+
+    def get_named_recipe_source(self, recipe_alias):
+        """
+        Returns the path of the config file which declared a recipe by name.
+        """
+        return self._named_recipe_sources[recipe_alias]
 
     def get_template_dir(self):
         """
