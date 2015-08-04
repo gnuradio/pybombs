@@ -102,6 +102,12 @@ class Recipes(CommandBase):
         else:
             self.log.error("Illegal recipes command: {}".format(self.args.prefix_command))
 
+    def uri_is_remote(self, uri):
+        """
+        Return True if uri is a remote URL, False otherwise.
+        """
+        return any([uri.find('{proto}+'.format(proto=x)) for x in self.remote_location_types])
+
     def _add_recipes(self):
         """
         Add recipe location:
@@ -174,7 +180,31 @@ class Recipes(CommandBase):
         self._update_recipes(uri, recipe_cache)
 
     def _remove_recipes(self):
-        pass
+        """
+        Remove a recipe alias and, if applicable, its cache.
+        """
+        if not self.cfg.get_named_recipe_locations().has_key(self.args.alias):
+            self.log.error("Unknown recipe alias: {alias}".format(self.args.alias))
+            exit(1)
+        # Remove from config file
+        cfg_file = self.cfg.get_named_recipe_source()[self.args.alias]
+        cfg_parser = ConfigParser.ConfigParser()
+        cfg_parser.read(cfg_file)
+        cfg_parser.remove_option('recipes', self.args.alias)
+        cfg_parser.write(open(cfg_file, 'wb'))
+        # If remote, remove cache
+        if not self.uri_is_remote(self.cfg.get_named_recipe_locations()[self.args.alias]):
+            return
+        recipe_cache_dir = os.path.join(
+            os.path.split(cfg_file)[0],
+            self.recipe_cache_dir,
+            self.args.alias,
+        )
+        if os.path.exists(recipe_cache_dir):
+            self.log.debug("Removing directory: {
+            shutil.rmtree(recipe_cache_dir)
+
+
 
     def _update_recipes(self, uri=None, target_dir=None):
         """
@@ -195,7 +225,7 @@ class Recipes(CommandBase):
                     self.args.alias
             )
         # If this is local, we need to do nothing
-        if not any([uri.find('{proto}+'.format(proto=x)) for x in self.remote_location_types]):
+        if not self.uri_is_remote(uri):
             self.log.info("Local recipe directories can't be updated through PyBOMBS.")
             return
         # Make sure the top cache dir exists (e.g. ~/.pybombs/recipes)
