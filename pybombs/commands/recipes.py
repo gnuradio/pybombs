@@ -184,10 +184,10 @@ class Recipes(CommandBase):
         Remove a recipe alias and, if applicable, its cache.
         """
         if not self.cfg.get_named_recipe_locations().has_key(self.args.alias):
-            self.log.error("Unknown recipe alias: {alias}".format(self.args.alias))
+            self.log.error("Unknown recipe alias: {alias}".format(alias=self.args.alias))
             exit(1)
         # Remove from config file
-        cfg_file = self.cfg.get_named_recipe_source()[self.args.alias]
+        cfg_file = self.cfg.get_named_recipe_source(self.args.alias)
         cfg_parser = ConfigParser.ConfigParser()
         cfg_parser.read(cfg_file)
         cfg_parser.remove_option('recipes', self.args.alias)
@@ -197,14 +197,12 @@ class Recipes(CommandBase):
             return
         recipe_cache_dir = os.path.join(
             os.path.split(cfg_file)[0],
-            self.recipe_cache_dir,
+            self.cfg.recipe_cache_dir,
             self.args.alias,
         )
         if os.path.exists(recipe_cache_dir):
-            self.log.debug("Removing directory: {
+            self.log.debug("Removing directory: {cdir}".format(cdir=recipe_cache_dir))
             shutil.rmtree(recipe_cache_dir)
-
-
 
     def _update_recipes(self, uri=None, target_dir=None):
         """
