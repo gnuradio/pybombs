@@ -24,10 +24,10 @@ Fetcher: Base class
 
 import re
 import os
+import copy
 import shutil
 import subprocess
 
-import copy
 from pybombs import pb_logging
 from pybombs import inventory
 from pybombs.utils import subproc
@@ -54,17 +54,34 @@ class FetcherBase(object):
     def fetch(self, recipe, url):
         """
         Do the fetch. If version info is available, return that.
-        Only return False or None if something goes wrong. May
-        throw.
+        Only return False or None if something goes wrong.
         """
+        self.log.obnoxious("Fetching {} file from url: {}".format(recipe, url))
+
+        # Jump to the src directory (should be created by init?)
+        if not os.path.isdir(self.src_dir):
+            self.log.error("Source dir does not exist! [{}]".format(self.src_dir))
+            return False
+        # Should this be checking the inventory or the src directory?
         if self.check_fetched(recipe, url):
             self.log.info("Already fetched: {}".format(recipe.id))
             return True
-        if not os.path.isdir(self.src_dir):
-            self.log.debug("Source dir does not exist! Trying to create {}".format(self.src_dir))
-            os.mkdir(self.src_dir)
-        self.log.debug("Fetching {}".format(url))
-        return self._fetch(recipe, url.split("://", 1)[1])
+
+        cwd = os.getcwd()
+        self.log.obnoxious("Switching to src directory: {}".format(self.src_dir))
+        os.chdir(self.src_dir)
+
+        # Do the fetch
+        try:
+            self.log.debug("Fetching {}".format(url))
+            self._fetch(recipe, url.split("://", 1)[1])
+        except Exception as ex:
+            self.log.error("Unable to fetch the {}".format(recipe))
+            self.log.error(ex)
+
+        # Always switch
+        os.chdir(cwd)
+        return True
 
     def _fetch(self, recipe, url):
         """

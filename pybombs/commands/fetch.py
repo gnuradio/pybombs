@@ -21,8 +21,8 @@
 """ PyBOMBS command: fetch """
 
 from pybombs.commands import CommandBase
-from pybombs import fetch
 from pybombs import recipe
+
 
 class Fetch(CommandBase):
     """ Fetch a package """
@@ -70,6 +70,8 @@ class Fetch(CommandBase):
 
     def run(self):
         """ Go, go, go! """
+        from pybombs.fetchers import FetcherBase, make_fetcher
+        
         recipe_list = []
         if self.args.all:
             self.log.debug("Loading all recipes!")
@@ -85,7 +87,7 @@ class Fetch(CommandBase):
                 self.log.debug("Package {} has no sources listed.".format(r.id))
                 continue
             self.log.debug("Downloading {}".format(r.srcs[0]))
-            fetcher = fetch.make_fetcher(r, r.srcs[0])
+            fetcher = make_fetcher(r, r.srcs[0])
             fetcher.fetch(r, r.srcs[0])
             fetcher.get_version(r, r.srcs[0])
             self.inventory.set_state(r.id, 'fetch')

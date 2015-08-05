@@ -41,10 +41,8 @@ class Git(FetcherBase):
         """
         git clone (or git pull TODO)
         """
-        cwd = os.getcwd()
-        os.chdir(self.src_dir)
+
         self.log.debug("Using url - {}".format(url))
-        self.log.obnoxious("Switching cwd to: {}".format(self.src_dir))
         gitcache = self.cfg.get("git-cache", "")
         if len(gitcache):
             self.log.debug("Using gitcache at {}", gitcache)
@@ -64,7 +62,6 @@ class Git(FetcherBase):
         # - Run the clone process in a process monitor
         # - Pipe its output through an output processor
         if subprocess.call(git_cmd, shell=True) != 0:
-            os.chdir(cwd)
             return False
         self.log.obnoxious("Switching cwd to: {}".format(os.path.join(self.src_dir, recipe.id)))
         os.chdir(os.path.join(self.src_dir, recipe.id))
@@ -75,10 +72,8 @@ class Git(FetcherBase):
             # - Run the clone process in a process monitor
             # - Pipe its output through an output processor
             if subprocess.call(git_co_cmd, shell=True) != 0:
-                os.chdir(cwd)
                 return False
         self.log.obnoxious("Switching cwd to: {}".format(cwd))
-        os.chdir(cwd)
         return True
 
     def get_version(self, recipe, url):

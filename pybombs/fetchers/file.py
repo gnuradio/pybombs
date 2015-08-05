@@ -37,13 +37,12 @@ class File(FetcherBase):
     Will symlink the file to the source dir and then extract it.
     """
     url_type = 'file'
+
     def _fetch(self, recipe, url):
         """
         symlink + extract
         """
-        cwd = os.getcwd()
-        self.log.obnoxious("Switching cwd to: {}".format(self.src_dir))
-        os.chdir(self.src_dir)
+
         fname = os.path.split(url)[-1]
         if os.path.isfile(fname):
             self.log.info("File already exists in source dir: {}".format(fname))
@@ -55,7 +54,7 @@ class File(FetcherBase):
             url = os.path.join("..", url)
         os.symlink(url, os.path.join(self.src_dir, fname))
         utils.extract(fname)
-        os.chdir(cwd)
+
         return True
 
 
