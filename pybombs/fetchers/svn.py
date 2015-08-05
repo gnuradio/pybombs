@@ -41,9 +41,7 @@ class Svn(FetcherBase):
         """
         svn checkout
         """
-        cwd = os.getcwd()
-        self.log.obnoxious("Switching cwd to: {}".format(self.src_dir))
-        os.chdir(self.src_dir)
+
         svn_cmd = "svn co -r {rev} {url} {dst_dir}".format(
                 rev=recipe.svn_rev,
                 url=url,
@@ -54,7 +52,6 @@ class Svn(FetcherBase):
         # - Run the clone process in a process monitor
         # - Pipe its output through an output processor
         if subprocess.call(svn_cmd, shell=True) != 0:
-            os.chdir(cwd)
             return False
         return True
 
@@ -63,7 +60,7 @@ class Svn(FetcherBase):
         if not self.check_fetched(recipe, url):
             self.log.error("Can't return version for {}, not fetched!".format(recipe.id))
             return None
-        cwd = os.getcwd()
+
         repo_dir = os.path.join(self.src_dir, recipe.id)
         self.log.obnoxious("Switching cwd to: {}".format(repo_dir))
         os.chdir(repo_dir)
@@ -73,5 +70,5 @@ class Svn(FetcherBase):
         self.version = rm.group(1)
         self.log.debug("Found version: {}".format(self.version))
         self.log.obnoxious("Switching cwd to: {}".format(cwd))
-        os.chdir(cwd)
+
         return self.version

@@ -31,9 +31,10 @@ from pybombs import inventory
 from pybombs.utils import subproc
 from pybombs.utils import output_proc
 from pybombs.pb_exception import PBException
-from pybombs.fetchers.base import FetcherBase, make_fetcher
+from pybombs.fetchers import FetcherBase, make_fetcher
 from pybombs.config_manager import config_manager
 from pybombs.packagers.base import PackagerBase
+
 
 class Source(PackagerBase):
     name = "source"

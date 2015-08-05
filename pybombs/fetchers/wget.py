@@ -42,9 +42,6 @@ class Wget(FetcherBase):
         """
         do download
         """
-        cwd = os.getcwd()
-        self.log.obnoxious("Switching cwd to: {}".format(self.src_dir))
-        os.chdir(self.src_dir)
         fname = os.path.split(url)[1]
         # Inspired by http://stackoverflow.com/questions/22676/how-do-i-download-a-file-over-http-using-python
         import urllib2
@@ -67,7 +64,6 @@ class Wget(FetcherBase):
             print status,
         f.close()
         utils.extract(filename)
-        os.chdir(cwd)
         return True
 
     def get_version(self, recipe, url):

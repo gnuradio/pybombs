@@ -25,7 +25,6 @@ from pybombs.commands import CommandBase
 from pybombs import simple_tree
 from pybombs import recipe
 from pybombs import package_manager
-from pybombs.fetchers.base import FetcherBase
 
 
 class Install(CommandBase):
