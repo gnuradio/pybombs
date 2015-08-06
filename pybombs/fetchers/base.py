@@ -42,12 +42,11 @@ class FetcherBase(object):
     """
     Base class for fetchers.
     """
-    name = None
     url_type = None
 
     def __init__(self):
         self.cfg = config_manager
-        self.log = pb_logging.logger.getChild("Fetcher.{}".format(self.name))
+        self.log = pb_logging.logger.getChild("Fetcher.{}".format(self.url_type))
         self.prefix_info = self.cfg.get_active_prefix()
         self.src_dir = self.prefix_info.src_dir
 
@@ -56,7 +55,7 @@ class FetcherBase(object):
         Do the fetch. If version info is available, return that.
         Only return False or None if something goes wrong.
         """
-        self.log.obnoxious("Fetching {} file from url: {}".format(recipe, url))
+        self.log.debug("Fetching source for recipe: {}".format(recipe.id))
 
         # Jump to the src directory (should be created by init?)
         if not os.path.isdir(self.src_dir):
@@ -68,13 +67,13 @@ class FetcherBase(object):
             return True
 
         cwd = os.getcwd()
-        self.log.obnoxious("Switching to src directory: {}".format(self.src_dir))
+        self.log.debug("Switching to src directory: {}".format(self.src_dir))
         os.chdir(self.src_dir)
 
         # Do the fetch
         try:
             self.log.debug("Fetching {}".format(url))
-            self._fetch(recipe, url.split("://", 1)[1])
+            folder = self._fetch(recipe.id, url.split("://", 1)[1])
         except Exception as ex:
             self.log.error("Unable to fetch the {}".format(recipe))
             self.log.error(ex)
@@ -83,7 +82,7 @@ class FetcherBase(object):
         os.chdir(cwd)
         return True
 
-    def _fetch(self, recipe, url):
+    def _fetch(self, name, url):
         """
         Overload this to implement the actual fetch.
         """
@@ -115,6 +114,8 @@ class FetcherBase(object):
             self.log.error("Can't return version for {}, not fetched!".format(recipe.id))
         return None
 
+    def clean(self, strings):
+        pass
 
 ### Factory functions #######################################################
 def get_fetcher_dict():

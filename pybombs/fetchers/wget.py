@@ -24,11 +24,13 @@ import os
 
 from pybombs import pb_logging
 from pybombs import inventory
-from pybombs.utils import subproc
-from pybombs.utils import output_proc
 from pybombs.pb_exception import PBException
 from pybombs.config_manager import config_manager
+from pybombs.utils import output_proc
+from pybombs.utils import subproc
+from pybombs.utils import utils
 from pybombs.utils import vcompare
+
 from pybombs.fetchers.base import FetcherBase
 
 
@@ -38,14 +40,17 @@ class Wget(FetcherBase):
     Doesn't actually use wget, name is just for historical reasons.
     """
     url_type = 'wget'
-    def _fetch(self, recipe, url):
+
+    def _fetch(self, name, url):
         """
         do download
         """
-        fname = os.path.split(url)[1]
         # Inspired by http://stackoverflow.com/questions/22676/how-do-i-download-a-file-over-http-using-python
+
         import urllib2
-        filename = url.split('/')[-1]
+        filename = os.path.split(url)[1]
+        self.log.debug("Downloading {}".format(url))
+
         u = urllib2.urlopen(url)
         f = open(filename, 'wb')
         meta = u.info()
@@ -63,8 +68,16 @@ class Wget(FetcherBase):
             status = status + chr(8)*(len(status)+1)
             print status,
         f.close()
-        utils.extract(filename)
-        return True
+
+        # Move to the correct source location.
+        prefix = utils.extract(filename)
+        self.log.debug("Moving {} to {}".format(prefix, name))
+        os.rename(prefix, name)
+
+        # Remove the tar file once it has been extracted
+        os.remove(filename)
+
+        return
 
     def get_version(self, recipe, url):
         # TODO tbw
