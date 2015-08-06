@@ -282,7 +282,7 @@ def remove(pkglist=None):
         print "\nNothing to do!"
         return
     confirm = raw_input("\nContinue (y or n) ")
-    if(confirm=="y" or confirm=='Y'):
+    if(confirm.lower().startswith('y')):
         for p in rblist: # 
             try:
                 pkg = global_recipes[p];
@@ -358,7 +358,7 @@ def update(pkglist=None):
     # make sure this is ok
     print "Will remove and install the following packages to the latest version: %s"%(str(rblist));
     confirm = raw_input("\nContinue (y or n) ")
-    if(confirm=="y" or confirm=='Y'):
+    if(confirm.lower().startswith('y')):
         pass
     else:
         print "aborting"
