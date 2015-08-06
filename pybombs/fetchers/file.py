@@ -26,7 +26,6 @@ from pybombs import inventory
 from pybombs.utils import subproc
 from pybombs.utils import output_proc
 from pybombs.pb_exception import PBException
-from pybombs.config_manager import config_manager
 from pybombs.utils import vcompare
 from pybombs.fetchers.base import FetcherBase
 
@@ -38,7 +37,7 @@ class File(FetcherBase):
     """
     url_type = 'file'
 
-    def _fetch(self, name, url):
+    def _fetch(self, url, recipe):
         """
         symlink + extract
         """
@@ -55,7 +54,7 @@ class File(FetcherBase):
         os.symlink(url, os.path.join(self.src_dir, filename))
         utils.extract(filename)
 
-        return 
+        return True
 
 
     def get_version(self, recipe, url):

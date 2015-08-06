@@ -19,7 +19,8 @@
 # Boston, MA 02110-1301, USA.
 #
 
-from base import FetcherBase, make_fetcher
+from base import FetcherBase
+from base import get_all, get_by_name
 from file import File
 from git import Git
 from svn import Svn

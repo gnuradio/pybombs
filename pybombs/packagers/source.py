@@ -31,7 +31,7 @@ from pybombs import inventory
 from pybombs.utils import subproc
 from pybombs.utils import output_proc
 from pybombs.pb_exception import PBException
-from pybombs.fetchers import FetcherBase, make_fetcher
+from pybombs.fetcher import Fetcher
 from pybombs.config_manager import config_manager
 from pybombs.packagers.base import PackagerBase
 
@@ -82,7 +82,8 @@ class Source(PackagerBase):
             self.log.debug("State on package {} is {}".format(recipe.id, initial_state))
             # First, make sure we have the sources
             if self.inventory.get_state(recipe.id) < self.inventory.STATE_FETCHED:
-                self.fetch(recipe)
+                f = Fetcher()
+                f.fetch(recipe)
                 self.inventory.set_state(recipe.id, self.inventory.STATE_FETCHED)
                 self.inventory.save()
             else:
@@ -144,27 +145,6 @@ class Source(PackagerBase):
     # Build methods: All of these must raise a PBException when something
     # goes wrong.
     #########################################################################
-    def fetch(self, recipe):
-        self.log.debug("Fetching from source URI: {}".format(recipe.srcs[0].split("://", 1)[1]))
-        fetched = False
-        for src in recipe.srcs:
-            fetcher = make_fetcher(recipe, src)
-            try:
-                # refetch is fine, because this only gets called when the
-                # state indicates it was not previously fetched, so a source
-                # dir has no business existing at this time
-                fetch_result = fetcher.refetch(recipe, src)
-                if not fetch_result:
-                    self.log.warning("Fetching source {0} failed.".format(src))
-                    continue
-                fetched = True
-                break
-            except Exception as e:
-                self.log.error(e)
-                self.log.error("Unable to fetch source for package {}".format(recipe.id))
-        if not fetched:
-            raise PBException("Unable to fetch recipe {}".format(recipe.id))
-
     def configure(self, recipe, try_again=False):
         """
         Run the configuration step for this recipe.

@@ -41,7 +41,7 @@ class Wget(FetcherBase):
     """
     url_type = 'wget'
 
-    def _fetch(self, name, url):
+    def _fetch(self, url, recipe):
         """
         do download
         """
@@ -71,13 +71,13 @@ class Wget(FetcherBase):
 
         # Move to the correct source location.
         prefix = utils.extract(filename)
-        self.log.debug("Moving {} to {}".format(prefix, name))
-        os.rename(prefix, name)
+        self.log.debug("Moving {} to {}".format(prefix, recipe.id))
+        os.rename(prefix, recipe.id)
 
         # Remove the tar file once it has been extracted
         os.remove(filename)
 
-        return
+        return True
 
     def get_version(self, recipe, url):
         # TODO tbw
