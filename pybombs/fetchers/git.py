@@ -37,7 +37,8 @@ class Git(FetcherBase):
     git fetcher
     """
     url_type = 'git'
-    def _fetch(self, recipe, url):
+
+    def _fetch(self, name, url):
         """
         git clone (or git pull TODO)
         """

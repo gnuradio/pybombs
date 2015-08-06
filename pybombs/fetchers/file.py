@@ -38,24 +38,24 @@ class File(FetcherBase):
     """
     url_type = 'file'
 
-    def _fetch(self, recipe, url):
+    def _fetch(self, name, url):
         """
         symlink + extract
         """
-
-        fname = os.path.split(url)[-1]
-        if os.path.isfile(fname):
-            self.log.info("File already exists in source dir: {}".format(fname))
+        filename = os.path.split(url)[-1]
+        self.log.debug("Looking for file: {}".format(filename))
+        if os.path.isfile(filename):
+            self.log.info("File already exists in source dir: {}".format(filename))
             return True
         if not os.path.isfile(url):
             self.log.error("File not found: {}".format(url))
             return False
         if url[0] != "/":
             url = os.path.join("..", url)
-        os.symlink(url, os.path.join(self.src_dir, fname))
-        utils.extract(fname)
+        os.symlink(url, os.path.join(self.src_dir, filename))
+        utils.extract(filename)
 
-        return True
+        return 
 
 
     def get_version(self, recipe, url):

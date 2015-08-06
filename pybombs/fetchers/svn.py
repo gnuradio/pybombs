@@ -37,7 +37,7 @@ class Svn(FetcherBase):
     svn fetcher
     """
     url_type = 'svn'
-    def _fetch(self, recipe, url):
+    def _fetch(self, name, url):
         """
         svn checkout
         """
