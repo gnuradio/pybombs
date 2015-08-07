@@ -108,11 +108,7 @@ class PrefixInfo(object):
             self._cfg_info = self._load_cfg_info([self.cfg_file,], self._cfg_info)
         # 4) Find the src dir
         self.src_dir = config_section.get('srcdir', os.path.join(self.prefix_dir, 'src'))
-        if not os.path.isdir(self.src_dir):
-            self.log.warn("Prefix source dir not found: {}".format(self.src_dir))
-            self.src_dir = None
-        else:
-            self.log.debug("Prefix source dir is: {}".format(self.src_dir))
+        self.log.debug("Prefix source dir is: {}".format(self.src_dir))
         # 5) Find the inventory file
         self.inv_file = os.path.join(self.prefix_cfg_dir, self.inv_file_name)
         if not os.path.isfile(self.inv_file):
