@@ -153,12 +153,10 @@ class Source(PackagerBase):
         self.log.debug("Using lvars - {}".format(recipe.lvars))
         self.log.debug("In cwd - {}".format(os.getcwd()))
         pre_cmd = self.var_replace_all(recipe, recipe.src_configure)
-        cmd = self.config_filter(pre_cmd)
+        cmd = self.filter_cmd(pre_cmd, recipe, 'config_filter')
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
             o_proc = output_proc.OutputProcessorMake(preamble="Configuring: ")
-        #pre_filt_command = self.scanner.var_replace_all(self.scr_configure)
-        #st = bashexec(self.scanner.config_filter(pre_filt_command), o_proc)
         if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
             self.log.debug("Configure successful.")
             return True
@@ -169,7 +167,6 @@ class Source(PackagerBase):
         else:
             self.log.error("Configuration failed after running at least twice.")
             raise PBException("Configuration failed")
-
 
     def make(self, recipe, try_again=False):
         """
@@ -184,6 +181,7 @@ class Source(PackagerBase):
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
             o_proc = output_proc.OutputProcessorMake(preamble="Building: ")
         cmd = self.var_replace_all(recipe, recipe.src_make)
+        cmd = self.filter_cmd(cmd, recipe, 'make_filter')
         if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
             self.log.debug("Make successful")
             return True
@@ -202,7 +200,7 @@ class Source(PackagerBase):
         self.log.debug("Installing package {}".format(recipe.id))
         self.log.debug("In cwd - {}".format(os.getcwd()))
         pre_cmd = self.var_replace_all(recipe, recipe.src_install)
-        cmd = self.install_filter(pre_cmd)
+        cmd = self.filter_cmd(pre_cmd, recipe, 'install_filter')
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG:
             o_proc = output_proc.OutputProcessorMake(preamble="Installing: ")
@@ -212,6 +210,9 @@ class Source(PackagerBase):
         self.log.error("Make failed")
         return False
 
+    #########################################################################
+    # Helpers
+    #########################################################################
     def var_replace(self, mo, lvars):
         """
         Expects arguments to be matchobjects for strings starting with $.
@@ -241,198 +242,30 @@ class Source(PackagerBase):
         # matches FOO, or b otherwise. We'll leave this out for now.
         return s
 
-    def config_filter(self, in_string):
-        prefix = re.compile("-DCMAKE_INSTALL_PREFIX=\S*")
-        toolchain = re.compile("-DCMAKE_TOOLCHAIN_FILE=\S*")
-        cmake = re.compile("cmake \S* ")
-        CC = re.compile("CC=\S* ")
-        CXX = re.compile("CXX=\S* ")
-        if str(os.environ.get('PYBOMBS_SDK')) == 'True':
-            cmk_cmd_match = re.search(cmake, in_string)
-            if cmk_cmd_match:
-                idx = in_string.find(cmk_cmd_match.group(0)) + len(cmk_cmd_match.group(0))
-                in_string = re.sub(prefix, "-DCMAKE_INSTALL_PREFIX=" + self.cfg.get('config', 'sdk_prefix'), in_string)
-                if re.search(toolchain, in_string):
-                    in_string = re.sub(toolchain, "-DCMAKE_TOOLCHAIN_FILE=" + self.cfg.get('config', 'toolchain'), in_string)
-                else:
-                    in_string = in_string[:idx] +  "-DCMAKE_TOOLCHAIN_FILE=" + self.cfg.get('config', 'toolchain') + ' ' + in_string[idx:]
-                if re.search(CC, in_string):
-                    in_string = re.sub(CC, "", in_string)
-                if re.search(CXX, in_string):
-                    in_string = re.sub(CXX, "", in_string)
-        return in_string
+    def filter_cmd(self, unfiltered_command, recipe, filter_flag):
+        """
+        - Get a filter from the recipe flags identified by filter_flag
+        - If filter is empty, return unfiltered_command verbatim
+        - Otherwise, it must contain the string $command
+            - If it doesn't, prepend it
+        - Replace all variables in the filter
+            - $command is replaced by unfiltered_command
+        """
+        cmd_filter = self.get_package_flag(recipe, filter_flag)
+        if len(cmd_filter) == 0:
+            return unfiltered_command
+        if cmd_filter.find('$command') == -1:
+            cmd_filter = '$command ' + cmd_filter
+        recipe.lvars['command'] = unfiltered_command
+        return self.var_replace_all(recipe, cmd_filter)
 
-    # Not really sure what this is for from the original
-    def install_filter(self, in_string):
-        return in_string
-        #installed = re.compile("make install")
-        #if str(os.environ.get('PYBOMBS_SDK')) == 'True':
-            #print in_string
-            #mk_inst_match = re.search(installed, in_string)
-            #if mk_inst_match:
-                #idx = in_string.find(mk_inst_match.group(0)) + len(mk_inst_match.group(0))
-                #in_string = in_string[:idx] +  " DESTDIR=" + config.get('config', 'sandbox') + ' ' + in_string[idx:]
-        #return in_string
+    def get_package_flag(self, recipe, flag):
+        """
+        For the package identified by recipe, either return the package
+        flag (if exists), or the categories flag.
+        """
+        pkg_flags = self.cfg.get_package_flags(recipe.id)
+        if pkg_flags.has_key(flag):
+            return pkg_flags[flag]
+        return self.cfg.get_package_flags(recipe.category, 'categories').get(flag, '')
 
-
-
-    #def is_installed(self, recipe):
-        #"""
-        #Check if a package is installed.
-        #"""
-        #return self.inventory.get_state(recipe.id) == 'installed'
-
-    #def remove(self, recipe):
-        #pass # tbw
-
-
-
-    #def fetch(self):
-        #pass
-        ### this is not possible if we do not have sources
-        ##if(len(self.source) == 0):
-            ##v.print_v(v.WARN, "WARNING: no sources available for package %s!"%(self.name))
-            ##return True
-        ##fetcher = fetch.fetcher(self.source, self)
-        ##fetcher.fetch()
-        ##if(not fetcher.success):
-            ##if(len(self.source) == 0):
-                ##raise PBRecipeException("Failed to Fetch package '%s' no sources were provided! '%s'!"%(self.name, self.source))
-            ##else:
-                ##raise PBRecipeException("Failed to Fetch package '%s' sources were '%s'!"%(self.name, self.source))
-        ### update value in inventory
-        ##inv.set_state(self.name, "fetch")
-        ##self.last_fetcher = fetcher
-        ##v.print_v(v.DEBUG, "Setting fetched version info (%s,%s)"%(fetcher.used_source, fetcher.version))
-        ##inv.set_prop(self.name, "source", fetcher.used_source)
-        ##inv.set_prop(self.name, "version", fetcher.version)
-
-
-    #def configure(self, recipe, try_again=False):
-        #"""
-        #Run the configuration step for this recipe.
-        #If try_again is set, it will assume the configuration failed before
-        #and we're trying to run it again.
-        #"""
-        #self.log.debug("Configuring recipe {}".format(recipe.id))
-        ##mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-        ##if v.VERBOSITY_LEVEL >= v.DEBUG or try_again:
-            ##o_proc = None
-        ##else:
-            ##o_proc = output_proc.OutputProcessorMake(preamble="Configuring: ")
-        ##pre_filt_command = self.scanner.var_replace_all(self.scr_configure)
-        ##st = bashexec(self.scanner.config_filter(pre_filt_command), o_proc)
-        ##if (st == 0):
-            ##return
-        ### If configuration fails:
-        ##if try_again == False:
-            ##v.print_v(v.ERROR, "Configuration failed. Re-trying with higher verbosity.")
-            ##self.make(try_again=True)
-        ##else:
-            ##v.print_v(v.ERROR, "Configuration failed. See output above for error messages.")
-            ##raise PBRecipeException("Configuration failed")
-
-
-    #def make(self, try_again=False):
-        #"""
-        #Build this recipe.
-        #If try_again is set, it will assume the build failed before
-        #and we're trying to run it again. In this case, reduce the
-        #makewidth to 1 and show the build output.
-        #"""
-        #self.log.debug("Building recipe {}".format(recipe.id))
-        ##v.print_v(v.PDEBUG, "make")
-        ##mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-        ##if v.VERBOSITY_LEVEL >= v.DEBUG or try_again:
-            ##o_proc = None
-        ##else:
-            ##o_proc = output_proc.OutputProcessorMake(preamble="Building:    ")
-        ### Stash the makewidth so we can set it back later
-        ##makewidth = self.scanner.lvars['makewidth']
-        ##if try_again:
-            ##self.scanner.lvars['makewidth'] = '1'
-        ##st = bashexec(self.scanner.var_replace_all(self.scr_make), o_proc)
-        ##self.scanner.lvars['makewidth'] = makewidth
-        ##if st == 0:
-            ##return
-        ### If build fails, try again with more output:
-        ##if try_again == False:
-            ##v.print_v(v.ERROR, "Build failed. Re-trying with reduced makewidth and higher verbosity.")
-            ##self.make(try_again=True)
-        ##else:
-            ##v.print_v(v.ERROR, "Build failed. See output above for error messages.")
-            ##raise PBRecipeException("Build failed.")
-
-    ##def installed(self):
-        ### perform installation, file copy
-        ##v.print_v(v.PDEBUG, "installed")
-        ##mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-        ##if v.VERBOSITY_LEVEL >= v.DEBUG:
-            ##o_proc = None
-        ##else:
-            ##o_proc = output_proc.OutputProcessorMake(preamble="Installing: ")
-        ##pre_filt_command = self.scanner.var_replace_all(self.scr_install)
-        ##st = bashexec(self.scanner.installed_filter(pre_filt_command), o_proc)
-        ##if (st != 0):
-            ##raise PBRecipeException("Installation failed.")
-
-    ### run package specific make uninstall
-    ##def uninstall(self):
-        ##try:
-            ##if(self.satisfier == "inventory"):
-                ##mkchdir(topdir + "/src/" + self.name + "/" + self.installdir)
-                ##st = bashexec(self.scanner.var_replace_all(self.scr_uninstall))
-                ##self.satisfier = None
-                ##del vars["%s.satisfier"%(self.name)]
-            ##else:
-                ##v.print_v(v.WARN, "pkg not installed from source, ignoring")
-        ##except:
-            ##v.print_v(v.DEBUG, "local build dir does not exist")
-
-    ### clean the src dir
-    ##def clean(self):
-        ##os.chdir(topdir + "/src/")
-        ##rmrf(self.name)
-        ##inv.set_state(self.name,None)
-
-
-    ##def run_install(self, pkgname):
-        ##"""
-        ##Install the package called pkgname.
-
-        ##Order of ops for each pkgname:
-        ##- Check if pkgname is in the recipe list
-        ##- Ask for a Recipe object and see if it's already installed
-          ##- If yes, figure out if we want to reinstall
-            ##- If no, return
-        ##- Ask the RecipeListManager for a list of dependencies (recursively)
-        ##- For every dependency, ask Recipe if it's already installed in
-          ##the current prefix
-        ##- Create a new list of all Recipes that need to be installed
-        ##- Install each of these
-        ##"""
-        ##self.log.info("Starting installation of package {0}".format(pkgname))
-
-
-        ##if not check_recipe(pkgname):
-            ##die("unknown package "+pkgname)
-        ##if die_if_already and check_installed(pkgname):
-            ##print pkgname + " already installed"
-            ##return
-        ##validate_write_perm(vars["prefix"])
-        ##rc = global_recipes[pkgname]
-        ##pkg_missing = rc.recursive_satisfy()
-
-        ### remove duplicates while preserving list order (lowest nodes first)
-        ##pkg_missing = list_unique_ord(pkg_missing)
-        ##self.log.info("Installing packages:\n" + "\n".join(["* {0}".format(x) for x in pkg_missing]))
-
-        ### prompt if list is ok?
-        ### provide choice of deb satisfiers or source build?
-
-        ##for pkg in pkg_missing:
-            ##global_recipes[pkg].install()
-            ##if(pkg == "gnuradio"):
-                ##if(confirm("Run VOLK Profile to choose fastest kernels?","Y",5)):
-                    ##run_volk_profile()
-    ###    global_recipes[pkgname].install()
