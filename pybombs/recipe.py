@@ -186,25 +186,25 @@ class Recipe(Scanner):
         " Add static config options "
         if self.static:
             self.log.log(1, "Adding static config options: {0}".format(static_cfg_opts.strip()))
-            self.src_configure = static_cfg_opts
+            self.src_configure = static_cfg_opts.strip()
 
     def configure_set(self, cfg_opts):
         " Add config options "
         if not self.static or self.src_configure == "":
             self.log.log(1, "Adding config options: {0}".format(cfg_opts.strip()))
-            self.src_configure = cfg_opts
+            self.src_configure = cfg_opts.strip()
 
     def install_set_static(self, arg):
         " Add static install options "
         if self.static:
             self.log.log(1, "Adding static install options: {0}".format(arg.strip()))
-            self.src_install = arg
+            self.src_install = arg.strip()
 
     def install_set(self, arg):
         " Add install options "
         if not self.static or self.src_install == "":
             self.log.log(1, "Adding install options: {0}".format(arg.strip()))
-            self.src_install = arg
+            self.src_install = arg.strip()
 
     def satisfy_begin(self, pkg_type):
         " Call this when finding a satisfy_*: line "
@@ -425,7 +425,7 @@ class Recipe(Scanner):
             (Rep(AnyBut("}")), configure_set), (Str("}"), mainstate),
         ]),
         State('make', [
-            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg, "src_make")), (Str("}"), mainstate),
+            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg.strip(), "src_make")), (Str("}"), mainstate),
         ]),
         State('install_static', [
             (Rep(AnyBut("}")), install_set_static), (Str("}"), mainstate),
@@ -434,10 +434,10 @@ class Recipe(Scanner):
             (Rep(AnyBut("}")), install_set), (Str("}"), mainstate),
         ]),
         State('verify', [
-            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg, "src_verify")), (Str("}"), mainstate),
+            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg.strip(), "src_verify")), (Str("}"), mainstate),
         ]),
         State('uninstall', [
-            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg, "src_uninstall")), (Str("}"), mainstate),
+            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg.strip(), "src_uninstall")), (Str("}"), mainstate),
         ]),
         State('comment', [
             (eol, Begin('')),
