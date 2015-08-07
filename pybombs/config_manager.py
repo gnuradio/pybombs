@@ -473,15 +473,16 @@ class ConfigManager(object):
         You can set attrname to 'categories' to get those.
         """
         flags_dict = {}
-        if self.prefix.prefix_dir is None:
+        if self._prefix_info.prefix_dir is None:
             return flags_dict
-        flags_list = [x.strip() for x in re.split(r'(?<!\\);', getattr(self.prefix, attrname).get(pkgname, ''))]
+        flags_list = [
+            x.strip()
+            for x in re.split(r'(?<!\\);', getattr(self._prefix_info, attrname).get(pkgname, ''))
+            if len(x.strip()) > 0
+        ]
         for flag in flags_list:
             flag_split = re.split(r'(?<!\\)=', flag, 1)
-            if len(flag_split) == 2:
-                flags_dict[flag_split[0]] = flag_split[1]
-            else:
-                flags_dict[flag_split[0]] = flag_split[0]
+            flags_dict[flag_split[0]] = flag_split[1 if len(flag_split) == 2 else 0]
         return flags_dict
 
     def setup_parser(self, parser):
