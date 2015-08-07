@@ -49,12 +49,14 @@ class Fetcher(object):
         self.log = pb_logging.logger.getChild("Fetcher")
         self.prefix = self.cfg.get_active_prefix()
         self.src_dir = self.prefix.src_dir
+        self.inventory = inventory.Inventory(self.prefix.inv_file)
 
-        # This should be created by init. Assume it exists already?
-        # Create it if it doesnt?
         if not os.path.isdir(self.src_dir):
-            self.log.error("Source dir does not exist! [{}]".format(self.src_dir))
-            return False
+            self.log.warning("Source dir does not exist! [{}]".format(self.src_dir))
+            try:
+                os.mkdir(self.src_dir)
+            except:
+                raise PBException("Unable to create the source directory!")
 
         # Get the avaliable fetcher objects.
         self.avaliable = fetchers.get_all()
@@ -102,13 +104,15 @@ class Fetcher(object):
                 self.log.error("Unable to fetch {}".format(recipe))
                 self.log.error(ex)
 
-        #self.log.debug("Fetching from source URI: {}".format(recipe.srcs[0].split("://", 1)[1]))
         # Always switch back
         os.chdir(cwd)
 
         if not fetched:
-            print "Strange."
             raise PBException("Unable to fetch recipe {}".format(recipe.id))
+
+        # Save status to the inventory
+        self.inventory.set_state(recipe.id, self.inventory.STATE_FETCHED)
+        self.inventory.save()
         return True
 
     #TODO: Same as fetch, except wipe out the source directory first

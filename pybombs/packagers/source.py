@@ -84,8 +84,6 @@ class Source(PackagerBase):
             if self.inventory.get_state(recipe.id) < self.inventory.STATE_FETCHED:
                 f = Fetcher()
                 f.fetch(recipe)
-                self.inventory.set_state(recipe.id, self.inventory.STATE_FETCHED)
-                self.inventory.save()
             else:
                 self.log.debug("Package {} is already fetched.".format(recipe.id))
             # Set up the build dir
