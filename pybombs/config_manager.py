@@ -466,12 +466,13 @@ class ConfigManager(object):
             return uri
         return os.path.join(cache_dir, name)
 
-    def get_package_flags(self, pkgname, attrname='packages'):
+    def get_package_flags(self, pkgname, pkgname_is_category=False):
         """
         Return all the package flags of pkgname as a dictionary.
         If pkgname doesn't have any package flags, return an empty dict.
         You can set attrname to 'categories' to get those.
         """
+        attrname = 'packages' if not pkgname_is_category else 'categories'
         flags_dict = {}
         if self._prefix_info.prefix_dir is None:
             return flags_dict
