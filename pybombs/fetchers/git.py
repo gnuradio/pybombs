@@ -21,6 +21,7 @@
 
 
 import os
+import subprocess
 
 from pybombs import pb_logging
 from pybombs import inventory
@@ -49,6 +50,7 @@ class Git(FetcherBase):
             self.log.debug("Using gitcache at {}", gitcache)
             gitcache = "--reference {}".format(gitcache)
         # TODO maybe we don't want depth=1, ask config_manager
+        # Errors with the gnuradio.org sources, but not github.com sources
         git_args = "--depth=1"
         git_cmd = "git clone {recipe_gitargs} {gitargs} {gitcache} -b {branch} {url} {name}".format(
             recipe_gitargs=recipe.git_args,
@@ -64,8 +66,12 @@ class Git(FetcherBase):
         # - Pipe its output through an output processor
         if subprocess.call(git_cmd, shell=True) != 0:
             return False
-        self.log.obnoxious("Switching cwd to: {}".format(os.path.join(self.src_dir, recipe.id)))
-        os.chdir(os.path.join(self.src_dir, recipe.id))
+        # Jump to the cloned repo
+        # We are already in the source directory for the prefix
+        cwd = os.getcwd()
+        src_dir = os.path.join(cwd, recipe.id)
+        self.log.obnoxious("Switching cwd to: {}".format(src_dir))
+        os.chdir(src_dir)
         if recipe.git_rev:
             git_co_cmd = "git checkout {rev}".format(recipe.git_rev)
             self.log.debug("Calling '{}'".format(git_co_cmd))
@@ -75,6 +81,7 @@ class Git(FetcherBase):
             if subprocess.call(git_co_cmd, shell=True) != 0:
                 return False
         self.log.obnoxious("Switching cwd to: {}".format(cwd))
+        os.chdir(cwd)
         return True
 
     def get_version(self, recipe, url):

@@ -21,6 +21,7 @@
 """ PyBOMBS command: fetch """
 
 from pybombs.commands import CommandBase
+from pybombs.pb_exception import PBException
 from pybombs import recipe
 
 
@@ -87,9 +88,9 @@ class Fetch(CommandBase):
                 self.log.debug("Package {} has no sources listed.".format(r.id))
                 continue
             self.log.debug("Downloading {}".format(r.srcs[0]))
-            f = Fetcher()
-            f.fetch(r)
-
-            #fetcher.get_version(r, r.srcs[0])
-            self.inventory.set_state(r.id, 'fetch')
-        self.inventory.save()
+            try:
+                f = Fetcher()
+                f.fetch(r)
+            except PBException as ex:
+                self.log.error("Unable to fetch package {}".format(r.id))
+                self.log.error(ex)
