@@ -78,17 +78,8 @@ class PackageManager(object):
         """
         See if package 'pkgname' has 'flag' set.
         """
-        if not self.prefix_available:
-            return False
-        if self.prefix.packages.has_key(pkgname) and \
-           self.prefix.packages[pkgname].find(flag) != -1:
-            return True
-        if r is None:
-            r = recipe.get_recipe(pkgname)
-        if self.prefix.categories.has_key(r.category) and \
-           self.prefix.categories[r.category].find(flag) != -1:
-            return True
-        return False
+        return self.cfg.get_package_flags(pkgname).has_key(flag) or \
+                self.cfg.get_package_flags(pkgname, 'categories').has_key(flag)
 
     def get_packagers(self, pkgname):
         """
