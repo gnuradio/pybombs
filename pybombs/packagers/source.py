@@ -267,5 +267,5 @@ class Source(PackagerBase):
         pkg_flags = self.cfg.get_package_flags(recipe.id)
         if pkg_flags.has_key(flag):
             return pkg_flags[flag]
-        return self.cfg.get_package_flags(recipe.category, 'categories').get(flag, '')
+        return self.cfg.get_package_flags(recipe.category, True).get(flag, '')
 
