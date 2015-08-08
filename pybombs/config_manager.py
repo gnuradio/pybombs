@@ -58,6 +58,7 @@ class PrefixInfo(object):
     """
     prefix_conf_dir = '.pybombs'
     env_prefix_var = 'PYBOMBS_PREFIX'
+    env_srcdir_var = 'PYBOMBS_PREFIX_SRC'
     inv_file_name = 'inventory.dat'
     setup_env_key = 'setup_env'
     default_package_flags = {'gnuradio': 'forcebuild'}
@@ -124,12 +125,12 @@ class PrefixInfo(object):
         if config_section.has_key(self.setup_env_key):
             self.log.debug('Loading environment from shell script: {}'.format(config_section[self.setup_env_key]))
             self.env = self._load_environ_from_script(config_section[self.setup_env_key])
-        # Just in case:
+        # Set some defaults:
         self.env[self.env_prefix_var] = self.prefix_dir
+        self.env[self.env_srcdir_var] = self.src_dir
         # [env] sections are always respected:
         for k, v in self._cfg_info['env'].iteritems():
-            print k, v
-            self.env[k] = os.path.expandvars(v.strip())
+            self.env[k.upper()] = os.path.expandvars(v.strip())
         # 8) Keep relevant config sections as attributes
         for k, v in self._cfg_info.iteritems():
             if k == 'env': continue
