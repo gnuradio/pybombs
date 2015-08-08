@@ -136,12 +136,14 @@ class PackageManager(object):
         """
         Install the given package. Returns True if successful, False otherwise.
         """
+        self.log.debug("install({})".format(name))
         r = recipe.get_recipe(name)
         if self.check_package_flag(name, 'forceinstalled', r):
             self.log.debug("Package {} is assumed installed.".format(name))
             # TODO maybe we can figure out a version string
             return True
         for pkgr in self.get_packagers(name):
+            self.log.debug("Trying to use packager {}".format(pkgr.name))
             try:
                 install_result = pkgr.install(r)
             except PBException as e:

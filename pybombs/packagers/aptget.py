@@ -54,7 +54,7 @@ class AptGet(PackagerBase):
         Call 'apt-get install pkgname' if we can satisfy the version requirements.
         """
         available_version = self.get_version_from_apt_cache(pkg_name)
-        if required_version is not None and not vcompare(comparator, required_version, available_version):
+        if required_version is not None and not vcompare(comparator, available_version, required_version):
             return False
         try:
             sysutils.monitor_process(["sudo", "apt-get", "-y", "install", pkg_name])
@@ -72,14 +72,14 @@ class AptGet(PackagerBase):
             return False
         if required_version is None:
             return True
-        return vcompare(comparator, required_version, installed_version)
+        return vcompare(comparator, installed_version, required_version)
 
     def _package_exists(self, pkg_name, comparator=">=", required_version=None):
         """
         See if an installable version of pkgname matches the version requirements.
         """
         available_version = self.get_version_from_apt_cache(pkg_name)
-        if required_version is not None and not vcompare(comparator, required_version, available_version):
+        if required_version is not None and not vcompare(comparator, available_version, required_version):
             return False
         return available_version
 
