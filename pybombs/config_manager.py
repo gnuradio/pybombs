@@ -73,7 +73,7 @@ class PrefixInfo(object):
         self.inv_file = None
         self.recipe_dir = None
         self.target_dir = None
-        self.env = {}
+        self.env = os.environ
         # 1) Load the config info
         self._cfg_info = self._load_cfg_info(cfg_list)
         # 2) Find the prefix directory
@@ -94,9 +94,6 @@ class PrefixInfo(object):
         if not os.path.isdir(self.prefix_cfg_dir):
             self.log.debug("Config dir does not yet exist, creating it.")
             os.mkdir(self.prefix_cfg_dir)
-        # TODO: This apparently can cause memory leaks on Mac OS X... figure out
-        # if I care
-        os.environ[self.env_prefix_var] = self.prefix_dir
         # 3) Find the config file
         self.cfg_file = os.path.join(self.prefix_cfg_dir, ConfigManager.cfg_file_name)
         config_section = {}
@@ -126,14 +123,15 @@ class PrefixInfo(object):
         if config_section.has_key('setup_env'):
             self.log.debug('Loading environment from shell script: {}'.format(config_section['setup_env']))
             self.env = self._load_environ_from_script(config_section['setup_env'])
-            # Just in case:
-            self.env["PYBOMBS_PREFIX"] = self.prefix_dir
-        else:
-            self.env = os.environ
-            for k, v in self._cfg_info['env'].iteritems():
-                self.env[k] = os.path.expandvars(v.strip())
+        # Just in case:
+        self.env[self.env_prefix_var] = self.prefix_dir
+        # [env] sections are always respected:
+        for k, v in self._cfg_info['env'].iteritems():
+            print k, v
+            self.env[k] = os.path.expandvars(v.strip())
         # 8) Keep relevant config sections as attributes
         for k, v in self._cfg_info.iteritems():
+            if k == 'env': continue
             setattr(self, k, v)
 
     def _load_cfg_info(self, cfg_list, cfg_info=None):
