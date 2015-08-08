@@ -25,6 +25,7 @@ Subprocess utils
 
 import subprocess
 from pybombs.pb_logging import logger
+from pybombs.config_manager import config_manager
 from pybombs.utils import output_proc
 
 def monitor_process(
@@ -42,16 +43,19 @@ def monitor_process(
     - args: Must be a list (e.g. ['ls', '-l']
     - shell: If True, run in shell environment
     - throw_ex: If True, propagate subprocess exceptions FIXME currently doesn't do anything
-    - env: A dictionary with environment variables
+    - env: A dictionary with environment variables. Note: If None is provided, it will
+           actually load the environment from the config manager.
     - oproc: An output processor
     """
-    log = logger.getChild("monitor_process")
-    log.debug("monitor_process(): Executing command `{}'".format(str(args).strip()))
+    log = logger.getChild("monitor_process()")
+    log.debug("Executing command `{cmd}'".format(cmd=str(args).strip()))
     extra_popen_args = {}
     use_oproc = False
     if isinstance(o_proc, output_proc.OutputProcessor):
         use_oproc = True
         extra_popen_args = o_proc.extra_popen_args
+    if env is None:
+        env = config_manager.get_active_prefix().env
     p = subprocess.Popen(args, shell=shell, env=env, **extra_popen_args)
     if use_oproc:
         ret_code = output_proc.run_with_output_processing(p, o_proc)
