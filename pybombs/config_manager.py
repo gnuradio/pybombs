@@ -59,6 +59,7 @@ class PrefixInfo(object):
     prefix_conf_dir = '.pybombs'
     env_prefix_var = 'PYBOMBS_PREFIX'
     inv_file_name = 'inventory.dat'
+    setup_env_key = 'setup_env'
     default_package_flags = {'gnuradio': 'forcebuild'}
     default_category_flags = {'common': 'forcebuild'}
 
@@ -120,9 +121,9 @@ class PrefixInfo(object):
             self.recipe_dir = None
         # 7) Load environment
         # If there's a setup_env option in the current config file, we use that
-        if config_section.has_key('setup_env'):
-            self.log.debug('Loading environment from shell script: {}'.format(config_section['setup_env']))
-            self.env = self._load_environ_from_script(config_section['setup_env'])
+        if config_section.has_key(self.setup_env_key):
+            self.log.debug('Loading environment from shell script: {}'.format(config_section[self.setup_env_key]))
+            self.env = self._load_environ_from_script(config_section[self.setup_env_key])
         # Just in case:
         self.env[self.env_prefix_var] = self.prefix_dir
         # [env] sections are always respected:
@@ -203,23 +204,26 @@ class PrefixInfo(object):
         self.prefix_src = None
         self.prefix_dir = None
 
-    def _load_environ_from_script(self, setup_env_cmd):
+    def _load_environ_from_script(self, setup_env_file):
         """
-        Run setup_env_cmd, return the new env
+        Run setup_env_file, return the new env
         FIXME make this portable!
         """
-        self.log.debug('Loading environment from shell script: {}'.format(setup_env_cmd))
+        self.log.debug('Loading environment from shell script: {}'.format(setup_env_file))
         # It would be nice if we could do os.path.expandvars() with a custom
         # env, wouldn't it
-        setup_env_cmd.replace('$PYTHON_PREFIX', self.prefix_dir)
-        setup_env_cmd.replace('${PYTHON_PREFIX}', self.prefix_dir)
+        setup_env_file = setup_env_file.replace('$PYBOMBS_PREFIX', self.prefix_dir)
+        setup_env_file = setup_env_file.replace('${PYBOMBS_PREFIX}', self.prefix_dir)
         # TODO add some checks this is a legit script
         # Damn, I hate just running stuff :/
         # TODO unportable command:
         separator = '<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>'
-        get_env_cmd = "{} && echo '{}' && env'".format(setup_env_cmd, separator)
-        # TODO add try/except
-        script_output = subprocess.check_output(get_env_cmd)
+        get_env_cmd = "source {env_file} && echo '{sep}' && env".format(env_file=setup_env_file, sep=separator)
+        try:
+            script_output = subprocess.check_output(get_env_cmd, shell=True)
+        except subprocess.CalledProcessError as e:
+            self.log.error("Trouble sourcing file {env_file}".format(setup_env_file))
+            exit(1)
         env_output = script_output.split(separator)[-1]
         # TODO assumption is that env_output now just holds the env output
         env_output = env_output.split('\n')
