@@ -121,10 +121,15 @@ class Install(CommandBase):
         Recursively add dependencies to the install tree.
         """
         deps = recipe.get_recipe(pkg).deps
+        # Filter for stuff already in the tree:
         deps_to_install = [dep for dep in deps if not dep in install_tree.get_nodes()]
+        # Filter for stuff already installed:
+        deps_to_install = filter(self._check_if_dep_needs_installing, deps_to_install)
         if len(deps_to_install) == 0:
             return
+        # First, add all dependencies into the install tree:
         install_tree.insert_at(deps_to_install, pkg)
+        # Then, extend the tree if the dependencies have dependencies themselves:
         for dep in deps_to_install:
             if isinstance(dep, list):
                 # I honestly have no clue why this happens, yet sometimes
@@ -135,3 +140,11 @@ class Install(CommandBase):
                 # installed
                 continue
             self._add_deps_recursive(install_tree, dep)
+
+    def _check_if_dep_needs_installing(self, dep):
+        """
+        Return True for package dep if it's not already installed,
+        or if we want to update it.
+        """
+        return self.update_if_exists or not self.pm.installed(dep)
+
