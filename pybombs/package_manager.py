@@ -49,6 +49,7 @@ class PackageManager(object):
             self.prefix = self.cfg.get_active_prefix()
         else:
             self.log.debug("No prefix specified. Skipping source package manager.")
+            self.src = None
         # Create sorted list of binary package managers
         requested_packagers = [x.strip() for x in self.cfg.get('packagers').split(',')]
         binary_pkgrs = []
@@ -132,17 +133,24 @@ class PackageManager(object):
                 return True
         return False
 
-    def install(self, name):
+    def install(self, name, **kwargs):
         """
         Install the given package. Returns True if successful, False otherwise.
         """
         self.log.debug("install({})".format(name))
-        r = recipe.get_recipe(name)
+        r = recipe.get_recipe(name, static=kwargs.get('static'))
         if self.check_package_flag(name, 'forceinstalled', r):
             self.log.debug("Package {} is assumed installed.".format(name))
             # TODO maybe we can figure out a version string
             return True
-        for pkgr in self.get_packagers(name):
+        packagers = self.get_packagers(name)
+        if kwargs.get('static'):
+            self.log.debug('Package will be built statically.')
+            if not self.prefix_available:
+                self.log.error('Static builds require source builds.')
+                exit(1)
+            packagers = [self.src,]
+        for pkgr in packagers:
             self.log.debug("Trying to use packager {}".format(pkgr.name))
             try:
                 install_result = pkgr.install(r)
