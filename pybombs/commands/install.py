@@ -120,6 +120,10 @@ class Install(CommandBase):
         """
         Recursively add dependencies to the install tree.
         """
+        # Check if package requested to not load deps:
+        if self.cfg.get_package_flags(pkg).get('nodeps') is not None:
+            return
+        # Load deps:
         deps = recipe.get_recipe(pkg).deps
         # Filter for stuff already in the tree:
         deps_to_install = [dep for dep in deps if not dep in install_tree.get_nodes()]
