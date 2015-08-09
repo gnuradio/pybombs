@@ -152,3 +152,36 @@ class Install(CommandBase):
         """
         return self.update_if_exists or not self.pm.installed(dep)
 
+
+### Damn, you found it :)
+class Moo(CommandBase):
+    """ Diary component of PyBOMBS """
+    cmds = {
+        'moo': 'MOoO',
+    }
+    hidden = True
+
+    @staticmethod
+    def setup_subparser(parser, cmd=None):
+        """
+        Set up a subparser for 'install'
+        """
+        pass
+
+    def __init__(self, cmd, args):
+        CommandBase.__init__(self,
+                cmd, args,
+                load_recipes=False,
+                require_prefix=False,
+                require_inventory=False,
+        )
+
+    def run(self):
+        """ Moo, Moo, Moo! """
+        print("         (__)    ")
+        print("         (oo)    ")
+        print("   /------\/     ")
+        print("  / |    ||      ")
+        print(" *  /\---/\      ")
+        print("    ~~   ~~      ")
+        print("....\"Have you mooed today?\"...")
