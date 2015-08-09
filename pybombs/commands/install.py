@@ -51,6 +51,11 @@ class Install(CommandBase):
                 help="Print dependency tree",
                 action='store_true',
         )
+        parser.add_argument(
+                '--static',
+                help="Build package(s) statically (implies source build)",
+                action='store_true',
+        )
         if cmd == 'install':
             parser.add_argument(
                     '-u', '--update',
@@ -114,7 +119,7 @@ class Install(CommandBase):
                 self.pm.update(pkg)
             else:
                 self.log.debug("Installing package: {}".format(pkg))
-                self.pm.install(pkg)
+                self.pm.install(pkg, static=self.args.static)
 
     def _add_deps_recursive(self, install_tree, pkg):
         """
@@ -164,7 +169,7 @@ class Moo(CommandBase):
     @staticmethod
     def setup_subparser(parser, cmd=None):
         """
-        Set up a subparser for 'install'
+        Moo.
         """
         pass
 

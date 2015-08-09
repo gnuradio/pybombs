@@ -447,15 +447,16 @@ class Recipe(Scanner):
 
 
 recipe_cache = {}
-def get_recipe(pkgname):
+def get_recipe(pkgname, static=False):
     """
     Return a recipe object by its package name.
     """
-    if recipe_cache.has_key(pkgname):
+    cache_key = pkgname+str(static)
+    if recipe_cache.has_key(cache_key):
         pb_logging.logger.getChild("get_recipe").debug("Woohoo, this one's already cached ({})".format(pkgname))
-        return recipe_cache[pkgname]
-    r = Recipe(recipe_manager.recipe_manager.get_recipe_filename(pkgname))
-    recipe_cache[pkgname] = r
+        return recipe_cache[cache_key]
+    r = Recipe(recipe_manager.recipe_manager.get_recipe_filename(pkgname), static=static)
+    recipe_cache[cache_key] = r
     return r
 
 

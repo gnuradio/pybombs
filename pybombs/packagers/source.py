@@ -87,10 +87,7 @@ class Source(PackagerBase):
             else:
                 self.log.debug("Package {} is already fetched.".format(recipe.id))
             # Set up the build dir
-            pkg_src_dir = "{src_dir}/{package}".format(
-                src_dir=self.prefix.src_dir,
-                package=recipe.id,
-            )
+            pkg_src_dir = os.path.join(self.prefix.src_dir, recipe.id)
             builddir = os.path.join(pkg_src_dir, recipe.install_dir)
             # The package source dir must exist, or something is wrong.
             if not os.path.isdir(pkg_src_dir):
@@ -219,7 +216,7 @@ class Source(PackagerBase):
         Returns the variable replacement value.
         """
         var_name = mo.group(0)
-        assert(len(var_name) > 1 and var_name[0] == '$')
+        assert len(var_name) > 1 and var_name[0] == '$'
         var_name = var_name[1:] # Strip $
         if var_name == 'prefix': # This is special
             return self.prefix.prefix_dir
