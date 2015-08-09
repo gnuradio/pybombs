@@ -23,7 +23,7 @@
 from base import CommandBase, dispatch
 from fetch import Fetch
 from prefix import Prefix
-from install import Install
+from install import Install, Moo
 from show import Show
 # Leave this at the end
 #from help import Help
