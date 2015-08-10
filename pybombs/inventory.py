@@ -23,7 +23,7 @@
 Inventory Manager
 """
 
-import pickle
+import yaml
 import pprint
 from pybombs import pb_logging
 
@@ -66,9 +66,7 @@ class Inventory(object):
         """
         try:
             self.log.debug("Trying to load inventory file {}...".format(self._filename))
-            inv_file = open(self._filename, 'rb')
-            self._contents = pickle.load(inv_file)
-            inv_file.close()
+            self._contents = yaml.safe_load(open(self._filename, 'r').read())
         except:
             self.log.debug("No success. Creating empty inventory.")
             self._contents = {}
@@ -82,10 +80,7 @@ class Inventory(object):
         created.
         """
         self.log.debug("Saving inventory to file {}...".format(self._filename))
-        inv_file = open(self._filename, 'wb')
-        pickle.dump(self._contents, inv_file)
-        inv_file.close()
-
+        open(self._filename, 'wb').write(yaml.dump(self._contents, default_flow_style=False))
 
     def has(self, pkg):
         """
