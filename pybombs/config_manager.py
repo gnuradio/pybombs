@@ -29,7 +29,8 @@ import re
 import os
 import argparse
 import subprocess
-import ConfigParser
+import yaml
+from copy import deepcopy
 import pb_logging
 from pb_exception import PBException
 import utils
@@ -40,16 +41,27 @@ def extract_cfg_items(filename, section, throw_ex=True):
     Read section from a config file and return it as a dict.
     Will throw KeyError if section does not exist.
     """
-    cfg_parser = ConfigParser.ConfigParser()
-    cfg_parser.read(filename)
-    if cfg_parser.has_section(section):
-        item_list = cfg_parser.items(section)
-        item_list = {item[0]: item[1] for item in item_list}
-    else:
-        if not throw_ex:
-            return {}
-        raise KeyError
-    return item_list
+    cfg_data = yaml.safe_load(open(filename).read())
+    try:
+        return cfg_data[section]
+    except KeyError as e:
+        if throw_ex:
+            raise e
+    return {}
+
+def dict_merge(a, b):
+    """
+    Recursively merge b into a. b[k] will overwrite a[k] if it exists.
+    """
+    if not isinstance(b, dict):
+        return b
+    result = deepcopy(a)
+    for k, v in b.iteritems():
+        if k in result and isinstance(result[k], dict):
+                result[k] = dict_merge(result[k], v)
+        else:
+            result[k] = deepcopy(v)
+    return result
 
 
 class PrefixInfo(object):
@@ -59,10 +71,16 @@ class PrefixInfo(object):
     prefix_conf_dir = '.pybombs'
     env_prefix_var = 'PYBOMBS_PREFIX'
     env_srcdir_var = 'PYBOMBS_PREFIX_SRC'
-    inv_file_name = 'inventory.dat'
+    inv_file_name = 'inventory.yml'
     setup_env_key = 'setup_env'
-    default_package_flags = {'gnuradio': 'forcebuild'}
-    default_category_flags = {'common': 'forcebuild'}
+    default_config_info = {
+            'prefix_aliases': {},
+            'prefix_config_dir': {},
+            'env': {},
+            'recipes': {},
+            'packages': {'gnuradio': 'forcebuild'},
+            'categories': {'common': 'forcebuild'},
+    }
 
     def __init__(self, args, cfg_list):
         self.log = pb_logging.logger.getChild("ConfigManager.PrefixInfo")
@@ -76,8 +94,10 @@ class PrefixInfo(object):
         self.recipe_dir = None
         self.target_dir = None
         self.env = os.environ
+        self._cfg_info = self.default_config_info
         # 1) Load the config info
-        self._cfg_info = self._load_cfg_info(cfg_list)
+        for cfg_file in reversed(cfg_list):
+            self._cfg_info = self._merge_config_info_from_file(cfg_file, self._cfg_info)
         # 2) Find the prefix directory
         self._find_prefix_dir(args)
         if self.prefix_dir is None:
@@ -104,7 +124,7 @@ class PrefixInfo(object):
             self.cfg_file = None
         else:
             config_section = extract_cfg_items(self.cfg_file, 'config', False)
-            self._cfg_info = self._load_cfg_info([self.cfg_file,], self._cfg_info)
+            self._cfg_info = self._merge_config_info_from_file(self.cfg_file, self._cfg_info)
         # 4) Find the src dir
         self.src_dir = config_section.get('srcdir', os.path.join(self.prefix_dir, 'src'))
         self.log.debug("Prefix source dir is: {}".format(self.src_dir))
@@ -114,7 +134,7 @@ class PrefixInfo(object):
             self.log.warn("Prefix inventory file not found: {}".format(self.inv_file))
         # 6) Prefix-specific recipes. There's two places for these:
         # - A 'recipes/' subdirectory
-        # - Anything declared in the config.dat file inside the prefix
+        # - Anything declared in the config.yml file inside the prefix
         self.recipe_dir = config_section.get('recipes', os.path.join(self.prefix_dir, 'recipes'))
         if os.path.isdir(self.recipe_dir):
             self.log.debug("Prefix-local recipe dir is: {}".format(self.recipe_dir))
@@ -128,40 +148,27 @@ class PrefixInfo(object):
         # Set some defaults:
         self.env[self.env_prefix_var] = self.prefix_dir
         self.env[self.env_srcdir_var] = self.src_dir
-        # [env] sections are always respected:
+        # env: sections are always respected:
         for k, v in self._cfg_info['env'].iteritems():
             self.env[k.upper()] = os.path.expandvars(v.strip())
         # 8) Keep relevant config sections as attributes
         for k, v in self._cfg_info.iteritems():
-            if k == 'env': continue
+            if k == 'env' or not k in self.default_config_info.keys():
+                continue
             setattr(self, k, v)
 
-    def _load_cfg_info(self, cfg_list, cfg_info=None):
+    def _merge_config_info_from_file(self, cfg_file, cfg_data={}):
         """
-        Go through all the config files, pull in everything
-        related to prefixes.
+        Load a config file, load its contents, and merge it into cfg_info.
+        Return the result.
         """
-        if cfg_info is None:
-            cfg_info = {
-                'prefix_aliases': {},
-                'prefix_config_dir': {},
-                'env': {},
-                'recipes': {},
-                'packages': self.default_package_flags,
-                'categories': self.default_category_flags,
-            }
-        for cfg_file in reversed(cfg_list):
+        try:
             self.log.debug('Inspecting config file: {}'.format(cfg_file))
-            # Default prefix is a special case:
-            config_section = extract_cfg_items(cfg_file, 'config', False)
-            if config_section.has_key('default_prefix'):
-                cfg_info['default_prefix'] = config_section['default_prefix']
-            # All the rest are full [sections] that we copy verbatim:
-            for cfg_section_key in cfg_info.keys():
-                cfg_section_data = extract_cfg_items(cfg_file, cfg_section_key, False)
-                for k, v in cfg_section_data.iteritems():
-                    cfg_info[cfg_section_key][k] = v
-        return cfg_info
+            cfg_data_new = yaml.safe_load(open(cfg_file, 'r').read())
+        except Exception as e:
+            self.log.debug('Well, looks like that failed.')
+            return cfg_data
+        return dict_merge(cfg_data, cfg_data_new)
 
     def _find_prefix_dir(self, args):
         """
@@ -244,13 +251,13 @@ class ConfigManager(object):
     """
     Order of preference, from least relevant to most:
     - Internal defaults
-    - Global defaults config file (/etc/pybombs/config.dat)
+    - Global defaults config file (/etc/pybombs/config.yml)
     - Config file in home directory
     - Config file in current prefix
     - What was specified on the command line
     """
     global_base_dir = "/etc/pybombs" # TODO we may want to change this
-    cfg_file_name = "config.dat"
+    cfg_file_name = "config.yml"
     pybombs_dir = ".pybombs"
     recipe_cache_dir = 'recipes'
 
@@ -370,21 +377,20 @@ class ConfigManager(object):
         """
         Load file filename, interpret it as a config file
         and append to cfg_cascade
+
+        Returns True if loading the config file was successful.
         """
         self.log.debug("Reading config info from file: {0}".format(cfg_filename))
-        cfg_parser = ConfigParser.ConfigParser()
-        cfg_parser.read(cfg_filename)
-        found_cfg = False
-        if cfg_parser.has_section("config"):
-            item_list = cfg_parser.items("config")
-            self.cfg_cascade.append({item[0]: item[1] for item in item_list})
-            found_cfg = True
-        else:
+        try:
+            cfg_data = yaml.safe_load(open(cfg_filename).read())
+        except Exception as e:
+            self.log.debug("Parsing config file failed ({cfgf}).".format(cfgf=cfg_filename))
             self.cfg_cascade.append({})
-            self.log.debug("Config file not found or does not have [config] section.")
-        if len(self.cfg_cascade[-1]) == 0:
-            self.log.debug("Empty config data set.")
-        return found_cfg
+            return False
+        config_items = cfg_data.get('config', {})
+        self.log.debug('New config items: {items}'.format(items=config_items))
+        self.cfg_cascade.append({item[0]: item[1] for item in config_items})
+        return True
 
     def get_pybombs_dir(self, prefix_dir=None):
         """
@@ -472,18 +478,9 @@ class ConfigManager(object):
         You can set attrname to 'categories' to get those.
         """
         attrname = 'packages' if not pkgname_is_category else 'categories'
-        flags_dict = {}
         if self._prefix_info.prefix_dir is None:
-            return flags_dict
-        flags_list = [
-            x.strip()
-            for x in re.split(r'(?<!\\);', getattr(self._prefix_info, attrname).get(pkgname, ''))
-            if len(x.strip()) > 0
-        ]
-        for flag in flags_list:
-            flag_split = re.split(r'(?<!\\)=', flag, 1)
-            flags_dict[flag_split[0]] = flag_split[1 if len(flag_split) == 2 else 0]
-        return flags_dict
+            return {}
+        return getattr(self._prefix_info, attrname).get(pkgname, {})
 
     def setup_parser(self, parser):
         """
@@ -502,7 +499,7 @@ class ConfigManager(object):
         )
         parser.add_argument(
             '--config',
-            help="Set a config.dat option via command line. May be used multiple times",
+            help="Set a config.yml option via command line. May be used multiple times",
             action='append',
             default=[],
         )

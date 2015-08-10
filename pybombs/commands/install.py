@@ -166,13 +166,6 @@ class Moo(CommandBase):
     }
     hidden = True
 
-    @staticmethod
-    def setup_subparser(parser, cmd=None):
-        """
-        Moo.
-        """
-        pass
-
     def __init__(self, cmd, args):
         CommandBase.__init__(self,
                 cmd, args,
