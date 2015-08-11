@@ -41,7 +41,7 @@ Typically, it is called .pybombs/ and is a subdirectory of the prefix.
 So, if your prefix is `~/src/prefix`, there will be a directory called
 `~/src/prefix/.pybombs/` containing special files. The two most important
 files are the inventory file (inventory.dat) and the prefix-local
-configuration file (config.dat), but it can also contain recipe files
+configuration file (config.yml), but it can also contain recipe files
 that are specific to this prefix.
 
 There is no limit to the number of prefixes. Indeed, it may make sense
@@ -71,7 +71,7 @@ but some will still work.
 
 #### Setting environment variables directly:
 
-In any config file that is read, a `[env]` section can be added. This
+In any config file that is read, a `env:` section can be added. This
 will set environment variables for any command  (configure, build, make...)
 that is run within PyBOMBS.
 
@@ -79,11 +79,13 @@ Note that this will still use the regular system environment as well, but
 it will overwrite existing variables. Variable expansion can be used, so
 this will keep the original setting:
 
-    [env]
-    LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/path/to/more/libs
+```{.yml}
+env:
+    LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:/path/to/more/libs
+```
 
 In all cases, the environment variable `PYBOMBS_PREFIX` is set to the
-current prefix.
+current prefix, and `PYBOMBS_PREFIX_SRC` is set to the source directory.
 
 #### Using an external script to set the environment
 
@@ -92,9 +94,11 @@ environment, which will then be used to set up an environment.
 
 Example:
 
-    [config]
+```{.yml}
+config:
     # Other vars
-    setup_env=/path/to/environment-setup-armv7ahf-vfp-neon-oe-linux-gnueabi
+    setup_env: /path/to/environment-setup-armv7ahf-vfp-neon-oe-linux-gnueabi
+```
 
 ## Recipes
 
@@ -137,7 +141,7 @@ Remote locations can be:
 
 Remote locations are copied into a local directory, so PyBOMBS can read the .lwr
 files locally. This local cache of recipes are stored in the same directory
-as the location of the corresponding config file (e.g., if `~/.pybombs/config.dat`
+as the location of the corresponding config file (e.g., if `~/.pybombs/config.yml`
 declare a recipe called 'myrecipes', the local cache will be in
 `~/.pybombs/recipes/myrecipes`).
 
@@ -145,54 +149,55 @@ declare a recipe called 'myrecipes', the local cache will be in
 
 Typically, there are four ways to configure PyBOMBS:
 
-1. The global configuration file (e.g. `/etc/pybombs/config.dat`)
-2. The local configuration file (e.g. `~/.pybombs/config.dat`)
-3. The recipe configuration file (e.g. `~/src/prefix/.pybombs/config.dat`)
+1. The global configuration file (e.g. `/etc/pybombs/config.yml`)
+2. The local configuration file (e.g. `~/.pybombs/config.yml`)
+3. The recipe configuration file (e.g. `~/src/prefix/.pybombs/config.yml`)
 4. By using the `--config` switch on the command line
 
 Higher numbers mean higher priority. Conflicting options are resolved by
 choosing option values with higher priority.
 
-### `config.dat` File Format
+### `config.yml` File Format
 
-The config.dat files are of the standard INI file format. A typical file
-looks like this:
+The config.yml files are in YAML format. A typical file looks like this:
 
-```
+```{.yml}
 # All configuration options:
-[config]
-satisfy_order = native,src
-default_prefix=default
-# ... more options
+config:
+	satisfy_order: native,src
+	default_prefix: default
+	# ... more options
 
 # Prefix aliases:
-[prefix_aliases]
-default=/home/user/src/pb-prefix/
-sys=/usr/local
+prefix_aliases:
+	default: /home/user/src/pb-prefix/
+	sys: /usr/local
 
 # Prefix configuration directories:
-[prefix_config_dir]
-sys=/home/user/pb-default/
-# Typically, you don't need this, because the prefix configuration
-# directory is in <PREFIX>/.pybombs
+prefix_config_dir:
+	sys: /home/user/pb-default/
+	# Typically, you don't need this, because the prefix configuration
+	# directory is in <PREFIX>/.pybombs
 
 # Recipe locations:
-[recipes]
-myrecipes=/usr/local/share/recipes
-morerecipes=/home/user/pb-recipes
-remoterecipes=git+git://url/to/repo
+recipes:
+	myrecipes: /usr/local/share/recipes
+	morerecipes: /home/user/pb-recipes
+	remoterecipes: git+git://url/to/repo
 
 # Package flags:
-[packages]
-gnuradio=forcebuild
+packages:
+	gnuradio:
+		forcebuild: True
 
 # Like package flags, but applies flags to all packages
 # in a certain category. 'common' is all OOTs.
-[categories]
-common=forcebuild
+categories:
+	common:
+		forcebuild: True
 
 # Environment variables
-[env]
-LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/path/to/more/libs
+env:
+	LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:/path/to/more/libs
 ```
 
