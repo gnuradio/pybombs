@@ -79,8 +79,9 @@ class PackageManager(object):
         """
         See if package 'pkgname' has 'flag' set.
         """
-        return self.cfg.get_package_flags(pkgname).has_key(flag) or \
-                self.cfg.get_package_flags(pkgname, True).has_key(flag)
+        if self.cfg.get_package_flags(pkgname).has_key(flag):
+            return self.cfg.get_package_flags(pkgname)[flag]
+        return self.cfg.get_package_flags(pkgname, True).get(flag)
 
     def get_packagers(self, pkgname):
         """
@@ -92,7 +93,7 @@ class PackageManager(object):
         if self.check_package_flag(pkgname, 'forcebuild'):
             self.log.debug("Package {pkg} is requesting a source build.".format(pkg=pkgname))
             if not self.prefix_available:
-                self.log.error("Package {} requires source-build, but no prefix is specified. Aborting.")
+                self.log.error("Package {pkg} requires source-build, but no prefix is specified. Aborting.".format(pkg=pkgname))
                 exit(1)
             return [self.src,]
         return self._packagers
