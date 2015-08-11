@@ -95,10 +95,9 @@ class Source(PackagerBase):
                 return False
             if os.path.exists(os.path.join(pkg_src_dir, builddir)):
                 #shutil.rmtree(builddir)
-                self.log.debug("Build dir already exists: {}".format(builddir))
+                self.log.warn("Build dir already exists: {}".format(builddir))
             else:
                 os.mkdir(builddir)
-
             os.chdir(builddir)
             ### Run the build process
             if self.inventory.get_state(recipe.id) < self.inventory.STATE_CONFIGURED:
@@ -204,8 +203,7 @@ class Source(PackagerBase):
         if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
             self.log.debug("Installation successful")
             return True
-        self.log.error("Make failed")
-        return False
+        raise PBException("Installation failed")
 
     #########################################################################
     # Helpers
