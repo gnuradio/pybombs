@@ -243,16 +243,13 @@ class Source(PackagerBase):
         """
         - Get a filter from the recipe flags identified by filter_flag
         - If filter is empty, return unfiltered_command verbatim
-        - Otherwise, it must contain the string $command
-            - If it doesn't, prepend it
         - Replace all variables in the filter
             - $command is replaced by unfiltered_command
         """
         cmd_filter = self.get_package_flag(recipe, filter_flag)
         if len(cmd_filter) == 0:
             return unfiltered_command
-        if cmd_filter.find('$command') == -1:
-            cmd_filter = '$command ' + cmd_filter
+        self.log.obnoxious('Filtering command using: {filt}'.format(filt=cmd_filter))
         recipe.lvars['command'] = unfiltered_command
         return self.var_replace_all(recipe, cmd_filter)
 
