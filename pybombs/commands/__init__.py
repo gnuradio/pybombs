@@ -26,5 +26,6 @@ from prefix import Prefix
 from install import Install, Moo
 from show import Show
 from recipes import Recipes
+from init import Init
 # Leave this at the end
 #from help import Help
