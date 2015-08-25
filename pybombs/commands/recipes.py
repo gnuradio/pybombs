@@ -61,11 +61,13 @@ class Recipes(CommandBase):
             parser.add_argument(
                 'alias',
                 help="Name of recipe location to remove",
+                nargs=1,
             )
         def setup_subsubparser_update(parser):
             parser.add_argument(
                 'alias',
                 help="Name of recipe location to update",
+                nargs=1,
             )
         ###### Start of setup_subparser()
         subparsers = parser.add_subparsers(
@@ -93,6 +95,7 @@ class Recipes(CommandBase):
 
     def run(self):
         """ Go, go, go! """
+        self.args.alias = self.args.alias[0]
         if self.args.prefix_command == 'add':
             self._add_recipes()
         elif self.args.prefix_command == 'remove':
@@ -115,7 +118,7 @@ class Recipes(CommandBase):
         - Otherwise, use local config file
         - Check alias is not already used
         """
-        alias = self.args.alias[0]
+        alias = self.args.alias
         uri   = self.args.uri[0]
         self.log.debug("Preparing to add recipe location {name} -> {uri}".format(
             name=alias, uri=uri
@@ -150,13 +153,17 @@ class Recipes(CommandBase):
                 uri_type = remote_type
                 uri = uri[len(remote_type)+1:]
         if uri_type == 'dir': # Then it might be an undeclared remote, let's guess:
-            uri_mo = re.match(r'[a-z]+://', uri)
+            uri_mo = re.match(r'(?P<utype>[a-z]+)(://|@)', uri)
             if uri_mo is not None:
-                uri_type = uri_mo.group(1)
+                uri_type = uri_mo.group('utype')
                 if not uri_type in self.remote_location_types:
                     self.log.error("Unrecognized remote recipe URL: {url}".format(
                         uri
                     ))
+                    exit(1)
+            else: # At the very least, it must be an existing directory:
+                if not os.path.isdir(uri):
+                    self.log.error("Can't read recipe directory: {dir}.".format(dir=uri))
                     exit(1)
         if uri_type != 'dir':
             uri = "{proto}+{url}".format(proto=uri_type, url=uri)
