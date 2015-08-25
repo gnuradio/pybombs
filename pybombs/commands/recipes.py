@@ -23,8 +23,8 @@
 
 import re
 import os
-import ConfigParser
 import shutil
+import yaml
 from pybombs.commands import CommandBase
 from pybombs.utils import subproc
 
@@ -161,13 +161,11 @@ class Recipes(CommandBase):
         if uri_type != 'dir':
             uri = "{proto}+{url}".format(proto=uri_type, url=uri)
         # Write this to config file
-        cfg_parser = ConfigParser.ConfigParser()
-        cfg_parser.read(cfg_file)
-        recipe_section_name = 'recipes'
-        if not cfg_parser.has_section(recipe_section_name):
-            cfg_parser.add_section(recipe_section_name)
-        cfg_parser.set(recipe_section_name, alias, uri)
-        cfg_parser.write(open(cfg_file, 'wb'))
+        cfg_data = yaml.safe_load(open(cfg_file).read())
+        if not cfg_data.has_key('recipes'):
+            cfg_data['recipes'] = {}
+        cfg_data['recipes'][alias] = uri
+        open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
         if uri_type == 'dir':
             return
         # Now make sure we don't already have a cache dir
@@ -188,10 +186,9 @@ class Recipes(CommandBase):
             exit(1)
         # Remove from config file
         cfg_file = self.cfg.get_named_recipe_source(self.args.alias)
-        cfg_parser = ConfigParser.ConfigParser()
-        cfg_parser.read(cfg_file)
-        cfg_parser.remove_option('recipes', self.args.alias)
-        cfg_parser.write(open(cfg_file, 'wb'))
+        cfg_data = yaml.safe_load(open(cfg_file).read())
+        cfg_data['recipes'].pop(self.args.alias, None)
+        open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
         # If remote, remove cache
         if not self.uri_is_remote(self.cfg.get_named_recipe_locations()[self.args.alias]):
             return
@@ -201,7 +198,7 @@ class Recipes(CommandBase):
             self.args.alias,
         )
         if os.path.exists(recipe_cache_dir):
-            self.log.debug("Removing directory: {cdir}".format(cdir=recipe_cache_dir))
+            self.log.info("Removing directory: {cdir}".format(cdir=recipe_cache_dir))
             shutil.rmtree(recipe_cache_dir)
 
     def _update_recipes(self, uri=None, target_dir=None):
