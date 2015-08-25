@@ -21,11 +21,14 @@
 
 C="src-reference"
 
-if [ $# -ne 0 ] ; then
-	echo "Usage: $0"
+echo $# "$*"
+
+if [ \( $# -ne 0 \) -a \( \( $# -eq 1 \) -a \( "x$1" != "x-a" \) \) ] ; then
+	echo "Usage: $0 [-a]"
 	echo ""
-	echo "This script will use the contents of the src/ directory"
-	echo "to create a reference repository in $C"
+	echo "This script will create a reference repository in $C"
+	echo "Without the '-a' flag, it will use the contents of src/ -"
+	echo "with it upstream repositoris are taken from recipes/*.lwr"
 	echo ""
 	echo "This reference will then be used to as the base for future"
 	echo "source checkouts, reducing network load and time to fetch."
@@ -44,13 +47,24 @@ else
 fi
 
 cd $C
-# extract all the git projects and urls from current source directory
-for g in ../src/*/.git ; do
-	# XXX figure out if I can clone the repos from the source dir
-	PROJECT=$(echo "$g" | sed -e 's,.*/\([^/]*\)/.git,\1,')
-	REPO=$(git --git-dir="$g" remote -v | sed -re 's,.*\s((http|git).*)\s.*,\1,' | sort -u)
-	git remote add $PROJECT $REPO
-done
+if [ "x$1" != "x-a" ] ; then
+	# extract all the git projects and urls from current source directory
+	for GIT in ../src/*/.git ; do
+		# XXX figure out if I can clone the repos from the source dir
+		PROJECT=$(echo "$GIT" | sed -e 's,.*/\([^/]*\)/.git,\1,')
+		REPO=$(git --git-dir="$GIT" remote -v | sed -re 's,.*\s((http|git).*)\s.*,\1,' | sort -u)
+		git remote add $PROJECT $REPO
+	done
+else
+	# extract all the git projects and urls from the recipes directory
+	for FILE in ../recipes/*.lwr ; do
+		PROJECT=$(echo "$FILE" | sed -e 's,.*/\(.*\)\.lwr,\1,')
+		REPO=$(grep "^source: git" "$FILE" | sed -e 's,^.*source: git://,,')
+		if [ -n "$REPO" ] ; then
+			git remote add $PROJECT $REPO
+		fi
+	done
+fi
 
 # check out all the sources
 git remote update -p
