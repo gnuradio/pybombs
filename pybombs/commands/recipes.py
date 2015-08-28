@@ -162,7 +162,7 @@ class Recipes(CommandBase):
                     ))
                     exit(1)
             else: # At the very least, it must be an existing directory:
-                if not os.path.isdir(uri):
+                if not os.path.isdir(uri) and not self.args.force:
                     self.log.error("Can't read recipe directory: {dir}.".format(dir=uri))
                     exit(1)
         if uri_type != 'dir':
