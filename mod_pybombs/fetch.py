@@ -145,10 +145,10 @@ class fetcher:
 
     def extract(self,fn):
         tarflags = {
-            r'.tar.gz':'z',
-            r'.tgz':'z', 
-            r'.bz2':'j',
-            r'.xz':'J'
+            r'.*\.tar\.gz':'z',
+            r'.*\.tgz':'z', 
+            r'.*\.bz2':'j',
+            r'.*\.xz':'J'
         }
         os.chdir(topdir + "/src/")
         print "Extract %s"%(fn)
