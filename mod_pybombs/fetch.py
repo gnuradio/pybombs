@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 #
-# Copyright 2015 Tim O'Shea
+# Copyright 2015 Tim O'Shea, Abram Hindle
 #
 # This file is part of PyBOMBS
 #
@@ -144,29 +144,27 @@ class fetcher:
         return True;
 
     def extract(self,fn):
-        os.chdir(topdir + "/src/");
-        print "Extract %s"%(fn);
-        if(re.match(r'.*\.tar.gz', fn) or re.match(r'.*\.tgz', fn)):
-            out = shellexec(["tar tbzB 1 --file %s"%(fn)]);
-            dirname = out.strip("^./").split("/")[0];
-            stat = shellexec_shell("tar xzf %s"%(fn), False);
-            if(stat != 0):
-                return False;
-            if(dirname != self.recipe.name):
-                rmrf(self.recipe.name);
-                os.rename(dirname, self.recipe.name);
-        elif(re.match(r'.*\.tar.bz2?', fn) or re.match(r'.*\.tbz2?', fn)):
-            out = shellexec(["tar tbjB 1 --file %s"%(fn)]);
-            dirname = out.strip("^./").split("/")[0];
-            stat = shellexec_shell("tar xjf %s"%(fn), False);
-            if(stat != 0):
-                return False;
-            if(dirname != self.recipe.name):
-                rmrf(self.recipe.name);
-                os.rename(dirname, self.recipe.name);
-
+        tarflags = {
+            r'.tar.gz':'z',
+            r'.tgz':'z', 
+            r'.bz2':'j',
+            r'.xz':'J'
+        }
+        os.chdir(topdir + "/src/")
+        print "Extract %s"%(fn)
+        for tarending in tarflags:
+            if re.match(tarending, fn):
+                flag = tarflags[tarending]
+                out = shellexec(["tar tb%sB 1 --file %s"%(flag,fn)])
+                dirname = out.strip("^./").split("/")[0]
+                stat = shellexec_shell("tar x%sf %s"%(flag,fn), False)
+                if(stat != 0):
+                    return False
+                if(dirname != self.recipe.name):
+                    rmrf(self.recipe.name)
+                    os.rename(dirname, self.recipe.name)
+                os.unlink(fn)
+                return True
         else:
-            print "unknown compression type?"%(fn);
-            return False;
-        os.unlink(fn);
-        return True;
+            print "unknown compression type?"%(fn)
+            return False
