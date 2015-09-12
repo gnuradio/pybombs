@@ -166,5 +166,5 @@ class fetcher:
                 os.unlink(fn)
                 return True
         else:
-            print "unknown compression type?"%(fn)
+            print "unknown compression type for file %s?"%(fn)
             return False
