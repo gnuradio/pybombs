@@ -18,7 +18,9 @@
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
 #
-
+"""
+git fetcher functions
+"""
 
 import os
 import subprocess
@@ -43,20 +45,18 @@ class Git(FetcherBase):
         """
         git clone (or git pull TODO)
         """
-
         self.log.debug("Using url - {}".format(url))
         gitcache = self.cfg.get("git-cache", "")
         if len(gitcache):
             self.log.debug("Using gitcache at {}", gitcache)
-            gitcache = "--reference {}".format(gitcache)
+            gitcache = " --reference {}".format(gitcache)
         # TODO maybe we don't want depth=1, ask config_manager
         # Errors with the gnuradio.org sources, but not github.com sources
-        git_args = "--depth=1"
-        git_cmd = "git clone {recipe_gitargs} {gitargs} {gitcache} -b {branch} {url} {name}".format(
-            recipe_gitargs=recipe.git_args,
-            gitargs=git_args,
+        git_cmd = "git clone {recipe_gitargs} {gitargs}{gitcache} -b {branch} {url} {name}".format(
+            recipe_gitargs=recipe.gitargs,
+            gitargs=recipe.gitargs,
             gitcache=gitcache,
-            branch=recipe.git_branch,
+            branch=recipe.gitbranch,
             url=url,
             name=recipe.id
         )
@@ -72,8 +72,8 @@ class Git(FetcherBase):
         src_dir = os.path.join(cwd, recipe.id)
         self.log.obnoxious("Switching cwd to: {}".format(src_dir))
         os.chdir(src_dir)
-        if recipe.git_rev:
-            git_co_cmd = "git checkout {rev}".format(recipe.git_rev)
+        if recipe.gitrev:
+            git_co_cmd = "git checkout {rev}".format(recipe.gitrev)
             self.log.debug("Calling '{}'".format(git_co_cmd))
             # TODO:
             # - Run the clone process in a process monitor
@@ -99,3 +99,4 @@ class Git(FetcherBase):
         self.log.obnoxious("Switching cwd to: {}".format(cwd))
         os.chdir(cwd)
         return self.version
+

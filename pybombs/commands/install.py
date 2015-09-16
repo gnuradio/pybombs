@@ -129,7 +129,7 @@ class Install(CommandBase):
         if self.cfg.get_package_flags(pkg).get('nodeps') is not None:
             return
         # Load deps:
-        deps = recipe.get_recipe(pkg).deps
+        deps = recipe.get_recipe(pkg).depends
         # Filter for stuff already in the tree:
         deps_to_install = [dep for dep in deps if not dep in install_tree.get_nodes()]
         # Filter for stuff already installed:

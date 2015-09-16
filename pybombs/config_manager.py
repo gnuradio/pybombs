@@ -30,11 +30,10 @@ import os
 import argparse
 import subprocess
 import yaml
-from copy import deepcopy
+
 import pb_logging
 from pb_exception import PBException
-import utils
-
+from pybombs.utils import dict_merge
 
 def extract_cfg_items(filename, section, throw_ex=True):
     """
@@ -48,21 +47,6 @@ def extract_cfg_items(filename, section, throw_ex=True):
         if throw_ex:
             raise e
     return {}
-
-def dict_merge(a, b):
-    """
-    Recursively merge b into a. b[k] will overwrite a[k] if it exists.
-    """
-    if not isinstance(b, dict):
-        return b
-    result = deepcopy(a)
-    for k, v in b.iteritems():
-        if k in result and isinstance(result[k], dict):
-                result[k] = dict_merge(result[k], v)
-        else:
-            result[k] = deepcopy(v)
-    return result
-
 
 class PrefixInfo(object):
     """
@@ -201,8 +185,8 @@ class PrefixInfo(object):
             self.prefix_src = 'cwd'
             self.log.debug('Using CWD as prefix ({})'.format(self.prefix_dir))
             return
-        if self._cfg_info.has_key('default_prefix'):
-            self.prefix_dir = self._cfg_info['default_prefix']
+        if self._cfg_info.get('config', {}).get('default_prefix'):
+            self.prefix_dir = self._cfg_info['config']['default_prefix']
             if self._cfg_info['prefix_aliases'].has_key(self.prefix_dir):
                 self.log.debug("Resolving prefix alias {}.".format(self.prefix_dir))
                 self.prefix_dir = self._cfg_info['prefix_aliases'][self.prefix_dir]
@@ -471,16 +455,18 @@ class ConfigManager(object):
             return uri
         return os.path.join(cache_dir, name)
 
-    def get_package_flags(self, pkgname, pkgname_is_category=False):
+    def get_package_flags(self, pkgname, categoryname=None):
         """
         Return all the package flags of pkgname as a dictionary.
         If pkgname doesn't have any package flags, return an empty dict.
-        You can set attrname to 'categories' to get those.
+
+        If categoryname is provided, it will load the category flags first
+        and then merge the package flags on top of it.
         """
-        attrname = 'packages' if not pkgname_is_category else 'categories'
-        if self._prefix_info.prefix_dir is None:
-            return {}
-        return getattr(self._prefix_info, attrname).get(pkgname, {})
+        return dict_merge(
+            getattr(self._prefix_info, 'categories').get(categoryname, {}),
+            getattr(self._prefix_info, 'packages').get(pkgname, {})
+        )
 
     def setup_parser(self, parser):
         """

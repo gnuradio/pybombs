@@ -17,9 +17,7 @@
 # Boston, MA 02110-1301, USA.
 #
 
-var config_opt = ""
 inherit: autoconf
-configure { 
+configure: |
     ./bootstrap
     ./configure --prefix=$prefix $config_opt CC=$cc CXX=$cxx
-}

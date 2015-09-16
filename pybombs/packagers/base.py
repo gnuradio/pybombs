@@ -55,7 +55,7 @@ class PackagerBase(object):
         # package manager. The source manager will override this function.
         self.log.obnoxious("exists({})".format(recipe.id))
         try:
-            satisfy_rule = recipe.satisfy[self.pkgtype]
+            satisfy_rule = recipe.get_package_reqs(self.pkgtype)
         except KeyError as e:
             self.log.debug("No satisfy rule for package type {}".format(self.pkgtype))
             return False
@@ -74,7 +74,7 @@ class PackagerBase(object):
         # package manager. The source manager will override this function.
         self.log.obnoxious("install({})".format(recipe.id))
         try:
-            satisfy_rule = recipe.satisfy[self.pkgtype]
+            satisfy_rule = recipe.get_package_reqs(self.pkgtype)
         except KeyError as e:
             self.log.debug("No satisfy rule for package type {}".format(self.pkgtype))
             return False
@@ -92,7 +92,7 @@ class PackagerBase(object):
         # package manager. The source manager will override this function.
         self.log.obnoxious("Checking if recipe {} is installed".format(recipe.id))
         try:
-            satisfy_rule = recipe.satisfy[self.pkgtype]
+            satisfy_rule = recipe.get_package_reqs(self.pkgtype)
         except KeyError as e:
             self.log.debug("No satisfy rule for package type {}".format(self.pkgtype))
             return False

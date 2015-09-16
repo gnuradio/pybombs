@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #
 # Copyright 2015 Free Software Foundation, Inc.
 #
@@ -69,7 +69,7 @@ class Fetcher(object):
         Do the fetch. Return version?
         If something goes wrong then throw a PBException
         """
-        self.log.debug("Fetching source for recipe: {}".format(recipe.name))
+        self.log.debug("Fetching source for recipe: {}".format(recipe.id))
 
         # Should this be checking the inventory or the src directory?
         """
@@ -85,7 +85,7 @@ class Fetcher(object):
 
         # Do the fetch
         fetched = False
-        for src in recipe.srcs:
+        for src in recipe.source:
             try:
                 # Get the right fetcher
                 (url_type, url) = src.split("://", 1)

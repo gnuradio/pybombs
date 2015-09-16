@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #
 # Copyright 2015 Free Software Foundation, Inc.
 #
@@ -24,15 +24,14 @@ Recipe representation class.
 """
 
 import os
-import re
-import copy
+import yaml
+import StringIO
+from plex import *
 
 from pybombs import pb_logging
 from pybombs import recipe_manager
 from pybombs.pb_exception import PBException
-from pybombs.config_manager import config_manager
-
-from plex import *
+from pybombs.utils import dict_merge
 
 class PBPackageRequirement(object):
     """
@@ -81,381 +80,163 @@ class PBPackageRequirementPair(object):
             a = a + " "*lvl + "None"
         return a
 
-class Recipe(Scanner):
+class PBPackageRequirementScanner(Scanner):
     """
-    Represents a recipe. Internally, it's a lexical scanner for the actual
-    recipe.
+    Turns a package requirement string (something like
+    libfoo >= 2.0 && libbar >= 3.0) into a PBPackageRequirement(Pair).
     """
-    def __init__(self, filename, lvars=None, static=False):
-        self.id = os.path.splitext(os.path.basename(filename))[0]
-        self.log = pb_logging.logger.getChild("Recipe[{}]".format(self.id))
-        self.static = static
-        self.deps = []
-        self.description = None
-        self.srcs = []
-        self.install_like = None
-        self.category = None
-        self.satisfy = {}
-        self.src_configure = ""
-        self.src_make = ""
-        self.src_install = ""
-        self.src_verify = ""
-        self.src_uninstall = ""
-        self.configuredir = ""
-        self.makedir = ""
-        self.install_dir = ""
-        self.git_branch = "master"
-        self.git_args = ""
-        self.svn_rev = "HEAD"
-        self.git_rev = ""
-        self.currpkg = None
-        self.pkgstack = []
-        self.curr_pkg_type = None
-        self.varname = None
-        self.varoverride = False
-        self.var = {}
-        # Init lvars:
-        if lvars is None:
-            self.lvars = {}
-        else:
-            self.lvars = copy.copy(lvars)
-        # Init recipe scanner:
-        if not os.path.exists(filename):
-            self.log.error("No such recipe file: {}".format(filename))
-            exit(1)
-        recipe_file = open(filename, 'r')
-        Scanner.__init__(self, self.lexicon, recipe_file, filename)
-        # Put scanner into default state:
-        self.begin("")
-        self.log.debug("Parsing {}".format(filename))
-        while True:
-            token = Scanner.read(self)
-            if token[0] is None:
-                break
-        recipe_file.close()
+    ### Plex: Patterns
+    letter      = Range("AZaz")
+    digit       = Range("09")
+    pkgname     = letter + Rep(letter | digit | Any("-.+_"))
+    space       = Any(" \t\n")
+    rspace      = Rep(space)
+    lpar        = Str("(")
+    rpar        = Str(")")
+    comparators = Str(">=") | Str("<=") | Str("==") | Str("!=")
+    combiner    = Str('&&') | Str('||')
+    version     = Rep(digit) + Rep(Str(".") + Rep(digit))
+
+    def __init__(self, req_string):
+        self.log = pb_logging.logger.getChild("ReqScanner")
+        self.preq = None
+        if not req_string:
+            self.log.debug("Empty requirements string.")
+            return
+        lexicon = Lexicon([
+            (self.rspace, IGNORE),
+            (self.pkgname, self.pl_pkg),
+            (self.version, self.pl_ver),
+            (self.lpar, self.pl_lpar),
+            (self.rpar, self.pl_rpar),
+            (self.comparators, self.pl_cmp),
+            (self.combiner, self.pl_cmb),
+            (Eol, self.end_distro_pkg_expr),
+        ])
+        fileobj = StringIO.StringIO(req_string)
+        self.stack = []
+        Scanner.__init__(self, lexicon, fileobj, "ReqString")
+        self.log.debug("Parsing '{rs}'".format(rs=req_string))
+        Scanner.read(self)
+        fileobj.close()
         self.log.debug("Done Parsing.")
 
+    def pl_pkg(self, scanner, pkg_name):
+        " Called in a package requirements list, when a package name is found "
+        self.log.obnoxious("Adding package with name {}".format(pkg_name))
+        new_pkg = PBPackageRequirement(pkg_name)
+        if self.preq is not None:
+            self.preq.second = new_pkg
+        else:
+            self.preq = new_pkg
+
+    def pl_lpar(self, scanner, par):
+        " Called in a package requirements list, when lparens are found "
+        self.stack.append(self.preq)
+        self.preq = None
+
+    def pl_rpar(self, scanner, par):
+        " Called in a package requirements list, when rparens are found "
+        prev = self.stack.pop()
+        if prev is not None:
+            prev.second = self.preq
+            self.preq = prev
+
+    def pl_cmp(self, scanner, cmpr):
+        " Called in a package requirements list, when version comparator is found "
+        self.log.obnoxious("Adding version comparator {}".format(cmpr))
+        if isinstance(self.preq, PBPackageRequirement):
+            self.preq.compare = cmpr
+        else:
+            self.preq.second.compare = cmpr
+
+    def pl_ver(self, scanner, ver):
+        " Called in a package requirements list, when version number is found "
+        self.log.obnoxious("Adding version number {}".format(ver))
+        if isinstance(self.preq, PBPackageRequirement):
+            self.preq.version = ver
+        else:
+            self.preq.second.version = ver
+
+    def pl_cmb(self, scanner, cmb):
+        " Called in a package requirements list, when a logical combiner (||, &&) is found "
+        self.log.obnoxious("Found package combiner {}".format(cmb))
+        if self.preq is None:
+            raise PBException("Parsing Error. Did not expect combiner here.")
+        self.preq = PBPackageRequirementPair(self.preq)
+        self.preq.combiner = cmb
+
+    def end_distro_pkg_expr(self, scanner, e):
+        " Called when a list of package reqs is finished "
+        self.log.obnoxious("End of requirements list")
+        self.stack = []
+        return "foo"
+
+    def get_preq(self):
+        " Return result, or None for no requirements. "
+        return self.preq
+
+class Recipe(object):
+    """
+    Object representation of a recipe file.
+    """
+    def __init__(self, filename):
+        self.id = os.path.splitext(os.path.basename(filename))[0]
+        self.log = pb_logging.logger.getChild("Recipe[{}]".format(self.id))
+        # Load original recipe:
+        self.log.obnoxious("Loading template file: {}".format(filename))
+        self._data = yaml.safe_load(open(filename).read())
+        # Recursively do the inheritance:
+        while self._data.get('inherit'):
+            inherit_from = self._data.get('inherit')
+            try:
+                filename = recipe_manager.recipe_manager.get_template_filename(inherit_from)
+                self.log.obnoxious("Loading template file: {}".format(filename))
+            except PBException as e:
+                self.log.warn("Recipe attempting to inherit from unknown template {}".format(
+                    inherit_from
+                ))
+                break
+            self.log.obnoxious("Inheriting from file {}".format(filename))
+            parent_data = yaml.safe_load(open(filename).read())
+            self._data = dict_merge(parent_data, self._data)
+            self._data['inherit'] = parent_data.get('inherit')
+        # Post-process some fields:
+        if self._data.has_key('source') and not isinstance(self._data['source'], list):
+            self._data['source'] = [self._data['source'],]
+        if self._data.has_key('depends') and not isinstance(self._data['depends'], list):
+            self._data['depends'] = [self._data['depends'],]
+        # Map all recipe info onto self:
+        for k, v in self._data.iteritems():
+            if not hasattr(self, k):
+                setattr(self, k, v)
+
     def __str__(self):
-        out = "Recipe: {0}".format(str(self.id))
-        out += "\t{0}: {1}\n".format("category", self.category)
-        out += "\t{0}: {1}\n".format("deps", self.deps)
-        out += "\t{0}: {1}\n".format("srcs", self.srcs)
-        out += "\t{0}: {1}\n".format("src_configure", self.src_configure)
-        out += "\t{0}: {1}\n".format("src_make", self.src_make)
-        out += "\t{0}: {1}\n".format("src_install", self.src_install)
-        out += "\t{0}: {1}\n".format("src_verify", self.src_verify)
-        out += "\t{0}: {1}\n".format("src_uninstall", self.src_uninstall)
-        out += "\t{0}: {1}\n".format("configuredir", self.configuredir)
-        out += "\t{0}: {1}\n".format("makedir", self.makedir)
-        out += "\t{0}: {1}\n".format("install_dir", self.install_dir)
-        out += "\t{0}: {1}\n".format("git_branch", self.git_branch)
-        out += "\t{0}: {1}\n".format("git_args", self.git_args)
-        out += "\t{0}: {1}\n".format("svn_rev", self.svn_rev)
-        out += "\t{0}: {1}\n".format("git_rev", self.git_rev)
-        out += "\t{0}: {1}\n".format("currpkg", self.currpkg)
-        out += "\t{0}: {1}\n".format("pkgstack", self.pkgstack)
-        out += "\t{0}: {1}\n".format("curr_pkg_type", self.curr_pkg_type)
-        out += "\t{0}: {1}\n".format("varname", self.varname)
-        out += "\t{0}: {1}\n".format("varoverride", self.varoverride)
-        out += "\t{0}: {1}\n".format("var", self.var)
+        out = "Recipe: {id}\n".format(id=str(self.id))
+        out += yaml.dump(self._data)
         return out
 
-    def is_oot(self):
-        return self.category == 'common'
+    def get_package_reqs(self, pkg_type):
+        """
+        Return a PBPackageRequirement(Pair) object for the selected
+        pkg_type. E.g., if pkg_type is 'deb', you can use this to
+        figure out which .deb packages to install.
 
-    def set_attr(self, arg, key):
-        " Set a simple attribute "
-        self.log.log(1, "Setting attribute {} = {}".format(key.strip(), arg.strip()))
-        setattr(self, key, arg)
-
-    def mainstate(self, a):
-        " Reset to default state "
-        self.begin("")
-
-    def deplist_add(self, pkg):
-        " Add pkg to the list of this recipe's dependencies "
-        self.log.log(1, "Added dependency: {}".format(pkg))
-        self.deps.append(pkg)
-
-    def source_add(self, src):
-        " Add source URI "
-        self.log.log(1, "Adding source: {0}".format(src))
-        self.srcs.append(src)
-
-    def configure_set_static(self, static_cfg_opts):
-        " Add static config options "
-        if self.static:
-            self.log.log(1, "Adding static config options: {0}".format(static_cfg_opts.strip()))
-            self.src_configure = static_cfg_opts.strip()
-
-    def configure_set(self, cfg_opts):
-        " Add config options "
-        if not self.static or self.src_configure == "":
-            self.log.log(1, "Adding config options: {0}".format(cfg_opts.strip()))
-            self.src_configure = cfg_opts.strip()
-
-    def install_set_static(self, arg):
-        " Add static install options "
-        if self.static:
-            self.log.log(1, "Adding static install options: {0}".format(arg.strip()))
-            self.src_install = arg.strip()
-
-    def install_set(self, arg):
-        " Add install options "
-        if not self.static or self.src_install == "":
-            self.log.log(1, "Adding install options: {0}".format(arg.strip()))
-            self.src_install = arg.strip()
-
-    def satisfy_begin(self, pkg_type):
-        " Call this when finding a satisfy_*: line "
-        match_obj = re.match(r'satisfy_([a-z]+):', pkg_type)
-        self.curr_pkg_type = str(match_obj.group(1))
-        self.log.log(1, "Found package list for package type {0}".format(self.curr_pkg_type))
-        self.begin("distro_pkg_expr")
-
-    def pl_pkg(self, pkg_name):
-        " Called in a package requirements list, when a package name is found "
-        self.log.log(1, "Adding package with name {}".format(pkg_name))
-        new_pkg = PBPackageRequirement(pkg_name)
-        if self.currpkg is not None:
-            self.currpkg.second = new_pkg
-        else:
-            self.currpkg = new_pkg
-
-    def pl_par(self, par):
-        " Called in a package requirements list, when parens are found "
-        if par == "(":
-            self.pkgstack.append(self.currpkg)
-            self.currpkg = None
-        elif par == ")":
-            prev = self.pkgstack.pop()
-            if prev is not None:
-                prev.second = self.currpkg
-                self.currpkg = prev
-        else:
-            raise PBException("Error parsing recipe file {}. Invalid parens or something. Weird.".format(self.filename))
-
-    def pl_cmp(self, cmpr):
-        " Called in a package requirements list, when version comparator is found "
-        self.log.log(1, "Adding version comparator {}".format(cmpr))
-        if isinstance(self.currpkg, PBPackageRequirement):
-            self.currpkg.compare = cmpr
-        else:
-            self.currpkg.second.compare = cmpr
-
-    def pl_ver(self, ver):
-        " Called in a package requirements list, when version number is found "
-        self.log.log(1, "Adding version number {}".format(ver))
-        if isinstance(self.currpkg, PBPackageRequirement):
-            self.currpkg.version = ver
-        else:
-            self.currpkg.second.version = ver
-
-    def pl_cmb(self, cmb):
-        " Called in a package requirements list, when a logical combiner (||, &&) is found "
-        self.log.log(1, "Found package combiner {}".format(cmb))
-        if self.currpkg is None:
-            raise PBException("Error parsing recipe file {}. Did not expect combiner here.".format(self.filename))
-        self.currpkg = PBPackageRequirementPair(self.currpkg)
-        self.currpkg.combiner = cmb
-
-    def end_distro_pkg_expr(self, e):
-        " Called when a list of package reqs is finished "
-        self.log.obnoxious("End of requirements list for package type {}".format(self.curr_pkg_type))
-        self.satisfy[self.curr_pkg_type] = self.currpkg
-        self.pkgstack = []
-        self.currpkg = None
-        self.begin("")
-
-    def inherit(self, template):
-        """ Inherit from a given template """
-        try:
-            filename = recipe_manager.recipe_manager.get_template_filename(template)
-            self.log.obnoxious("Loading template file: {}".format(filename))
-        except PBException as e:
-            self.log.warn("Recipe attempting to inherit from unknown template {}".format(template))
-            return
-        self.log.obnoxious("Calling subscanner for file {}".format(filename))
-        sub_recipe = Recipe(filename, lvars=self.lvars, static=self.static)
-        # We inherit those values that *aren't* set already by our own recipe
-        empty = [v for v in vars(self) if (getattr(self, v) is None or getattr(self, v) == "")]
-        for v in empty:
-            setattr(self, v, getattr(sub_recipe, v))
-        # Copy the lvars over:
-        self.lvars = sub_recipe.lvars
-        self.log.obnoxious("Updated lvars: {}".format(self.lvars))
-
-    def variable_begin(self, a):
-        " Beginning of a variable line "
-        match_obj = re.match(r'var\s+([\w\d_]+)\s+(=\!?)\s+"', a)
-        self.varname = str(match_obj.group(1))
-        if match_obj.group(2) == "=":
-            self.varoverride = False
-        else:
-            self.varoverride = True
-        self.log.log(1, "Found variable, name == {}, overriding: {}".format(self.varname, self.varoverride))
-        if not self.lvars.has_key(self.varname) or self.varoverride:
-            self.lvars[self.varname] = ""
-            self.varoverride = True
-        self.begin("variable")
-
-    def variable_set(self, arg):
-        " After variable_begin(), variable value is set here "
-        if not self.lvars.has_key(self.varname) or self.lvars[self.varname] == '' or self.varoverride:
-            self.log.obnoxious("Setting variable {} == {}".format(self.varname, arg))
-            self.lvars[self.varname] = arg
-        else:
-            self.log.obnoxious("Ignoring variable {} == {}".format(self.varname, arg))
-
-    ### Plex: Patterns
-    letter   = Range("AZaz")
-    digit    = Range("09")
-    gitbranchtype = Rep(letter | digit | Any("_-./"))
-    revtype  = Rep(letter | digit | Any("_-."))
-    name     = letter + Rep(letter | digit | Any("-"))
-    var_name = letter + Rep(letter | digit | Any("_"))
-    pkgname  = letter + Rep(letter | digit | Any("-.+_"))
-    uri      = letter + Rep(letter | digit | Any("+@$-._:/"))
-    number   = Rep1(digit)
-    space    = Any(" \t\n")
-    rspace   = Rep(space)
-    freetext = Rep(letter | digit | Any("+@$-._:/()#%[]=' ") | Any('"'))
-    comment  = Str("{") + Rep(AnyBut("}")) + Str("}")
-    sep      = Any(", :/")
-    eol      = Str("\r\n")|Str("\n")|Eof
-    lpar     = Str("(")
-    rpar     = Str(")")
-    parens   = lpar | rpar
-    comparators = Str(">=") | Str("<=") | Str("==") | Str("!=")
-    assignments = Str("=") | Str("=!")
-    combiner = Str("and") | Str("or") | Str('&&') | Str('||')
-    version  = Rep(digit) + Rep(Str(".") + Rep(digit))
-
-    ### Plex: Lexicon
-    # Builds the lexical analyser
-    lexicon = Lexicon([
-        # Token Definitions. Format is: (pattern, action)
-        # Begin(statename) is an action that puts the parser into
-        # the state 'statename'.
-        (Str("category:"), Begin("cat")),
-        (Str("depends:"), Begin("deplist")),
-        (Str("description:"), Begin("descr")),
-        (Str("inherit:"), Begin("inherit")),
-        (Str("configuredir:"), Begin("configuredir")),
-        (Str("makedir:"), Begin("makedir")),
-        (Str("installdir:"), Begin("installdir")),
-        (Str("gitbranch:"), Begin("gitbranch")),
-        (Str("gitargs:"), Begin("gitargs")),
-        (Str("svnrev:"), Begin("svnrev")),
-        (Str("gitrev:"), Begin("gitrev")),
-        #(Str("satisfy_") + Rep1(letter) + Str(':'), Begin("distro_pkg_expr")),
-        (Str("satisfy_") + Rep1(letter) + Str(':'), satisfy_begin),
-        (Str("source:"), Begin("source_uri")),
-        (Str("install_like:"), Begin("install_like")),
-        (Str("configure") + Rep(space) + Str("{"), Begin("configure")),
-        (Str("configure_static") + Rep(space) + Str("{"), Begin("configure_static")),
-        (Str("make") + Rep(space) + Str("{"), Begin("make")),
-        (Str("install") + Rep(space) + Str("{"), Begin("install")),
-        (Str("install_static") + Rep(space) + Str("{"), Begin("install_static")),
-        (Str("verify") + Rep(space) + Str("{"), Begin("verify")),
-        (Str("uninstall") + Rep(space) + Str("{"), Begin("uninstall")),
-        (Str("var") + Rep(space) + var_name + Rep(space) + assignments + Rep(space) + Str("\""), variable_begin),
-        (name, TEXT),
-        (number, 'int'),
-        (space, IGNORE),
-        (Str("#"), Begin('comment')),
-        # State definitions: In every state, only certain tokens are accepted.
-        # Tokens are of format (pattern, action). action can be a method of
-        # this class.
-        State('deplist', [
-            (sep, IGNORE), (pkgname, deplist_add), (eol, mainstate),
-        ]),
-        State('distro_pkg_expr', [
-            (sep, IGNORE),
-            (pkgname, pl_pkg),
-            (version, pl_ver),
-            (parens, pl_par),
-            (comparators, pl_cmp),
-            (combiner, pl_cmb),
-            (Eol, end_distro_pkg_expr),
-        ]),
-        State('source_uri', [
-            (sep, IGNORE), (uri, source_add), (eol, mainstate),
-        ]),
-        State('install_like', [
-            (sep, IGNORE), (pkgname, lambda scanner, arg: scanner.set_attr(arg, "install_like")), (Str("\n"), mainstate),
-        ]),
-        State('cat', [
-            (sep, IGNORE), (pkgname, lambda scanner, arg: scanner.set_attr(arg, "category")), (eol, mainstate),
-        ]),
-        State('descr', [
-            (sep, IGNORE), (freetext, lambda scanner, arg: scanner.set_attr(arg, "description")), (eol, mainstate),
-        ]),
-        State('inherit', [
-            (sep, IGNORE), (pkgname, inherit), (eol, mainstate),
-        ]),
-        State('configuredir', [
-            (sep, IGNORE), (uri, lambda scanner, arg: scanner.set_attr(arg, "configuredir")), (eol, mainstate),
-        ]),
-        State('variable', [
-            (Rep(AnyBut("\"")), variable_set), (Str("\""), mainstate),
-        ]),
-        State('makedir', [
-            (sep, IGNORE), (uri, lambda scanner, arg: scanner.set_attr(arg, "makedir")), (eol, mainstate),
-        ]),
-        State('gitbranch', [
-            (sep, IGNORE), (gitbranchtype, lambda scanner, arg: scanner.set_attr(arg, "git_branch")), (eol, mainstate),
-        ]),
-        State('gitargs', [
-            (sep, IGNORE), (gitbranchtype, lambda scanner, arg: scanner.set_attr(arg, "git_args")), (eol, mainstate),
-        ]),
-        State('gitrev', [
-            (sep, IGNORE), (revtype, lambda scanner, arg: scanner.set_attr(arg, "git_rev")), (eol, mainstate),
-        ]),
-        State('svnrev', [
-            (sep, IGNORE), (revtype, lambda scanner, arg: scanner.set_attr(arg, "svn_rev")), (eol, mainstate),
-        ]),
-        State('installdir', [
-            (sep, IGNORE), (uri, lambda scanner, arg: scanner.set_attr(arg, "install_dir")), (eol, mainstate),
-        ]),
-        State('configure_static', [
-            (Rep(AnyBut("}")), configure_set_static), (Str("}"), mainstate),
-        ]),
-        State('configure', [
-            (Rep(AnyBut("}")), configure_set), (Str("}"), mainstate),
-        ]),
-        State('make', [
-            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg.strip(), "src_make")), (Str("}"), mainstate),
-        ]),
-        State('install_static', [
-            (Rep(AnyBut("}")), install_set_static), (Str("}"), mainstate),
-        ]),
-        State('install', [
-            (Rep(AnyBut("}")), install_set), (Str("}"), mainstate),
-        ]),
-        State('verify', [
-            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg.strip(), "src_verify")), (Str("}"), mainstate),
-        ]),
-        State('uninstall', [
-            (Rep(AnyBut("}")), lambda scanner, arg: scanner.set_attr(arg.strip(), "src_uninstall")), (Str("}"), mainstate),
-        ]),
-        State('comment', [
-            (eol, Begin('')),
-            (AnyChar, IGNORE)
-        ])
-    ]) # End Lexicon()
-
+        If pkg_type was not listed in the recipe, return None.
+        """
+        req_string = getattr(self, 'satisfy', {}).get(pkg_type)
+        return PBPackageRequirementScanner(req_string).get_preq()
 
 recipe_cache = {}
-def get_recipe(pkgname, static=False):
+def get_recipe(pkgname):
     """
     Return a recipe object by its package name.
     """
-    cache_key = pkgname+str(static)
+    cache_key = pkgname
     if recipe_cache.has_key(cache_key):
         pb_logging.logger.getChild("get_recipe").debug("Woohoo, this one's already cached ({})".format(pkgname))
         return recipe_cache[cache_key]
-    r = Recipe(recipe_manager.recipe_manager.get_recipe_filename(pkgname), static=static)
+    r = Recipe(recipe_manager.recipe_manager.get_recipe_filename(pkgname))
     recipe_cache[cache_key] = r
     return r
 
@@ -464,9 +245,9 @@ if __name__ == "__main__":
     #recipe_filename = '/home/mbr0wn/src/pybombs/recipes/gr-specest.lwr'
     #recipe_filename = '/home/mbr0wn/src/pybombs/recipes/python.lwr'
     recipe_filename = '/home/mbr0wn/src/pybombs/recipes/gnuradio.lwr'
-    pb_logging.logger.setLevel(1)
-    scanner = Recipe(recipe_filename)
-    for k, v in scanner.satisfy.iteritems():
-        print "{}:".format(k)
-        print str(v)
-    print scanner.lvars
+    #pb_logging.logger.setLevel(1)
+    #scanner = Recipe(recipe_filename)
+    #for k, v in scanner.satisfy.iteritems():
+        #print "{}:".format(k)
+        #print str(v)
+    #print scanner.lvars

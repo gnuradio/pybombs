@@ -19,3 +19,4 @@
 # Boston, MA 02110-1301, USA.
 #
 
+from utils import dict_merge

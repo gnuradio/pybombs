@@ -75,13 +75,12 @@ class PackageManager(object):
         self.log.debug("Using packagers: {}".format([x.name for x in self._packagers]))
         # Now we can use self.packagers, in order, for our commands.
 
-    def check_package_flag(self, pkgname, flag, r=None):
+    def check_package_flag(self, pkgname, flag):
         """
-        See if package 'pkgname' has 'flag' set.
+        See if package 'pkgname' has 'flag' set (return the boolean value
+        of that flag if yes, or None otherwise).
         """
-        if self.cfg.get_package_flags(pkgname).has_key(flag):
-            return self.cfg.get_package_flags(pkgname)[flag]
-        return self.cfg.get_package_flags(pkgname, True).get(flag)
+        return bool(self.cfg.get_package_flags(pkgname).get(flag))
 
     def get_packagers(self, pkgname):
         """
@@ -103,9 +102,9 @@ class PackageManager(object):
         Check to see if this package is available on this platform.
         Returns True or a version string if yes, False if not.
         """
-        r = recipe.get_recipe(name)
-        if self.check_package_flag(name, 'forceinstalled', r):
+        if self.check_package_flag(name, 'forceinstalled'):
             return True
+        r = recipe.get_recipe(name)
         for pkgr in self.get_packagers(name):
             pkg_version = pkgr.exists(r)
             if pkg_version is None or not pkg_version:
@@ -121,11 +120,11 @@ class PackageManager(object):
         Otherwise, returns False.
         """
         self.log.debug("Checking if package {} is installed.".format(name))
-        r = recipe.get_recipe(name)
-        if self.check_package_flag(name, 'forceinstalled', r):
+        if self.check_package_flag(name, 'forceinstalled'):
             self.log.debug("Package {} is forced to state 'installed'.".format(name))
             # TODO maybe we can figure out a version string
             return True
+        r = recipe.get_recipe(name)
         for pkgr in self.get_packagers(name):
             pkg_version = pkgr.installed(r)
             if pkg_version is None or not pkg_version:
@@ -139,8 +138,7 @@ class PackageManager(object):
         Install the given package. Returns True if successful, False otherwise.
         """
         self.log.debug("install({})".format(name))
-        r = recipe.get_recipe(name, static=kwargs.get('static'))
-        if self.check_package_flag(name, 'forceinstalled', r):
+        if self.check_package_flag(name, 'forceinstalled'):
             self.log.debug("Package {} is assumed installed.".format(name))
             # TODO maybe we can figure out a version string
             return True
@@ -151,6 +149,7 @@ class PackageManager(object):
                 self.log.error('Static builds require source builds.')
                 exit(1)
             packagers = [self.src,]
+        r = recipe.get_recipe(name)
         for pkgr in packagers:
             self.log.debug("Trying to use packager {}".format(pkgr.name))
             try:
