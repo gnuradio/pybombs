@@ -17,16 +17,12 @@
 # Boston, MA 02110-1301, USA.
 #
 
-var config_opt = ""
-
-configure { 
-}
-
-make {
-}
-
-install {
-}
-
-uninstall {
-}
+vars:
+        config_opt: ""
+configure: ""
+make: ""
+install: ""
+uninstall: ""
+verify: ""
+gitrev: ""
+gitargs: ""

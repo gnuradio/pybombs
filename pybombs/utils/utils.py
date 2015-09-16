@@ -24,6 +24,7 @@ utils
 """
 
 from threading import Thread, Event
+from copy import deepcopy
 import os
 import re
 import shutil
@@ -286,6 +287,19 @@ def shellexec_monitor(cmd, throw_ex=True):
         else:
             return -1;
 
+def dict_merge(a, b):
+    """
+    Recursively merge b into a. b[k] will overwrite a[k] if it exists.
+    """
+    if not isinstance(b, dict):
+        return b
+    result = deepcopy(a)
+    for k, v in b.iteritems():
+        if k in result and isinstance(result[k], dict):
+                result[k] = dict_merge(result[k], v)
+        else:
+            result[k] = deepcopy(v)
+    return result
 
 if __name__ == "__main__":
     print get_child_pids(4155)

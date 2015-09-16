@@ -17,20 +17,8 @@
 # Boston, MA 02110-1301, USA.
 #
 
-var config_opt = ""
-
-configure { 
-    ./configure --prefix=$prefix $config_opt CC=$cc CXX=$cxx
-}
-
-make {
-    make -j$makewidth
-}
-
-install {
-    make install
-}
-
-uninstall {
-    make uninstall
-}
+inherit: empty
+configure: ./configure --prefix=$prefix $config_opt CC=$cc CXX=$cxx
+make: make -j$makewidth
+install: make install
+uninstall: make uninstall

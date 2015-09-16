@@ -72,7 +72,7 @@ class Source(PackagerBase):
         Otherwise, return True on success and False if installing failed.
         """
         cwd = os.getcwd()
-        if len(recipe.srcs) == 0:
+        if len(recipe.source) == 0:
             self.log.warning("Cannot find a source URI for package {}".format(recipe.id))
             return False
         try:
@@ -88,7 +88,7 @@ class Source(PackagerBase):
                 self.log.debug("Package {} is already fetched.".format(recipe.id))
             # Set up the build dir
             pkg_src_dir = os.path.join(self.prefix.src_dir, recipe.id)
-            builddir = os.path.join(pkg_src_dir, recipe.install_dir)
+            builddir = os.path.join(pkg_src_dir, recipe.installdir)
             # The package source dir must exist, or something is wrong.
             if not os.path.isdir(pkg_src_dir):
                 self.log.error("There should be a source dir in {}, but there isn't.".format(pkg_src_dir))
@@ -146,9 +146,9 @@ class Source(PackagerBase):
         and we're trying to run it again.
         """
         self.log.debug("Configuring recipe {}".format(recipe.id))
-        self.log.debug("Using lvars - {}".format(recipe.lvars))
+        self.log.debug("Using vars - {}".format(recipe.vars))
         self.log.debug("In cwd - {}".format(os.getcwd()))
-        pre_cmd = self.var_replace_all(recipe, recipe.src_configure)
+        pre_cmd = self.var_replace_all(recipe, recipe.configure)
         cmd = self.filter_cmd(pre_cmd, recipe, 'config_filter')
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
@@ -176,14 +176,14 @@ class Source(PackagerBase):
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
             o_proc = output_proc.OutputProcessorMake(preamble="Building: ")
-        cmd = self.var_replace_all(recipe, recipe.src_make)
+        cmd = self.var_replace_all(recipe, recipe.make)
         cmd = self.filter_cmd(cmd, recipe, 'make_filter')
         if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
             self.log.debug("Make successful")
             return True
         # OK, something bad happened.
         if try_again == False:
-            recipe.lvars['makewidth'] = '1'
+            recipe.vars['makewidth'] = '1'
             self.make(recipe, try_again=True)
         else:
             self.log.error("Build failed. See output above for error messages.")
@@ -195,7 +195,7 @@ class Source(PackagerBase):
         """
         self.log.debug("Installing package {}".format(recipe.id))
         self.log.debug("In cwd - {}".format(os.getcwd()))
-        pre_cmd = self.var_replace_all(recipe, recipe.src_install)
+        pre_cmd = self.var_replace_all(recipe, recipe.install)
         cmd = self.filter_cmd(pre_cmd, recipe, 'install_filter')
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG:
@@ -208,7 +208,7 @@ class Source(PackagerBase):
     #########################################################################
     # Helpers
     #########################################################################
-    def var_replace(self, mo, lvars):
+    def var_replace(self, mo, vars):
         """
         Expects arguments to be matchobjects for strings starting with $.
         Returns the variable replacement value.
@@ -218,19 +218,19 @@ class Source(PackagerBase):
         var_name = var_name[1:] # Strip $
         if var_name == 'prefix': # This is special
             return self.prefix.prefix_dir
-        if lvars.has_key(var_name):
-            return lvars[var_name]
+        if vars.has_key(var_name):
+            return vars[var_name]
         return self.cfg.get(var_name, '')
 
     def var_replace_all(self, recipe, s):
         """
-        Replace all the $variables in string 's' with the lvars
-        from 'recipe'. If keys are not in lvars, try config options.
+        Replace all the $variables in string 's' with the vars
+        from 'recipe'. If keys are not in vars, try config options.
         Default to empty strings.
         """
         # Starts with a $, unless preceded by \
         var_re = re.compile(r'(?<!\\)\$[a-z][a-z0-9_]*')
-        var_repl = lambda mo: self.var_replace(mo, recipe.lvars)
+        var_repl = lambda mo: self.var_replace(mo, recipe.vars)
         s = var_re.sub(var_repl, s)
         # PyBOMBS1 supported a conditional replacement mechanism,
         # where variable==FOO?{a}:{b} would return a if variables
@@ -244,11 +244,11 @@ class Source(PackagerBase):
         - Replace all variables in the filter
             - $command is replaced by unfiltered_command
         """
-        cmd_filter = self.get_package_flag(recipe, filter_flag)
-        if len(cmd_filter) == 0:
+        cmd_filter = self.cfg.get_package_flags(recipe.id, recipe.category).get(filter_flag)
+        if not cmd_filter:
             return unfiltered_command
         self.log.obnoxious('Filtering command using: {filt}'.format(filt=cmd_filter))
-        recipe.lvars['command'] = unfiltered_command
+        recipe.vars['command'] = unfiltered_command
         return self.var_replace_all(recipe, cmd_filter)
 
     def get_package_flag(self, recipe, flag):
