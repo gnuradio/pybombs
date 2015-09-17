@@ -373,7 +373,7 @@ class ConfigManager(object):
             return False
         config_items = cfg_data.get('config', {})
         self.log.debug('New config items: {items}'.format(items=config_items))
-        self.cfg_cascade.append({item[0]: item[1] for item in config_items})
+        self.cfg_cascade.append(config_items)
         return True
 
     def get_pybombs_dir(self, prefix_dir=None):
