@@ -184,8 +184,8 @@ class Recipe(object):
         self.id = os.path.splitext(os.path.basename(filename))[0]
         self.log = pb_logging.logger.getChild("Recipe[{}]".format(self.id))
         # Load original recipe:
-        self.log.obnoxious("Loading template file: {}".format(filename))
-        self._data = yaml.safe_load(open(filename).read())
+        self.log.obnoxious("Loading recipe file: {}".format(filename))
+        self._data = self.load_recipe_from_yaml(filename)
         # Recursively do the inheritance:
         while self._data.get('inherit'):
             inherit_from = self._data.get('inherit')
@@ -198,14 +198,13 @@ class Recipe(object):
                 ))
                 break
             self.log.obnoxious("Inheriting from file {}".format(filename))
-            parent_data = yaml.safe_load(open(filename).read())
+            parent_data = self.load_recipe_from_yaml(filename)
+            self._data['depends'] = self._data['depends'] + parent_data['depends']
             self._data = dict_merge(parent_data, self._data)
             self._data['inherit'] = parent_data.get('inherit')
         # Post-process some fields:
         if self._data.has_key('source') and not isinstance(self._data['source'], list):
             self._data['source'] = [self._data['source'],]
-        if self._data.has_key('depends') and not isinstance(self._data['depends'], list):
-            self._data['depends'] = [self._data['depends'],]
         # Map all recipe info onto self:
         for k, v in self._data.iteritems():
             if not hasattr(self, k):
@@ -215,6 +214,19 @@ class Recipe(object):
         out = "Recipe: {id}\n".format(id=str(self.id))
         out += yaml.dump(self._data)
         return out
+
+    def load_recipe_from_yaml(self, filename):
+        """
+        Turn a YAML file into a valid recipe datastructure.
+        """
+        data = yaml.safe_load(open(filename).read())
+        # Make sure dependencies is always a list:
+        if data.has_key('depends'):
+            if not isinstance(data['depends'], list):
+                data['depends'] = [data['depends'],]
+        else:
+                data['depends'] = []
+        return data
 
     def get_package_reqs(self, pkg_type):
         """
