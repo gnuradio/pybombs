@@ -220,7 +220,7 @@ class Source(PackagerBase):
             return self.prefix.prefix_dir
         if vars.has_key(var_name):
             return vars[var_name]
-        return self.cfg.get(var_name, '')
+        return str(self.cfg.get(var_name, ''))
 
     def var_replace_all(self, recipe, s):
         """
