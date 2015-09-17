@@ -60,7 +60,8 @@ class RecipeListManager(object):
         try:
             return self._recipe_list[name][0]
         except KeyError:
-            raise PBException("Package {} has no recipe file!".format(name))
+            self.log.error("Package {} has no recipe file!".format(name))
+            exit(1)
 
     def get_template_filename(self, template):
         """ Returns the filename for the requested template """

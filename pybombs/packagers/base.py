@@ -59,6 +59,8 @@ class PackagerBase(object):
         except KeyError as e:
             self.log.debug("No satisfy rule for package type {}".format(self.pkgtype))
             return False
+        if satisfy_rule is None:
+            return None
         self.log.obnoxious("Calling ev for recursive availability checking")
         return satisfy_rule.ev(self._package_exists)
 
@@ -78,6 +80,8 @@ class PackagerBase(object):
         except KeyError as e:
             self.log.debug("No satisfy rule for package type {}".format(self.pkgtype))
             return False
+        if satisfy_rule is None:
+            return None
         self.log.obnoxious("Calling ev for recursive installation")
         return satisfy_rule.ev(self._package_install)
 
@@ -96,6 +100,8 @@ class PackagerBase(object):
         except KeyError as e:
             self.log.debug("No satisfy rule for package type {}".format(self.pkgtype))
             return False
+        if satisfy_rule is None:
+            return None
         self.log.obnoxious("Calling ev for recursive install state checking")
         return satisfy_rule.ev(self._package_installed)
 
