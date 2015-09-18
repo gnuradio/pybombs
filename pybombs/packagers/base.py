@@ -64,7 +64,7 @@ class PackagerBase(object):
         self.log.obnoxious("Calling ev for recursive availability checking")
         return satisfy_rule.ev(self._package_exists)
 
-    def install(self, recipe):
+    def install(self, recipe, static=False):
         """
         Run the installation process for a package given a recipe.
         May raise an exception if things go terribly wrong.

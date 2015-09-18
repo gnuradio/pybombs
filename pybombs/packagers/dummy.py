@@ -38,21 +38,21 @@ class Dummy(PackagerBase):
         """ This is always supported """
         return True
 
-    def exists(self, recipe, throw_ex=True):
+    def exists(self, recipe):
         """
         We'll always return version 0.0 here.
         """
         self.log.info("Pretending that package {} exists.".format(recipe.id))
         return "0.0"
 
-    def install(self, recipe, throw_ex=True):
+    def install(self, recipe, static=False):
         """
         Pseudo-install package
         """
         self.log.info("Pretending to install package {}.".format(recipe.id))
         return True
 
-    def installed(self, recipe, throw_ex=True):
+    def installed(self, recipe):
         """
         We always pretend the package is not yet installed
         """

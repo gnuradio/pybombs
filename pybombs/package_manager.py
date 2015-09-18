@@ -133,7 +133,7 @@ class PackageManager(object):
                 return True
         return False
 
-    def install(self, name, **kwargs):
+    def install(self, name, static=False):
         """
         Install the given package. Returns True if successful, False otherwise.
         """
@@ -143,7 +143,7 @@ class PackageManager(object):
             # TODO maybe we can figure out a version string
             return True
         packagers = self.get_packagers(name)
-        if kwargs.get('static'):
+        if static:
             self.log.debug('Package will be built statically.')
             if not self.prefix_available:
                 self.log.error('Static builds require source builds.')
@@ -153,7 +153,7 @@ class PackageManager(object):
         for pkgr in packagers:
             self.log.debug("Trying to use packager {}".format(pkgr.name))
             try:
-                install_result = pkgr.install(r)
+                install_result = pkgr.install(r, static)
             except PBException as e:
                 self.log.error(
                     "Something went wrong while trying to install {} using {}: {}".format(
