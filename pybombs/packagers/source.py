@@ -49,6 +49,7 @@ class Source(PackagerBase):
             exit(1)
         self.prefix = self.cfg.get_active_prefix()
         self.inventory = inventory.Inventory(self.prefix.inv_file)
+        self.static = False
 
     def supported(self):
         """
@@ -64,13 +65,15 @@ class Source(PackagerBase):
         # TODO check if we can get something better from the inventory
         return "0.0"
 
-    def install(self, recipe):
+    def install(self, recipe, static=False):
         """
         Run the source installation process for package 'recipe'.
 
         May raise an exception if things go terribly wrong.
         Otherwise, return True on success and False if installing failed.
         """
+        self.static = static
+        recipe.set_static(static)
         cwd = os.getcwd()
         if len(recipe.source) == 0:
             self.log.warning("Cannot find a source URI for package {}".format(recipe.id))
@@ -82,8 +85,7 @@ class Source(PackagerBase):
             self.log.debug("State on package {} is {}".format(recipe.id, initial_state))
             # First, make sure we have the sources
             if self.inventory.get_state(recipe.id) < self.inventory.STATE_FETCHED:
-                f = Fetcher()
-                f.fetch(recipe)
+                Fetcher().fetch(recipe)
             else:
                 self.log.debug("Package {} is already fetched.".format(recipe.id))
             # Set up the build dir
@@ -148,7 +150,7 @@ class Source(PackagerBase):
         self.log.debug("Configuring recipe {}".format(recipe.id))
         self.log.debug("Using vars - {}".format(recipe.vars))
         self.log.debug("In cwd - {}".format(os.getcwd()))
-        pre_cmd = self.var_replace_all(recipe, recipe.configure)
+        pre_cmd = self.var_replace_all(recipe, recipe.get_command('configure'))
         cmd = self.filter_cmd(pre_cmd, recipe, 'config_filter')
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
@@ -176,7 +178,7 @@ class Source(PackagerBase):
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
             o_proc = output_proc.OutputProcessorMake(preamble="Building: ")
-        cmd = self.var_replace_all(recipe, recipe.make)
+        cmd = self.var_replace_all(recipe, recipe.get_command('make'))
         cmd = self.filter_cmd(cmd, recipe, 'make_filter')
         if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
             self.log.debug("Make successful")
@@ -195,7 +197,7 @@ class Source(PackagerBase):
         """
         self.log.debug("Installing package {}".format(recipe.id))
         self.log.debug("In cwd - {}".format(os.getcwd()))
-        pre_cmd = self.var_replace_all(recipe, recipe.install)
+        pre_cmd = self.var_replace_all(recipe, recipe.get_command('install'))
         cmd = self.filter_cmd(pre_cmd, recipe, 'install_filter')
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG:

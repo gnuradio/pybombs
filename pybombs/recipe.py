@@ -183,9 +183,10 @@ class Recipe(object):
     def __init__(self, filename):
         self.id = os.path.splitext(os.path.basename(filename))[0]
         self.log = pb_logging.logger.getChild("Recipe[{}]".format(self.id))
+        self._static = False
         # Load original recipe:
         self.log.obnoxious("Loading recipe file: {}".format(filename))
-        self._data = self.load_recipe_from_yaml(filename)
+        self._data = self._load_recipe_from_yaml(filename)
         # Recursively do the inheritance:
         while self._data.get('inherit'):
             inherit_from = self._data.get('inherit')
@@ -198,7 +199,7 @@ class Recipe(object):
                 ))
                 break
             self.log.obnoxious("Inheriting from file {}".format(filename))
-            parent_data = self.load_recipe_from_yaml(filename)
+            parent_data = self._load_recipe_from_yaml(filename)
             self._data['depends'] = self._data['depends'] + parent_data['depends']
             self._data = dict_merge(parent_data, self._data)
             self._data['inherit'] = parent_data.get('inherit')
@@ -215,7 +216,7 @@ class Recipe(object):
         out += yaml.dump(self._data)
         return out
 
-    def load_recipe_from_yaml(self, filename):
+    def _load_recipe_from_yaml(self, filename):
         """
         Turn a YAML file into a valid recipe datastructure.
         """
@@ -238,6 +239,31 @@ class Recipe(object):
         """
         req_string = getattr(self, 'satisfy', {}).get(pkg_type)
         return PBPackageRequirementScanner(req_string).get_preq()
+
+    def set_static(self, static):
+        """
+        Set the internal build choice to static or not.
+        """
+        self._static = bool(static)
+
+    def get_command(self, cmd, static=None):
+        """
+        Return a recipe option that can exists both as a static version
+        and a regular one. Example:
+        >>> pm.get_command('configure', True)
+        cmake ...
+
+        This will return configure_static, if that exists, or configure if not,
+        and None if neither exist.
+
+        If static is not provided, it will use the state set by set_static().
+        """
+        if static is None:
+            static = self._static
+        if static and hasattr(self, '{cmd}_static'.format(cmd=cmd)):
+            return getattr(self, '{cmd}_static'.format(cmd=cmd))
+        return getattr(self, cmd, None)
+
 
 recipe_cache = {}
 def get_recipe(pkgname):
