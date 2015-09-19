@@ -229,6 +229,13 @@ class Recipe(object):
                 data['depends'] = []
         return data
 
+    def get_dict(self):
+        """
+        Return recipe data as dictionary.
+        r.get_dict()['foo'] is the same as r.foo.
+        """
+        return self._data
+
     def get_package_reqs(self, pkg_type):
         """
         Return a PBPackageRequirement(Pair) object for the selected

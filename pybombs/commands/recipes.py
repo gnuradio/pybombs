@@ -71,8 +71,8 @@ class Recipes(CommandBase):
             )
         ###### Start of setup_subparser()
         subparsers = parser.add_subparsers(
-                help="Prefix Commands:",
-                dest='prefix_command',
+                help="Recipe Commands:",
+                dest='recipe_command',
         )
         recipes_cmd_name_list = {
             'add':    ('Add a new recipes location.', setup_subsubparser_add),
@@ -96,14 +96,14 @@ class Recipes(CommandBase):
     def run(self):
         """ Go, go, go! """
         self.args.alias = self.args.alias[0]
-        if self.args.prefix_command == 'add':
+        if self.args.recipe_command == 'add':
             self._add_recipes()
-        elif self.args.prefix_command == 'remove':
+        elif self.args.recipe_command == 'remove':
             self._remove_recipes()
-        elif self.args.prefix_command == 'update':
+        elif self.args.recipe_command == 'update':
             self._update_recipes()
         else:
-            self.log.error("Illegal recipes command: {}".format(self.args.prefix_command))
+            self.log.error("Illegal recipes command: {}".format(self.args.recipe_command))
 
     def uri_is_remote(self, uri):
         """
