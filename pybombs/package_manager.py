@@ -69,9 +69,15 @@ class PackageManager(object):
                 if self.prefix_available:
                     self._packagers += [self.src,]
             elif satisfy == 'native':
-                self._packagers += binary_pkgrs
+                if self.cfg.get('forcebuild_all', False):
+                    self.log.debug("Forcing source build for all packages.")
+                else:
+                    self._packagers += binary_pkgrs
             else:
                 raise PBException("Invalid satisfy_order value: {}".format(satisfy))
+        if len(self._packagers) == 0:
+            self.log.error("No valid packagers found.")
+            exit(1)
         self.log.debug("Using packagers: {}".format([x.name for x in self._packagers]))
         # Now we can use self.packagers, in order, for our commands.
 
