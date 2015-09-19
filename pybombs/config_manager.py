@@ -64,7 +64,6 @@ class PrefixInfo(object):
             'recipes': {},
             'packages': {'gnuradio': 'forcebuild'},
             'categories': {'common': 'forcebuild'},
-            'config': {},
     }
 
     def __init__(self, args, cfg_list):
@@ -329,8 +328,6 @@ class ConfigManager(object):
         self.log.debug("Template directory: {}".format(self._template_dir))
         ## Init prefix:
         self._prefix_info = PrefixInfo(args, cfg_files)
-        self.cfg_cascade[self.LAYER_PREFIX] = self._prefix_info.config
-        self.log.debug("Add prefix config options: {cfg}".format(cfg=self.cfg_cascade[self.LAYER_PREFIX]))
         ## Init recipe-lists:
         # Go through cfg files, then env variable, then command line args
         # From command line:
