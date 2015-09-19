@@ -21,9 +21,20 @@
 #
 """ PyBOMBS command: prefix """
 
-import pprint
+import yaml
 from pybombs.commands import CommandBase
+from pybombs.utils import dict_merge
+from pybombs import recipe
 
+### Parser Helpers
+def setup_subsubparser_initsdk(parser):
+    parser.add_argument(
+        'sdkname',
+        help="SDK Package Name",
+        nargs=1,
+    )
+
+### Class definition
 class Prefix(CommandBase):
     """
     Prefix operations
@@ -31,22 +42,25 @@ class Prefix(CommandBase):
     cmds = {
         'prefix': 'Prefix commands', # TODO nicer
     }
+    # These keys are copied from the recipe to the config file
+    sdk_recipe_keys_for_config = ('config', 'packages', 'categories', 'env')
 
     @staticmethod
     def setup_subparser(parser, cmd=None):
         """
         Set up a subparser for a specific command
         """
+        ###### Start of setup_subparser()
         subparsers = parser.add_subparsers(
                 help="Prefix Commands:",
                 dest='prefix_command',
         )
-        prefix_cmd_name_list = {
-                'info': 'Display information on the currently used prefix.',
-                'env': 'Print the environment variables used in this prefix.',
-        }
-        for cmd_name, cmd_help in prefix_cmd_name_list.iteritems():
-            subparser = subparsers.add_parser(cmd_name, help=cmd_help)
+        for cmd_name, cmd_info in Prefix.prefix_cmd_name_list.iteritems():
+            subparser = subparsers.add_parser(
+                    cmd_name,
+                    help=cmd_info['help']
+            )
+            cmd_info['parser'](subparser)
         return parser
 
     def __init__(self, cmd, args):
@@ -59,17 +73,73 @@ class Prefix(CommandBase):
 
     def run(self):
         """ Go, go, go! """
-        if self.args.prefix_command == 'info':
-            self._print_prefix_info()
-        elif self.args.prefix_command == 'env':
-            self._print_prefix_env()
-        else:
-            self.log.error("Illegal prefix command: {}".format(self.args.prefix_command))
+        self.prefix_cmd_name_list[self.args.prefix_command]['run'](self)
 
     def _print_prefix_info(self):
+        """
+        pybombs prefix info
+        """
         self.log.info('Prefix dir: {}'.format(self.prefix.prefix_dir))
 
     def _print_prefix_env(self):
+        """
+        pybombs prefix env
+        """
         print 'Prefix env:'
         for k, v in self.prefix.env.iteritems():
             print "{}={}".format(k, v)
+
+
+    def _run_installsdk(self):
+        """
+        pybombs prefix install-sdk
+        """
+        self._install_sdk_to_prefix(self.args.sdkname[0])
+
+    def _run_init(self):
+        """
+        pybombs prefix init
+        """
+        # tbw
+        pass
+
+
+    def _install_sdk_to_prefix(self, sdkname):
+        """
+        Read recipe for sdkname, and install the SDK to the prefix.
+        """
+        ### Get the recipe
+        r = recipe.get_recipe(sdkname, target='sdk')
+        ### Install the actual SDK file
+        # tbw
+        ### Update the prefix-local config file
+        self.log.debug("Updating config file with SDK recipe info.")
+        try:
+            old_cfg_data = yaml.safe_load(open(self.prefix.cfg_file).read())
+        except IOError:
+            old_cfg_data = {}
+        # Filter out keys we don't care about:
+        sdk_cfg_data = {k: v for k, v in r.get_dict().iteritems() if k in self.sdk_recipe_keys_for_config}
+        self.log.obnoxious("New data: {new}".format(new=sdk_cfg_data))
+        cfg_data = dict_merge(old_cfg_data, sdk_cfg_data)
+        open(self.prefix.cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
+
+    # Sub-commands:
+    prefix_cmd_name_list = {
+            'info': {
+                'help': 'Display information on the currently used prefix.',
+                'parser': lambda p: None,
+                'run': _print_prefix_info,
+            },
+            'env': {
+                'help': 'Print the environment variables used in this prefix.',
+                'parser': lambda p: None,
+                'run': _print_prefix_info,
+            },
+            'install-sdk': {
+                'help': 'Install an SDK into the prefix.',
+                'parser': setup_subsubparser_initsdk,
+                'run': _run_installsdk,
+            },
+    }
+
