@@ -17,13 +17,4 @@
 # Boston, MA 02110-1301, USA.
 #
 
-target: package
-vars:
-        config_opt: ""
-configure: ""
-make: ""
-install: ""
-uninstall: ""
-verify: ""
-gitrev: ""
-gitargs: ""
+target: sdk
