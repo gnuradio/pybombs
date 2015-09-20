@@ -61,6 +61,8 @@ class Source(PackagerBase):
         """
         This will work whenever any sources are defined.
         """
+        if len(recipe.source) == 0:
+            return None
         # Return a pseudo-version
         # TODO check if we can get something better from the inventory
         return "0.0"
@@ -150,7 +152,7 @@ class Source(PackagerBase):
         self.log.debug("Configuring recipe {}".format(recipe.id))
         self.log.debug("Using vars - {}".format(recipe.vars))
         self.log.debug("In cwd - {}".format(os.getcwd()))
-        pre_cmd = self.var_replace_all(recipe, recipe.get_command('configure'))
+        pre_cmd = recipe.var_replace_all(recipe.get_command('configure'))
         cmd = self.filter_cmd(pre_cmd, recipe, 'config_filter')
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
@@ -178,7 +180,7 @@ class Source(PackagerBase):
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
             o_proc = output_proc.OutputProcessorMake(preamble="Building: ")
-        cmd = self.var_replace_all(recipe, recipe.get_command('make'))
+        cmd = recipe.var_replace_all(recipe.get_command('make'))
         cmd = self.filter_cmd(cmd, recipe, 'make_filter')
         if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
             self.log.debug("Make successful")
@@ -197,7 +199,7 @@ class Source(PackagerBase):
         """
         self.log.debug("Installing package {}".format(recipe.id))
         self.log.debug("In cwd - {}".format(os.getcwd()))
-        pre_cmd = self.var_replace_all(recipe, recipe.get_command('install'))
+        pre_cmd = recipe.var_replace_all(recipe.get_command('install'))
         cmd = self.filter_cmd(pre_cmd, recipe, 'install_filter')
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG:
@@ -210,35 +212,6 @@ class Source(PackagerBase):
     #########################################################################
     # Helpers
     #########################################################################
-    def var_replace(self, mo, vars):
-        """
-        Expects arguments to be matchobjects for strings starting with $.
-        Returns the variable replacement value.
-        """
-        var_name = mo.group(0)
-        assert len(var_name) > 1 and var_name[0] == '$'
-        var_name = var_name[1:] # Strip $
-        if var_name == 'prefix': # This is special
-            return self.prefix.prefix_dir
-        if vars.has_key(var_name):
-            return vars[var_name]
-        return str(self.cfg.get(var_name, ''))
-
-    def var_replace_all(self, recipe, s):
-        """
-        Replace all the $variables in string 's' with the vars
-        from 'recipe'. If keys are not in vars, try config options.
-        Default to empty strings.
-        """
-        # Starts with a $, unless preceded by \
-        var_re = re.compile(r'(?<!\\)\$[a-z][a-z0-9_]*')
-        var_repl = lambda mo: self.var_replace(mo, recipe.vars)
-        s = var_re.sub(var_repl, s)
-        # PyBOMBS1 supported a conditional replacement mechanism,
-        # where variable==FOO?{a}:{b} would return a if variables
-        # matches FOO, or b otherwise. We'll leave this out for now.
-        return s
-
     def filter_cmd(self, unfiltered_command, recipe, filter_flag):
         """
         - Get a filter from the recipe flags identified by filter_flag
@@ -251,15 +224,5 @@ class Source(PackagerBase):
             return unfiltered_command
         self.log.obnoxious('Filtering command using: {filt}'.format(filt=cmd_filter))
         recipe.vars['command'] = unfiltered_command
-        return self.var_replace_all(recipe, cmd_filter)
-
-    def get_package_flag(self, recipe, flag):
-        """
-        For the package identified by recipe, either return the package
-        flag (if exists), or the categories flag.
-        """
-        pkg_flags = self.cfg.get_package_flags(recipe.id)
-        if pkg_flags.has_key(flag):
-            return pkg_flags[flag]
-        return self.cfg.get_package_flags(recipe.category, True).get(flag, '')
+        return recipe.var_replace_all(cmd_filter)
 
