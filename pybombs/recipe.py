@@ -23,6 +23,7 @@
 Recipe representation class.
 """
 
+import re
 import os
 import yaml
 import StringIO
@@ -30,6 +31,7 @@ from plex import *
 
 from pybombs import pb_logging
 from pybombs import recipe_manager
+from pybombs import config_manager
 from pybombs.pb_exception import PBException
 from pybombs.utils import dict_merge
 
@@ -206,6 +208,13 @@ class Recipe(object):
         # Post-process some fields:
         if self._data.has_key('source') and not isinstance(self._data['source'], list):
             self._data['source'] = [self._data['source'],]
+        # Package flags override vars:
+        self._data['vars'] = dict_merge(
+            self._data.get('vars', {}),
+            config_manager.config_manager.get_package_flags(
+                self.id, self._data.get('category')
+            )
+        )
         # Map all recipe info onto self:
         for k, v in self._data.iteritems():
             if not hasattr(self, k):
@@ -270,6 +279,33 @@ class Recipe(object):
         if static and hasattr(self, '{cmd}_static'.format(cmd=cmd)):
             return getattr(self, '{cmd}_static'.format(cmd=cmd))
         return getattr(self, cmd, None)
+
+    def var_replace_all(self, s):
+        """
+        Replace all the $variables in string 's' with the vars
+        from 'recipe'. If keys are not in vars, try config options.
+        Default to empty strings.
+        """
+        def var_replace(mo, vars, cfg):
+            """
+            Expects arguments to be matchobjects for strings starting with $.
+            Returns the variable replacement value.
+            """
+            var_name = mo.group(0)
+            assert len(var_name) > 1 and var_name[0] == '$'
+            var_name = var_name[1:] # Strip $
+            if var_name == 'prefix': # This is special
+                return cfg.get_active_prefix().prefix_dir
+            return vars.get(var_name, str(cfg.get(var_name, '')))
+        ###
+        # Starts with a $, unless preceded by \
+        var_re = re.compile(r'(?<!\\)\$[a-z][a-z0-9_]*')
+        var_repl = lambda mo: var_replace(mo, self.vars, config_manager.config_manager)
+        s = var_re.sub(var_repl, s)
+        # PyBOMBS1 supported a conditional replacement mechanism,
+        # where variable==FOO?{a}:{b} would return a if variables
+        # matches FOO, or b otherwise. We'll leave this out for now.
+        return s
 
 
 recipe_cache = {}
