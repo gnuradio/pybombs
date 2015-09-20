@@ -183,14 +183,14 @@ class PrefixInfo(object):
         if os.getcwd() != os.path.expanduser('~') and os.path.isdir(os.path.join('.', self.prefix_conf_dir)):
             self.prefix_dir = os.getcwd()
             self.prefix_src = 'cwd'
-            self.log.debug('Using CWD as prefix ({})'.format(self.prefix_dir))
+            self.log.info('Using CWD as prefix ({})'.format(self.prefix_dir))
             return
         if self._cfg_info.get('config', {}).get('default_prefix'):
             self.prefix_dir = self._cfg_info['config']['default_prefix']
             if self._cfg_info['prefix_aliases'].has_key(self.prefix_dir):
                 self.log.debug("Resolving prefix alias {}.".format(self.prefix_dir))
                 self.prefix_dir = self._cfg_info['prefix_aliases'][self.prefix_dir]
-            self.log.debug('Using default_prefix as prefix ({})'.format(self.prefix_dir))
+            self.log.info('Using default_prefix as prefix ({})'.format(self.prefix_dir))
             self.prefix_src = 'default'
             return
         self.prefix_src = None
