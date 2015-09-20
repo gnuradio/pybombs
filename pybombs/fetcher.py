@@ -24,6 +24,7 @@ Fetcher. Whoa.
 """
 
 import os
+import re
 
 from pybombs import pb_logging
 from pybombs import inventory
@@ -37,10 +38,42 @@ from pybombs import fetchers
 from pybombs import pb_logging
 from pybombs.pb_exception import PBException
 
+URI_TYPES = ('file', 'wget', 'git', 'svn')
+URI_REGEXES = {
+        'git': (
+            r'.*\.git$',
+            r'git@',
+        ),
+}
+
+def parse_uri(uri):
+    """
+    Return a tuple (url_type, url).
+    """
+    url = None
+    # If we're lucky, it starts with git+... or whatever
+    url_type = uri.split('+', 1)[0]
+    if url_type in URI_TYPES:
+        url = uri[len(url_type)+1:]
+        return (url_type, url)
+    # OK, let's try and identify it.
+    try: # Is it a file?
+        os.stat(uri)
+        return ('file', uri)
+    except OSError:
+        pass
+    # No, OK, let's try regexing this guy
+    for utype in URI_REGEXES.iterkeys():
+        for regex in URI_REGEXES[utype]:
+            if re.match(regex, uri):
+                return (utype, uri)
+    # Yeah, whatever, I give up.
+    raise PBException("Unrecognized URI: {uri}".format(uri=uri))
+
 
 class Fetcher(object):
     """
-    This will attempt to download source from all the recipe's urls using the avaliable fetchers.
+    This will attempt to download source from all the recipe's urls using the available fetchers.
     """
 
     def __init__(self):
@@ -58,11 +91,8 @@ class Fetcher(object):
             except:
                 raise PBException("Unable to create the source directory!")
 
-        # Get the avaliable fetcher objects.
-        self.avaliable = fetchers.get_all()
-
-    def get_url_type(url):
-        return url.split("://", 1)[0]
+        # Get the available fetcher objects.
+        self.available = fetchers.get_all()
 
     def fetch(self, recipe):
         """
@@ -86,13 +116,13 @@ class Fetcher(object):
         # Do the fetch
         fetched = False
         for src in recipe.source:
+            self.log.obnoxious("Trying to fetch {}".format(src))
             try:
                 # Get the right fetcher
-                (url_type, url) = src.split("://", 1)
-                fetcher = self.avaliable[url_type]
+                (url_type, url) = parse_uri(src)
+                self.log.debug("Fetching {url}, type {t}".format(url=url, t=url_type))
+                fetcher = self.available[url_type]
                 self.log.debug("Using fetcher {}".format(fetcher))
-                self.log.debug("Fetching {}".format(url))
-
                 # TODO: Use an exception rather than true/false
                 if not fetcher._fetch(url, recipe):
                     self.log.warning("Fetching source {0} failed.".format(src))

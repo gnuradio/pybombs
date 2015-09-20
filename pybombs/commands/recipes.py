@@ -27,6 +27,7 @@ import shutil
 import yaml
 from pybombs.commands import CommandBase
 from pybombs.utils import subproc
+from pybombs.fetcher import parse_uri
 
 class Recipes(CommandBase):
     """
@@ -147,33 +148,15 @@ class Recipes(CommandBase):
         assert cfg_file is not None
         assert recipe_cache is not None
         # Detect recipe URI type
-        uri_type = 'dir'
-        for remote_type in self.remote_location_types: # If we're lucky, it starts with git+... or whatever
-            if uri.find('{}+'.format(remote_type)) == 0:
-                uri_type = remote_type
-                uri = uri[len(remote_type)+1:]
-        if uri_type == 'dir': # Then it might be an undeclared remote, let's guess:
-            uri_mo = re.match(r'(?P<utype>[a-z]+)(://|@)', uri)
-            if uri_mo is not None:
-                uri_type = uri_mo.group('utype')
-                if not uri_type in self.remote_location_types:
-                    self.log.error("Unrecognized remote recipe URL: {url}".format(
-                        uri
-                    ))
-                    exit(1)
-            else: # At the very least, it must be an existing directory:
-                if not os.path.isdir(uri) and not self.args.force:
-                    self.log.error("Can't read recipe directory: {dir}.".format(dir=uri))
-                    exit(1)
-        if uri_type != 'dir':
-            uri = "{proto}+{url}".format(proto=uri_type, url=uri)
+        (uri_type, uri) = parse_uri(uri)
+        uri = "{proto}+{url}".format(proto=uri_type, url=uri)
         # Write this to config file
         cfg_data = yaml.safe_load(open(cfg_file).read())
         if not cfg_data.has_key('recipes'):
             cfg_data['recipes'] = {}
         cfg_data['recipes'][alias] = uri
         open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
-        if uri_type == 'dir':
+        if uri_type == 'file':
             return
         # Now make sure we don't already have a cache dir
         if os.path.isdir(recipe_cache):
