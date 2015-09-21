@@ -68,6 +68,13 @@ def extract(filename):
         return prefix
     raise RuntimeError("Cannot extract {}: Unknown archive type")
 
+def is_archive(filename):
+    """
+    Return True if 'filename' is a zipped archive.
+    """
+    return os.path.isfile(filename) and \
+            (tarfile.is_tarfile(filename) or zipfile.is_zipfile(filename))
+
 #############################################################################
 # Execute other scripts
 #############################################################################

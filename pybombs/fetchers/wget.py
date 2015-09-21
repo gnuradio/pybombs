@@ -68,15 +68,13 @@ class Wget(FetcherBase):
             status = status + chr(8)*(len(status)+1)
             print status,
         f.close()
-
-        # Move to the correct source location.
-        prefix = utils.extract(filename)
-        self.log.debug("Moving {} to {}".format(prefix, recipe.id))
-        os.rename(prefix, recipe.id)
-
-        # Remove the tar file once it has been extracted
-        os.remove(filename)
-
+        if utils.is_archive(filename):
+            # Move to the correct source location.
+            prefix = utils.extract(filename)
+            self.log.debug("Moving {} to {}".format(prefix, recipe.id))
+            os.rename(prefix, recipe.id) # Will work if arguments are equal
+            # Remove the tar file once it has been extracted
+            os.remove(filename)
         return True
 
     def get_version(self, recipe, url):
