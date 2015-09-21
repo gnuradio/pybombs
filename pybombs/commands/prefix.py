@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #
 # Copyright 2015 Free Software Foundation, Inc.
 #
@@ -21,10 +21,14 @@
 #
 """ PyBOMBS command: prefix """
 
+import os
+import shutil
 import yaml
 from pybombs.commands import CommandBase
 from pybombs.utils import dict_merge
+from pybombs.utils import subproc
 from pybombs import recipe
+from pybombs import fetcher
 
 ### Parser Helpers
 def setup_subsubparser_initsdk(parser):
@@ -42,7 +46,7 @@ class Prefix(CommandBase):
     cmds = {
         'prefix': 'Prefix commands', # TODO nicer
     }
-    # These keys are copied from the recipe to the config file
+    # These sections are copied from the recipe to the config file
     sdk_recipe_keys_for_config = ('config', 'packages', 'categories', 'env')
 
     @staticmethod
@@ -85,9 +89,9 @@ class Prefix(CommandBase):
         """
         pybombs prefix env
         """
-        print 'Prefix env:'
+        print('Prefix env:')
         for k, v in self.prefix.env.iteritems():
-            print "{}={}".format(k, v)
+            print("{}={}".format(k, v))
 
 
     def _run_installsdk(self):
@@ -110,13 +114,41 @@ class Prefix(CommandBase):
         """
         ### Get the recipe
         r = recipe.get_recipe(sdkname, target='sdk')
+        os.chdir(self.prefix.src_dir)
         ### Install the actual SDK file
-        # tbw
+        self.log.debug("Fetching SDK `{sdk}'".format(sdk=sdkname))
+        fetcher.Fetcher().fetch(r)
+        self.log.info("Installing SDK `{sdk}'".format(sdk=sdkname))
+        # Install command
+        cmd = r.var_replace_all(r.get_command('install'))
+        if subproc.monitor_process(cmd, shell=True, env=os.environ) == 0:
+            self.log.debug("Installation successful")
+        else:
+            self.log.error("Error installing SDK. Aborting.")
+            exit(1)
+        # Clean up
+        files_to_delete = [r.var_replace_all(x) for x in r.clean]
+        if len(files_to_delete):
+            self.log.info("Cleaning up files...")
+        for ftd in files_to_delete:
+            ftd = os.path.normpath(os.path.join(self.prefix.src_dir, ftd))
+            if os.path.commonprefix((self.prefix.src_dir, ftd)) != self.prefix.src_dir:
+                self.log.warn("Not removing {ftd} -- outside source dir!".format(ftd=ftd))
+                continue
+            self.log.debug("Removing {ftd}...".format(ftd=ftd))
+            if os.path.isdir(ftd):
+                shutil.rmtree(ftd)
+            elif os.path.isfile(ftd):
+                os.remove(ftd)
+            else:
+                self.log.error("Not sure what this is: {ftd}".format(ftd=ftd))
+                exit(1)
         ### Update the prefix-local config file
         self.log.debug("Updating config file with SDK recipe info.")
         try:
-            old_cfg_data = yaml.safe_load(open(self.prefix.cfg_file).read())
+            old_cfg_data = yaml.safe_load(open(self.prefix.cfg_file).read()) or {}
         except IOError:
+            self.log.debug("There doesn't seem to be a config file yet for this prefix.")
             old_cfg_data = {}
         # Filter out keys we don't care about:
         sdk_cfg_data = {k: v for k, v in r.get_dict().iteritems() if k in self.sdk_recipe_keys_for_config}
@@ -124,6 +156,7 @@ class Prefix(CommandBase):
         cfg_data = dict_merge(old_cfg_data, sdk_cfg_data)
         open(self.prefix.cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
 
+    #########################################################################
     # Sub-commands:
     prefix_cmd_name_list = {
             'info': {
@@ -142,4 +175,5 @@ class Prefix(CommandBase):
                 'run': _run_installsdk,
             },
     }
+    #########################################################################
 

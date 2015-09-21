@@ -294,8 +294,10 @@ class Recipe(object):
             var_name = mo.group(0)
             assert len(var_name) > 1 and var_name[0] == '$'
             var_name = var_name[1:] # Strip $
-            if var_name == 'prefix': # This is special
+            if var_name == 'prefix':
                 return cfg.get_active_prefix().prefix_dir
+            if var_name == 'src_dir':
+                return cfg.get_active_prefix().src_dir
             return vars.get(var_name, str(cfg.get(var_name, '')))
         ###
         # Starts with a $, unless preceded by \
