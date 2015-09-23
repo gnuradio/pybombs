@@ -27,13 +27,14 @@ from pybombs.utils import subproc
 from pybombs.utils import output_proc
 from pybombs.pb_exception import PBException
 from pybombs.utils import vcompare
+from pybombs.utils import utils
 from pybombs.fetchers.base import FetcherBase
 
 
 class File(FetcherBase):
     """
-    The 'file://' protocol is a way of saying you have the archive locally.
-    Will symlink the file to the source dir and then extract it.
+    The 'file' protocol is a way of saying you have the archive locally.
+    Will symlink the file to the source dir and then extract it if its an archive.
     """
     url_type = 'file'
 
@@ -51,9 +52,15 @@ class File(FetcherBase):
             return False
         if url[0] != "/":
             url = os.path.join("..", url)
-        os.symlink(url, os.path.join(self.src_dir, filename))
-        utils.extract(filename)
-
+        os.symlink(url, os.path.join(self.cfg.get_active_prefix().src_dir, filename))
+        if utils.is_archive(filename):
+            self.log.debug("Unpacking {ar}".format(ar=filename))
+            # Move to the correct source location.
+            prefix = utils.extract(filename)
+            self.log.debug("Moving {} to {}".format(prefix, recipe.id))
+            os.rename(prefix, recipe.id) # Will work if arguments are equal
+            # Remove the tar file once it has been extracted
+            os.remove(filename)
         return True
 
 
@@ -62,7 +69,7 @@ class File(FetcherBase):
             self.log.error("Can't return version for {}, not fetched!".format(recipe.id))
             return None
         cwd = os.getcwd()
-        repo_dir = os.path.join(self.src_dir, recipe.id)
+        repo_dir = os.path.join(self.cfg.get_active_prefix().src_dir, recipe.id)
         self.log.obnoxious("Switching cwd to: {}".format(repo_dir))
         os.chdir(repo_dir)
         # TODO run this process properly
