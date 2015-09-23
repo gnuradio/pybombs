@@ -40,7 +40,7 @@ def extract_cfg_items(filename, section, throw_ex=True):
     Read section from a config file and return it as a dict.
     Will throw KeyError if section does not exist.
     """
-    cfg_data = yaml.safe_load(open(filename).read())
+    cfg_data = yaml.safe_load(open(filename).read()) or {}
     try:
         return cfg_data[section]
     except KeyError as e:
@@ -109,6 +109,7 @@ class PrefixInfo(object):
         else:
             config_section = extract_cfg_items(self.cfg_file, 'config', False)
             self._cfg_info = self._merge_config_info_from_file(self.cfg_file, self._cfg_info)
+        print self._cfg_info, 'oooooooooooooooo'
         # 4) Find the src dir
         self.src_dir = config_section.get('srcdir', os.path.join(self.prefix_dir, 'src'))
         self.log.debug("Prefix source dir is: {}".format(self.src_dir))
@@ -148,7 +149,7 @@ class PrefixInfo(object):
         """
         try:
             self.log.debug('Inspecting config file: {}'.format(cfg_file))
-            cfg_data_new = yaml.safe_load(open(cfg_file, 'r').read())
+            cfg_data_new = yaml.safe_load(open(cfg_file, 'r').read()) or {}
         except Exception as e:
             self.log.debug('Well, looks like that failed.')
             return cfg_data
@@ -366,7 +367,7 @@ class ConfigManager(object):
         """
         self.log.debug("Reading config info from file: {0}".format(cfg_filename))
         try:
-            cfg_data = yaml.safe_load(open(cfg_filename).read())
+            cfg_data = yaml.safe_load(open(cfg_filename).read()) or {}
         except Exception as e:
             self.log.debug("Parsing config file failed ({cfgf}).".format(cfgf=cfg_filename))
             self.cfg_cascade.append({})
