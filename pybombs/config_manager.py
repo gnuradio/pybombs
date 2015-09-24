@@ -109,7 +109,6 @@ class PrefixInfo(object):
         else:
             config_section = extract_cfg_items(self.cfg_file, 'config', False)
             self._cfg_info = self._merge_config_info_from_file(self.cfg_file, self._cfg_info)
-        print self._cfg_info, 'oooooooooooooooo'
         # 4) Find the src dir
         self.src_dir = config_section.get('srcdir', os.path.join(self.prefix_dir, 'src'))
         self.log.debug("Prefix source dir is: {}".format(self.src_dir))
@@ -267,7 +266,7 @@ class ConfigManager(object):
         'cc': ('', 'C Compiler Executable [gcc, clang, icc, etc]'),
         'cxx': ('', 'C++ Compiler Executable [g++, clang++, icpc, etc]'),
         'makewidth': ('4', 'Concurrent make threads [1,2,4,8...]'),
-        'packagers': ('apt-get', 'Priority of non-source package managers'),
+        'packagers': ('pip', 'apt-get', 'Priority of non-source package managers'),
     }
     LAYER_DEFAULT = 0
     LAYER_GLOBALS = 1

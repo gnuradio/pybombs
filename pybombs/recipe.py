@@ -317,7 +317,7 @@ def get_recipe(pkgname, target='package'):
     """
     cache_key = pkgname
     if recipe_cache.has_key(cache_key):
-        pb_logging.logger.getChild("get_recipe").debug("Woohoo, this one's already cached ({})".format(pkgname))
+        pb_logging.logger.getChild("get_recipe").obnoxious("Woohoo, this one's already cached ({})".format(pkgname))
         return recipe_cache[cache_key]
     r = Recipe(recipe_manager.recipe_manager.get_recipe_filename(pkgname))
     recipe_cache[cache_key] = r
