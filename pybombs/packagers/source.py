@@ -61,7 +61,7 @@ class Source(PackagerBase):
         """
         This will work whenever any sources are defined.
         """
-        if len(recipe.source) == 0:
+        if not hasattr(recipe, 'source') or len(recipe.source) == 0:
             return None
         # Return a pseudo-version
         # TODO check if we can get something better from the inventory
@@ -77,7 +77,7 @@ class Source(PackagerBase):
         self.static = static
         recipe.set_static(static)
         cwd = os.getcwd()
-        if len(recipe.source) == 0:
+        if not hasattr(recipe, 'source') or len(recipe.source) == 0:
             self.log.warning("Cannot find a source URI for package {}".format(recipe.id))
             return False
         try:
