@@ -78,7 +78,7 @@ class Pip(PackagerBase):
         """
         try:
             self.log.debug("Calling `pip install {pkg}'".format(pkg=pkgname))
-            subprocess.check_call(["sudo", "--set-home", "/usr/local/bin/pip", "install", pkgname])
+            subprocess.check_call(["sudo", "--set-home", sysutils.which('pip'), "install", pkgname])
             self.load_install_cache()
             installed_version = PIP_INSTALLED_CACHE.get(pkgname)
             self.log.debug("Installed version for {pkg} is: {ver}.".format(pkg=pkgname, ver=installed_version))
