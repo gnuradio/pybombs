@@ -126,7 +126,7 @@ class AptGet(PackagerBase):
             # This usually means the packet is not installed
             return False
         except Exception as e:
-            print str(e)
             self.log.error("Running dpkg -s failed.")
+            self.log.obnoxious(str(e))
         return False
 

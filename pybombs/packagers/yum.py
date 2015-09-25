@@ -26,6 +26,7 @@ import re
 import subprocess
 from pybombs.packagers.base import PackagerBase
 from pybombs.utils import sysutils
+from pybombs.utils.vcompare import vcompare
 
 class Yum(PackagerBase):
     """
@@ -42,81 +43,94 @@ class Yum(PackagerBase):
         Check if we can even run apt-get.
         Return True if so.
         """
-        if sysutils.which('yum') is None:
-            return False
-        return True
+        return sysutils.which('yum') is not None
 
-    def _package_install(self, pkg_name, comparator=">=", required_version=None):
+    def _package_install(self, pkgname, comparator=">=", required_version=None):
         """
         Call 'yum install pkgname' if we can satisfy the version requirements.
         """
-        available_version = self.get_version_from_apt_cache(pkgname)
-        if required_version is not None and not vcompare(comparator, required_version, available_version):
+        available_version = self.get_available_version_from_yum(pkgname)
+        if required_version is not None and not vcompare(comparator, available_version, required_version):
             return False
         try:
-            sysutils.monitor_process(["sudo", "apt-get", "-y", "install", name])
+            sysutils.monitor_process(["sudo", "yum", "-y", "install", pkgname])
             return True
-        except:
-            self.log.error("Running apt-get install failed.")
+        except Exception as ex:
+            self.log.error("Running `yum install' failed.")
+            self.log.obnoxious(str(ex))
         return False
 
-    def _package_installed(self, pkg_name, comparator=">=", required_version=None):
+    def _package_installed(self, pkgname, comparator=">=", required_version=None):
         """
         See if the installed version of pkgname matches the version requirements.
         """
-        installed_version = self.get_version_from_dpkg(pkg_name)
+        installed_version = self.get_installed_version_from_yum(pkgname)
         if not installed_version:
             return False
         if required_version is None:
             return True
-        return vcompare(comparator, required_version, installed_version)
+        return vcompare(comparator, installed_version, required_version)
 
-    def _package_exists(self, pkg_name, comparator=">=", required_version=None):
+    def _package_exists(self, pkgname, comparator=">=", required_version=None):
         """
         See if an installable version of pkgname matches the version requirements.
         """
-        available_version = self.get_version_from_apt_cache(pkg_name)
-        if required_version is not None and not vcompare(comparator, required_version, available_version):
+        available_version = self.get_available_version_from_yum(pkgname)
+        if required_version is not None and not vcompare(comparator, available_version, required_version):
             return False
         return available_version
 
-    ### apt-get specific functions:
-    def get_version_from_yum(self, pkgname):
+    ### yum specific functions:
+    def get_available_version_from_yum(self, pkgname):
         """
         Check which version is available in yum.
         """
         try:
-            out = subprocess.check_output(["apt-cache", "showpkg", pkgname])
-            # apt-cache returns nothing on stdout if a package is not found
-            if len(out) >= 0:
-                # Get the versions
-                ver = re.search(
-                        r'Versions: \n(?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n',
-                        out
-                ).group('ver')
-                self.log.debug("Package {} has version {} in apt-cache".format(pkgname, ver))
-                return ver
-            else:
+            out = subprocess.check_output(["yum", "info", pkgname]).strip()
+            if len(out) == 0:
+                self.log.debug("Did not expect empty output for `yum info'...")
                 return False
-        except Exception as e:
-            # Non-zero return.
-            self.log.error("Error running apt-get showpkg")
+            ver = re.search(r'^Version\s+:\s+(?P<ver>.*$)', out, re.MULTILINE).group('ver')
+            self.log.debug("Package {} has version {} in yum".format(pkgname, ver))
+            return ver
+        except subprocess.CalledProcessError as ex:
+            # This usually means the package was not found, so don't worry
+            self.log.obnoxious("`yum info' returned non-zero exit status.")
+            self.log.obnoxious(str(ex))
+            return False
+        except Exception as ex:
+            self.log.error("Error parsing yum info")
+            self.log.error(str(ex))
         return False
 
-    #def get_version_from_dpkg(self, pkgname):
-        #"""
-        #Check which version is currently installed.
-        #"""
-        #try:
-            ## dpkg -s will return non-zero if package does not exist, thus will throw
-            #out = subprocess.check_output(["dpkg", "-s", pkgname])
-            ## Get the versions
-            ##ver = re.search(r'^Version: (?:\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n', out)
-            #ver = re.search(r'^Version: (?:\d+:)?(?P<ver>.*)$', out, re.MULTILINE).group('ver')
-            #self.log.debug("Package {} has version {} in dpkg".format(pkgname, ver))
-            #return ver
-        #except:
-            #self.log.error("Running dpkg -s failed.")
-        #return False
+    def get_installed_version_from_yum(self, pkgname):
+        """
+        Check which version is currently installed.
+        """
+        try:
+            # yum list installed will return non-zero if package does not exist, thus will throw
+            out = subprocess.check_output(
+                    ["yum", "list", "installed", pkgname],
+                    stderr=subprocess.STDOUT
+            ).strip().split("\n")
+            # Output looks like this:
+            # <pkgname>.<arch>   <version>   <more info>
+            # So, two steps:
+            # 1) Check that pkgname is correct
+            # 2) return version
+            for line in out:
+                mobj = re.match(r"^(?P<pkg>[^\.]+)\.(?P<arch>\S+)\s+(?P<ver>[0-9]+(\.[0-9]+){0,2})", line)
+                if mobj and mobj.group('pkg') == pkgname:
+                    ver = mobj.group('ver')
+                    self.log.debug("Package {} has version {} in yum".format(pkgname, ver))
+                    return ver
+            return False
+        except subprocess.CalledProcessError:
+            # This usually means the packet is not installed
+            return False
+        except Exception as ex:
+            self.log.error("Parsing `yum list installed` failed.")
+            self.log.obnoxious(str(ex))
+        return False
 
 
