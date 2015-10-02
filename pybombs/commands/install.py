@@ -126,7 +126,7 @@ class Install(CommandBase):
         Recursively add dependencies to the install tree.
         """
         # Check if package requested to not load deps:
-        if self.cfg.get_package_flags(pkg).get('nodeps') is not None:
+        if self.cfg.get_package_flags(pkg, recipe.get_recipe(pkg).category).get('nodeps') is not None:
             return
         # Load deps:
         deps = recipe.get_recipe(pkg).depends

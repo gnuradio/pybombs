@@ -80,7 +80,12 @@ class PackageManager(object):
         See if package 'pkgname' has 'flag' set (return the boolean value
         of that flag if yes, or None otherwise).
         """
-        return bool(self.cfg.get_package_flags(pkgname).get(flag))
+        return bool(
+            self.cfg.get_package_flags(
+                pkgname,
+                recipe.get_recipe(pkgname).category
+            ).get(flag)
+        )
 
     def get_packagers(self, pkgname):
         """
