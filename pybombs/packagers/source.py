@@ -152,7 +152,7 @@ class Source(PackagerBase):
         self.log.debug("Configuring recipe {}".format(recipe.id))
         self.log.debug("Using vars - {}".format(recipe.vars))
         self.log.debug("In cwd - {}".format(os.getcwd()))
-        pre_cmd = recipe.var_replace_all(recipe.get_command('configure'))
+        pre_cmd = recipe.var_replace_all(self.get_command('configure', recipe))
         cmd = self.filter_cmd(pre_cmd, recipe, 'config_filter')
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
@@ -180,7 +180,7 @@ class Source(PackagerBase):
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
             o_proc = output_proc.OutputProcessorMake(preamble="Building: ")
-        cmd = recipe.var_replace_all(recipe.get_command('make'))
+        cmd = recipe.var_replace_all(self.get_command('make', recipe))
         cmd = self.filter_cmd(cmd, recipe, 'make_filter')
         if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
             self.log.debug("Make successful")
@@ -199,7 +199,7 @@ class Source(PackagerBase):
         """
         self.log.debug("Installing package {}".format(recipe.id))
         self.log.debug("In cwd - {}".format(os.getcwd()))
-        pre_cmd = recipe.var_replace_all(recipe.get_command('install'))
+        pre_cmd = recipe.var_replace_all(self.get_command('install', recipe))
         cmd = self.filter_cmd(pre_cmd, recipe, 'install_filter')
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG:
@@ -225,4 +225,18 @@ class Source(PackagerBase):
         self.log.obnoxious('Filtering command using: {filt}'.format(filt=cmd_filter))
         recipe.vars['command'] = unfiltered_command
         return recipe.var_replace_all(cmd_filter)
+
+    def get_command(self, cmd_idx, recipe):
+        """
+        Look up the command for 'cmd_idx'. Consider package + category flags first,
+        then recipe data.
+        """
+        cmd = None
+        if self.static:
+            cmd = self.cfg.get_package_flags(recipe.id, recipe.category).get("{cmd}_static".format(cmd=cmd_idx))
+        else:
+            cmd = self.cfg.get_package_flags(recipe.id, recipe.category).get(cmd_idx)
+        if cmd is not None:
+            return cmd
+        return recipe.get_command(cmd_idx)
 
