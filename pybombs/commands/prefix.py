@@ -114,7 +114,11 @@ class Prefix(CommandBase):
         """
         ### Get the recipe
         r = recipe.get_recipe(sdkname, target='sdk')
-        os.chdir(self.prefix.src_dir)
+        try:
+            os.chdir(self.prefix.src_dir)
+        except:
+            self.log.error("Source dir required to install SDK.")
+            exit(1)
         ### Install the actual SDK file
         self.log.debug("Fetching SDK `{sdk}'".format(sdk=sdkname))
         fetcher.Fetcher().fetch(r)

@@ -112,6 +112,12 @@ class PrefixInfo(object):
         # 4) Find the src dir
         self.src_dir = config_section.get('srcdir', os.path.join(self.prefix_dir, 'src'))
         self.log.debug("Prefix source dir is: {}".format(self.src_dir))
+        if not os.path.isdir(self.src_dir):
+            self.log.debug("Creating source dir.")
+            try:
+                os.mkdir(self.src_dir)
+            except:
+                self.log.warn("No source directory, and failed to create it.")
         # 5) Find the inventory file
         self.inv_file = os.path.join(self.prefix_cfg_dir, self.inv_file_name)
         if not os.path.isfile(self.inv_file):
