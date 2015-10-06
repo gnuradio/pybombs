@@ -78,7 +78,7 @@ class Source(PackagerBase):
         recipe.set_static(static)
         cwd = os.getcwd()
         if not hasattr(recipe, 'source') or len(recipe.source) == 0:
-            self.log.warning("Cannot find a source URI for package {0}".format(recipe.id))
+            self.log.warn("Cannot find a source URI for package {0}".format(recipe.id))
             return False
         try:
             initial_state = self.inventory.get_state(recipe.id) or 0
