@@ -286,6 +286,9 @@ class Recipe(object):
         from 'recipe'. If keys are not in vars, try config options.
         Default to empty strings.
         """
+        # PyBOMBS1 supported a conditional replacement mechanism,
+        # where variable==FOO?{a}:{b} would return a if variables
+        # matches FOO, or b otherwise. We'll leave this out for now.
         def var_replace(mo, vars, cfg):
             """
             Expects arguments to be matchobjects for strings starting with $.
@@ -303,11 +306,10 @@ class Recipe(object):
         # Starts with a $, unless preceded by \
         var_re = re.compile(r'(?<!\\)\$[a-z][a-z0-9_]*')
         var_repl = lambda mo: var_replace(mo, self.vars, config_manager.config_manager)
-        s = var_re.sub(var_repl, s)
-        # PyBOMBS1 supported a conditional replacement mechanism,
-        # where variable==FOO?{a}:{b} would return a if variables
-        # matches FOO, or b otherwise. We'll leave this out for now.
-        return s
+        (s, n_subs) = var_re.subn(var_repl, s)
+        if n_subs == 0:
+            return s
+        return self.var_replace_all(s)
 
 
 recipe_cache = {}
