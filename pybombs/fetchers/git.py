@@ -50,8 +50,6 @@ class Git(FetcherBase):
         if len(gitcache):
             self.log.debug("Using gitcache at {}", gitcache)
             gitcache = " --reference {}".format(gitcache)
-        # TODO maybe we don't want depth=1, ask config_manager
-        # Errors with the gnuradio.org sources, but not github.com sources
         git_cmd = "git clone {recipe_gitargs} {gitargs}{gitcache} -b {branch} {url} {name}".format(
             recipe_gitargs=recipe.gitargs,
             gitargs=recipe.gitargs,
