@@ -116,10 +116,15 @@ class Install(CommandBase):
                 exit(2)
             if pkg in packages_to_update:
                 self.log.info("Updating package: {}".format(pkg))
-                self.pm.update(pkg)
+                if not self.pm.update(pkg):
+                    self.log.error("Error updating package {0}. Aborting.".format(pkg))
+                    exit(1)
             else:
                 self.log.info("Installing package: {}".format(pkg))
-                self.pm.install(pkg, static=self.args.static)
+                if not self.pm.install(pkg, static=self.args.static):
+                    self.log.error("Error installing package {0}. Aborting.".format(pkg))
+                    exit(1)
+            self.log.info("Installation successful.")
 
     def _add_deps_recursive(self, install_tree, pkg):
         """

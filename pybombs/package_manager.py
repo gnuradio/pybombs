@@ -162,7 +162,7 @@ class PackageManager(object):
             except PBException as e:
                 self.log.error(
                     "Something went wrong while trying to install {} using {}: {}".format(
-                        name, pkgr.name, str(e)
+                        name, pkgr.name, str(e).strip()
                     )
                 )
                 continue
