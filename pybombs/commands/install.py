@@ -115,10 +115,10 @@ class Install(CommandBase):
                 self.log.error("Package {} can't be found!".format(pkg))
                 exit(2)
             if pkg in packages_to_update:
-                self.log.debug("Updating package: {}".format(pkg))
+                self.log.info("Updating package: {}".format(pkg))
                 self.pm.update(pkg)
             else:
-                self.log.debug("Installing package: {}".format(pkg))
+                self.log.info("Installing package: {}".format(pkg))
                 self.pm.install(pkg, static=self.args.static)
 
     def _add_deps_recursive(self, install_tree, pkg):
