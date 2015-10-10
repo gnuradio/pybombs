@@ -20,6 +20,7 @@
 #
 
 from base import PackagerBase, get_by_name
+from pkgconfig import PkgConfig
 from aptget import AptGet
 from yum import Yum
 from pip import Pip
