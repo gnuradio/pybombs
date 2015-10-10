@@ -103,7 +103,7 @@ class PBPackageRequirementScanner(Scanner):
         self.log = pb_logging.logger.getChild("ReqScanner")
         self.preq = None
         if not req_string:
-            self.log.debug("Empty requirements string.")
+            self.log.obnoxious("Empty requirements string.")
             return
         lexicon = Lexicon([
             (self.rspace, IGNORE),
@@ -121,7 +121,7 @@ class PBPackageRequirementScanner(Scanner):
         self.log.debug("Parsing '{rs}'".format(rs=req_string))
         Scanner.read(self)
         fileobj.close()
-        self.log.debug("Done Parsing.")
+        self.log.obnoxious("Done Parsing.")
 
     def pl_pkg(self, scanner, pkg_name):
         " Called in a package requirements list, when a package name is found "
