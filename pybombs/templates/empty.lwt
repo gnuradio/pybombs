@@ -27,4 +27,5 @@ uninstall: ""
 verify: ""
 gitrev: ""
 gitargs: ""
+gitbranch: master
 inherit: false
