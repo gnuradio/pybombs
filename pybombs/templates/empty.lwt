@@ -27,3 +27,4 @@ uninstall: ""
 verify: ""
 gitrev: ""
 gitargs: ""
+inherit: false
