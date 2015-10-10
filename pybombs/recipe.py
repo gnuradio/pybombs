@@ -185,13 +185,14 @@ class Recipe(object):
     def __init__(self, filename):
         self.id = os.path.splitext(os.path.basename(filename))[0]
         self.log = pb_logging.logger.getChild("Recipe[{}]".format(self.id))
+        self.inherit = 'empty'
         self._static = False
         # Load original recipe:
         self.log.obnoxious("Loading recipe file: {}".format(filename))
         self._data = self._load_recipe_from_yaml(filename)
         # Recursively do the inheritance:
-        while self._data.get('inherit'):
-            inherit_from = self._data.get('inherit')
+        while self._data.get('inherit', 'empty'):
+            inherit_from = self._data.get('inherit', 'empty')
             try:
                 filename = recipe_manager.recipe_manager.get_template_filename(inherit_from)
                 self.log.obnoxious("Loading template file: {}".format(filename))

@@ -62,8 +62,8 @@ class PrefixInfo(object):
             'prefix_config_dir': {},
             'env': {},
             'recipes': {},
-            'packages': {'gnuradio': 'forcebuild'},
-            'categories': {'common': 'forcebuild'},
+            'packages': {'gnuradio': {'forcebuild': True}},
+            'categories': {'common': {'forcebuild': True}},
     }
 
     def __init__(self, args, cfg_list):
