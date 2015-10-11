@@ -19,4 +19,6 @@
 # Boston, MA 02110-1301, USA.
 #
 
+__version__ = "2.0.0a1"
+
 from utils import dict_merge

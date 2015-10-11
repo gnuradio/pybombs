@@ -24,9 +24,13 @@
 
 from pybombs.commands import *
 
-if __name__ == '__main__':
+def main():
+    " Go, go, go! "
     try:
         dispatch(globals().values())
     except KeyboardInterrupt:
         pass
+
+if __name__ == '__main__':
+    main()
 
