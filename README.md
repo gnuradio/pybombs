@@ -25,11 +25,30 @@ along with PyBOMBS; see the file COPYING.  If not, write to
 the Free Software Foundation, Inc., 51 Franklin Street,
 Boston, MA 02110-1301, USA.
 
+## Installation
+
+PyBOMBS can be installed using Python's setuptools. From the top
+level of the source code repository, run
+
+    $ python setup.py build
+    $ sudo python setup.py install
+
+This will install PyBOMBS and all required dependencies. See
+
+   $ python setup.py build --help
+   $ python setup.py install --help
+
+for additional settings.
+
+For development purposes, it's possible to run pybombs without
+installation. Simply run `pybombs/main.py` and make sure `pybombs/`
+is in reach.
+
 ## Prefixes
 
 A prefix is a directory into which packages are installed.
-The prefix may be /usr/local/ for system-wide installation
-of packages, or something like ~/src/prefix if you want to
+The prefix may be `/usr/local/` for system-wide installation
+of packages, or something like `~/src/prefix` if you want to
 have a user-level, local installation path. The latter is
 highly recommended for local development, as it allows
 compilation and installation without root access.
@@ -104,6 +123,8 @@ config:
 
 ### Recipe Format
 
+Recipes files are in YAML format.
+
 tbw
 
 ### Recipe Management
@@ -126,7 +147,7 @@ Recipe management can be mostly done through the command line using
 the `pybombs recipes` command -- editing configuration files is possible,
 but often not necessary. Run
 
-    pybombs help recipes
+    $ pybombs help recipes
 
 for further information on the `pybombs recipes` command.
 
