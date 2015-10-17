@@ -52,6 +52,13 @@ class Dummy(PackagerBase):
         self.log.info("Pretending to install package {}.".format(recipe.id))
         return True
 
+    def update(self, recipe):
+        """
+        Pseudo-update package
+        """
+        self.log.info("Pretending to update package {}.".format(recipe.id))
+        return True
+
     def installed(self, recipe):
         """
         We always pretend the package is not yet installed

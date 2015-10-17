@@ -69,6 +69,12 @@ class PkgConfig(PackagerBase):
         """
         return False
 
+    def _package_update(self, pkgname, comparator=">=", required_version=None):
+        """
+        pkg-config can't update stuff, so this must always fail
+        """
+        return False
+
     ### pkg-config specific functions:
     def get_version_from_pkgconfig(self, pkgname):
         """

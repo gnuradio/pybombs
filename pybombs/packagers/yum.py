@@ -45,20 +45,14 @@ class Yum(PackagerBase):
         """
         return sysutils.which('yum') is not None
 
-    def _package_install(self, pkgname, comparator=">=", required_version=None):
+    def _package_exists(self, pkgname, comparator=">=", required_version=None):
         """
-        Call 'yum install pkgname' if we can satisfy the version requirements.
+        See if an installable version of pkgname matches the version requirements.
         """
         available_version = self.get_available_version_from_yum(pkgname)
         if required_version is not None and not vcompare(comparator, available_version, required_version):
             return False
-        try:
-            sysutils.monitor_process(["sudo", "yum", "-y", "install", pkgname])
-            return True
-        except Exception as ex:
-            self.log.error("Running `yum install' failed.")
-            self.log.obnoxious(str(ex))
-        return False
+        return available_version
 
     def _package_installed(self, pkgname, comparator=">=", required_version=None):
         """
@@ -71,14 +65,26 @@ class Yum(PackagerBase):
             return True
         return vcompare(comparator, installed_version, required_version)
 
-    def _package_exists(self, pkgname, comparator=">=", required_version=None):
+    def _package_install(self, pkgname, comparator=">=", required_version=None, cmd='install'):
         """
-        See if an installable version of pkgname matches the version requirements.
+        Call 'yum install pkgname' if we can satisfy the version requirements.
         """
         available_version = self.get_available_version_from_yum(pkgname)
         if required_version is not None and not vcompare(comparator, available_version, required_version):
             return False
-        return available_version
+        try:
+            sysutils.monitor_process(["sudo", "yum", "-y", cmd, pkgname])
+            return True
+        except Exception as ex:
+            self.log.error("Running `yum install' failed.")
+            self.log.obnoxious(str(ex))
+        return False
+
+    def _package_update(self, pkgname, comparator=">=", required_version=None):
+        """
+        Call 'yum update pkgname' if we can satisfy the version requirements.
+        """
+        return self._package_install(pkgname, comparator, required_version, cmd='update')
 
     ### yum specific functions:
     def get_available_version_from_yum(self, pkgname):

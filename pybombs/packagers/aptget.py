@@ -49,6 +49,26 @@ class AptGet(PackagerBase):
             return False
         return True
 
+    def _package_exists(self, pkg_name, comparator=">=", required_version=None):
+        """
+        See if an installable version of pkgname matches the version requirements.
+        """
+        available_version = self.get_version_from_apt_cache(pkg_name)
+        if required_version is not None and not vcompare(comparator, available_version, required_version):
+            return False
+        return available_version
+
+    def _package_installed(self, pkg_name, comparator=">=", required_version=None):
+        """
+        See if the installed version of pkgname matches the version requirements.
+        """
+        installed_version = self.get_version_from_dpkg(pkg_name)
+        if not installed_version:
+            return False
+        if required_version is None:
+            return True
+        return vcompare(comparator, installed_version, required_version)
+
     def _package_install(self, pkg_name, comparator=">=", required_version=None):
         """
         Call 'apt-get install pkgname' if we can satisfy the version requirements.
@@ -63,25 +83,11 @@ class AptGet(PackagerBase):
             self.log.error("Running apt-get install failed.")
         return False
 
-    def _package_installed(self, pkg_name, comparator=">=", required_version=None):
+    def _package_update(self, pkg_name, comparator=">=", required_version=None):
         """
-        See if the installed version of pkgname matches the version requirements.
+        Call 'apt-get install pkgname' if we can satisfy the version requirements.
         """
-        installed_version = self.get_version_from_dpkg(pkg_name)
-        if not installed_version:
-            return False
-        if required_version is None:
-            return True
-        return vcompare(comparator, installed_version, required_version)
-
-    def _package_exists(self, pkg_name, comparator=">=", required_version=None):
-        """
-        See if an installable version of pkgname matches the version requirements.
-        """
-        available_version = self.get_version_from_apt_cache(pkg_name)
-        if required_version is not None and not vcompare(comparator, available_version, required_version):
-            return False
-        return available_version
+        return self._package_install(pkg_name, comparator, required_version)
 
     ### apt-get specific functions:
     def get_version_from_apt_cache(self, pkgname):

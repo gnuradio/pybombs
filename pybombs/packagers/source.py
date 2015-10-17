@@ -67,6 +67,15 @@ class Source(PackagerBase):
         # TODO check if we can get something better from the inventory
         return "0.0"
 
+    def installed(self, recipe):
+        """
+        We read the version number from the inventory. It might not exist,
+        but that's OK.
+        """
+        if self.inventory.has(recipe.id) and self.inventory.get_state(recipe.id) == 'installed':
+            return self.inventory.get_version(recipe.id, True)
+        return False
+
     def install(self, recipe, static=False):
         """
         Run the source installation process for package 'recipe'.
@@ -128,14 +137,10 @@ class Source(PackagerBase):
         os.chdir(cwd)
         return True
 
-    def installed(self, recipe):
-        """
-        We read the version number from the inventory. It might not exist,
-        but that's OK.
-        """
-        if self.inventory.has(recipe.id) and self.inventory.get_state(recipe.id) == 'installed':
-            return self.inventory.get_version(recipe.id, True)
-        return False
+    def update(self, recipe):
+        # tbw
+        raise NotImplementedError
+        pass
 
     #########################################################################
     # Build methods: All of these must raise a PBException when something
