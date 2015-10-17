@@ -29,3 +29,4 @@ gitrev: ""
 gitargs: ""
 gitbranch: master
 inherit: false
+installdir: build
