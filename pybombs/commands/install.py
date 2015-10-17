@@ -20,12 +20,9 @@
 #
 """ PyBOMBS command: install """
 
-import copy
 from pybombs.commands import CommandBase
-from pybombs import simple_tree
-from pybombs import recipe
 from pybombs import package_manager
-
+from pybombs import dep_manager
 
 class Install(CommandBase):
     """ Install or update a package """
@@ -51,12 +48,12 @@ class Install(CommandBase):
                 help="Print dependency tree",
                 action='store_true',
         )
-        parser.add_argument(
-                '--static',
-                help="Build package(s) statically (implies source build)",
-                action='store_true',
-        )
         if cmd == 'install':
+            parser.add_argument(
+                    '--static',
+                    help="Build package(s) statically (implies source build)",
+                    action='store_true',
+            )
             parser.add_argument(
                     '-u', '--update',
                     help="If packages are already installed, update them instead.",
@@ -70,7 +67,7 @@ class Install(CommandBase):
                 require_prefix=True,
                 require_inventory=False,
         )
-        self.args.packages = args.packages[0] # wat?
+        self.args.packages = args.packages[0]
         if len(self.args.packages) == 0 and not args.all:
             self.log.error("No packages specified.")
             exit(1)
@@ -78,94 +75,49 @@ class Install(CommandBase):
         self.fail_if_not_exists = (cmd == 'update')
         self.pm = package_manager.PackageManager()
 
+    def _check_if_pkg_goes_into_tree(self, pkg):
+        """
+        Return True if pkg has a legitimate right to be in the tree.
+        """
+        if self.fail_if_not_exists:
+            return bool(self.pm.installed(pkg))
+        return self.update_if_exists or not self.pm.installed(pkg)
+
     def run(self):
         """ Go, go, go! """
-        install_tree = simple_tree.SimpleTree()
-        packages_to_update = []
-        ### Step 1: Make a list of packages to install
-        # Loop through all packages to install
-        for pkg in self.args.packages:
-            # Check is a valid package:
-            if not self.pm.exists(pkg):
-                self.log.error("Package does not exist: {}".format(pkg))
-                exit(1)
-            # Check if we already covered this package
-            if pkg in install_tree.get_nodes():
-                continue
-            # Check if package is already installed:
-            if not self.pm.installed(pkg):
-                if self.fail_if_not_exists:
-                    self.log.error("Package {} is not installed. Aborting.".format(pkg))
+        ### Sanity checks
+        if self.fail_if_not_exists:
+            for pkg in self.args.packages:
+                if not self.pm.installed(pkg):
+                    self.log.error("Package {0} is not installed. Aborting.".format(pkg))
                     exit(1)
-                install_tree.insert_at(pkg)
-                self._add_deps_recursive(install_tree, pkg)
-            elif self.update_if_exists:
-                packages_to_update.append(pkg)
-                install_tree.insert_at(pkg)
-                self._add_deps_recursive(install_tree, pkg)
-            # If it's already installed, but we didn't select update, just
-            # do nothing.
+        ### Make install tree
+        install_tree = dep_manager.DepManager().make_dep_tree(
+            self.args.packages,
+            self._check_if_pkg_goes_into_tree
+        )
         self.log.debug("Install tree:")
         if self.log.getEffectiveLevel() <= 20 or self.args.print_tree:
             install_tree.pretty_print()
-        ### Step 2: Recursively install, starting at the leaf nodes
+        ### Recursively install/update, starting at the leaf nodes
         while not install_tree.empty():
             pkg = install_tree.pop_leaf_node()
-            if not self.pm.exists(pkg):
-                self.log.error("Package {} can't be found!".format(pkg))
-                exit(2)
-            if pkg in packages_to_update:
-                self.log.info("Updating package: {}".format(pkg))
+            if self.pm.installed(pkg):
+                self.log.info("Updating package: {0}".format(pkg))
                 if not self.pm.update(pkg):
                     self.log.error("Error updating package {0}. Aborting.".format(pkg))
                     exit(1)
+                self.log.info("Update successful.")
             else:
-                self.log.info("Installing package: {}".format(pkg))
+                self.log.info("Installing package: {0}".format(pkg))
                 if not self.pm.install(pkg, static=self.args.static):
                     self.log.error("Error installing package {0}. Aborting.".format(pkg))
                     exit(1)
-            self.log.info("Installation successful.")
-
-    def _add_deps_recursive(self, install_tree, pkg):
-        """
-        Recursively add dependencies to the install tree.
-        """
-        # Check if package requested to not load deps:
-        if self.cfg.get_package_flags(pkg, recipe.get_recipe(pkg).category).get('nodeps') is not None:
-            return
-        # Load deps:
-        deps = recipe.get_recipe(pkg).depends
-        # Filter for stuff already in the tree:
-        deps_to_install = [dep for dep in deps if not dep in install_tree.get_nodes()]
-        # Filter for stuff already installed:
-        deps_to_install = filter(self._check_if_dep_needs_installing, deps_to_install)
-        if len(deps_to_install) == 0:
-            return
-        # First, add all dependencies into the install tree:
-        install_tree.insert_at(deps_to_install, pkg)
-        # Then, extend the tree if the dependencies have dependencies themselves:
-        for dep in deps_to_install:
-            if isinstance(dep, list):
-                # I honestly have no clue why this happens, yet sometimes
-                # it does.
-                continue
-            if not self.update_if_exists and self.pm.installed(dep):
-                # We don't need to extend nodes if the package is already
-                # installed
-                continue
-            self._add_deps_recursive(install_tree, dep)
-
-    def _check_if_dep_needs_installing(self, dep):
-        """
-        Return True for package dep if it's not already installed,
-        or if we want to update it.
-        """
-        return self.update_if_exists or not self.pm.installed(dep)
-
+                self.log.info("Installation successful.")
 
 ### Damn, you found it :)
 class Moo(CommandBase):
-    """ Diary component of PyBOMBS """
+    """ Secret dairy component of PyBOMBS """
     cmds = {
         'moo': 'MOoO',
     }
