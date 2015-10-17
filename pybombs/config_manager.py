@@ -466,6 +466,10 @@ class ConfigManager(object):
         Return all the package flags of pkgname as a dictionary.
         If pkgname doesn't have any package flags, return an empty dict.
 
+        Note: Only returns settings from the local settings files! If you
+        want the full set of current package settings, prefer
+        recipe.get_local_package_data().
+
         If categoryname is provided, it will load the category flags first
         and then merge the package flags on top of it.
         """
