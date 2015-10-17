@@ -214,7 +214,7 @@ class Recipe(object):
             self._data.get('vars', {}),
             config_manager.config_manager.get_package_flags(
                 self.id, self._data.get('category')
-            )
+            ).get('vars', {})
         )
         # Map all recipe info onto self:
         for k, v in self._data.iteritems():
@@ -311,6 +311,21 @@ class Recipe(object):
         if n_subs == 0:
             return s
         return self.var_replace_all(s)
+
+    def get_local_package_data(self):
+        """
+        Merges the recipe data with local config settings. Local settings
+        always supersede recipe settings.
+
+        This allows users to override anything in a recipe with whatever's stored
+        in the `package:` and `category:` sections of their local config files.
+        """
+        return dict_merge(
+            self.get_dict(),
+            config_manager.config_manager.get_package_flags(
+                self.id, self.get_dict().get('category')
+            )
+        )
 
 
 recipe_cache = {}
