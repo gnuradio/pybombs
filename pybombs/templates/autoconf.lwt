@@ -22,3 +22,4 @@ configure: ./configure --prefix=$prefix $config_opt CC=$cc CXX=$cxx
 make: make -j$makewidth
 install: make install
 uninstall: make uninstall
+installdir: .
