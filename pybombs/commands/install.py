@@ -48,6 +48,11 @@ class Install(CommandBase):
                 help="Print dependency tree",
                 action='store_true',
         )
+        parser.add_argument(
+                '--no-deps',
+                help="Skip dependencies",
+                action='store_true',
+        )
         if cmd == 'install':
             parser.add_argument(
                     '--static',
@@ -94,7 +99,7 @@ class Install(CommandBase):
         ### Make install tree
         install_tree = dep_manager.DepManager().make_dep_tree(
             self.args.packages,
-            self._check_if_pkg_goes_into_tree
+            self._check_if_pkg_goes_into_tree if not self.args.no_deps else lambda x: bool(x in self.args.packages)
         )
         self.log.debug("Install tree:")
         if self.log.getEffectiveLevel() <= 20 or self.args.print_tree:
