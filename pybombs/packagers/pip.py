@@ -72,13 +72,14 @@ class Pip(PackagerBase):
             self.log.debug("Package {pkg} already installed by pip.".format(pkg=pkgname))
         return False
 
-    def _package_install(self, pkgname, comparator=">=", required_version=None):
+    def _package_install(self, pkgname, comparator=">=", required_version=None, update=False):
         """
         Call 'pip install pkgname' if we can satisfy the version requirements.
         """
         try:
             self.log.debug("Calling `pip install {pkg}'".format(pkg=pkgname))
-            subprocess.check_call(["sudo", "--set-home", sysutils.which('pip'), "install", pkgname])
+            extra_flag = '' if not update else '--upgrade'
+            subprocess.check_call(["sudo", "--set-home", sysutils.which('pip'), "install", extra_flag, pkgname])
             self.load_install_cache()
             installed_version = PIP_INSTALLED_CACHE.get(pkgname)
             self.log.debug("Installed version for {pkg} is: {ver}.".format(pkg=pkgname, ver=installed_version))
@@ -92,6 +93,12 @@ class Pip(PackagerBase):
             self.log.error("Running pip install failed.")
             self.log.error(str(e))
         return False
+
+    def _package_update(self, pkgname, comparator=">=", required_version=None):
+        """
+        Call 'pip install --upgrade pkgname' if we can satisfy the version requirements.
+        """
+        return self._package_install(pkgname, comparator, required_version, update=True)
 
     ### pip specific functions:
     def check_package_in_pip(self, pkgname):

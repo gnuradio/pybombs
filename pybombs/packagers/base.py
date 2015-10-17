@@ -54,15 +54,19 @@ class PackagerBase(object):
         # If we run this code, the assumption is that we're running a
         # package manager. The source manager will override this function.
         self.log.obnoxious("exists({})".format(recipe.id))
-        try:
-            satisfy_rule = recipe.get_package_reqs(self.pkgtype)
-        except KeyError as e:
-            self.log.debug("No satisfy rule for package type {}".format(self.pkgtype))
-            return False
-        if satisfy_rule is None:
-            return None
-        self.log.obnoxious("Calling ev for recursive availability checking")
-        return satisfy_rule.ev(self._package_exists)
+        return self._packager_run_tree(recipe, self._package_exists)
+
+    def installed(self, recipe):
+        """
+        Returns the installed version of package (identified by recipe)
+        as a string, or False if the package is not installed.
+        May also return True if a version can't be determined, but the
+        recipe is installed.
+        """
+        # If we run this code, the assumption is that we're running a
+        # package manager. The source manager will override this function.
+        self.log.obnoxious("Checking if recipe {} is installed".format(recipe.id))
+        return self._packager_run_tree(recipe, self._package_installed)
 
     def install(self, recipe, static=False):
         """
@@ -75,19 +79,11 @@ class PackagerBase(object):
         # If we run this code, the assumption is that we're running a
         # package manager. The source manager will override this function.
         self.log.obnoxious("install({})".format(recipe.id))
-        try:
-            satisfy_rule = recipe.get_package_reqs(self.pkgtype)
-        except KeyError as e:
-            self.log.debug("No satisfy rule for package type {}".format(self.pkgtype))
-            return False
-        if satisfy_rule is None:
-            return None
-        self.log.obnoxious("Calling ev for recursive installation")
-        return satisfy_rule.ev(self._package_install)
+        return self._packager_run_tree(recipe, self._package_install)
 
-    def installed(self, recipe):
+    def update(self, recipe):
         """
-        Returns the installed version of package (identified by recipe)
+        Returns the updated version of package (identified by recipe)
         as a string, or False if the package is not installed.
         May also return True if a version can't be determined, but the
         recipe is installed.
@@ -95,6 +91,19 @@ class PackagerBase(object):
         # If we run this code, the assumption is that we're running a
         # package manager. The source manager will override this function.
         self.log.obnoxious("Checking if recipe {} is installed".format(recipe.id))
+        return self._packager_run_tree(recipe, self._package_installed)
+
+    ### Package-manager specific helpers ####################################
+    # Most packagers will work with a system packager in the background (e.g.
+    # ap-get, dnf, etc. All of these pretty much have the same behaviour, and
+    # only need the backend communication implemented.
+    #
+    # The source packager is the only exception, and will override the functions
+    # above, orphaning these methods. But who cares.
+    def _packager_run_tree(self, recipe, satisfy_evaluator):
+        """
+        Recursively evaluate satisfy rules given in a recipe.
+        """
         try:
             satisfy_rule = recipe.get_package_reqs(self.pkgtype)
         except KeyError as e:
@@ -102,8 +111,24 @@ class PackagerBase(object):
             return False
         if satisfy_rule is None:
             return None
-        self.log.obnoxious("Calling ev for recursive install state checking")
-        return satisfy_rule.ev(self._package_installed)
+        self.log.obnoxious("Calling ev for recursive satisfier rule evaluation")
+        return satisfy_rule.ev(satisfy_evaluator)
+
+    def _package_exists(self, pkg_name, comparator=">=", required_version=None):
+        """
+        Check if `pkg_name` is installable through this packager.
+        Return type same as 'exists()'.
+        """
+        raise NotImplementedError()
+
+    def _package_update(self, pkg_name, comparator=">=", required_version=None):
+        """
+        Updates a specific package through the current package manager.
+        This is typically called by update() to do the actual package
+        update call.
+        Return type same as 'update()'.
+        """
+        raise NotImplementedError()
 
     def _package_install(self, pkg_name, comparator=">=", required_version=None):
         """
@@ -116,14 +141,12 @@ class PackagerBase(object):
 
     def _package_installed(self, pkg_name, comparator=">=", required_version=None):
         """
+        Queries the current package mananger to see if a package is installed.
+        Return type same as 'installed()'.
         """
         raise NotImplementedError()
-
-    def _package_exists(self, pkg_name, comparator=">=", required_version=None):
-        """
-        Check if a pkg_name is installable through this packager.
-        """
-        raise NotImplementedError()
+    #
+    #########################################################################
 
 def get_by_name(name, objs):
     """
