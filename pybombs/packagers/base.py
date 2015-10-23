@@ -24,7 +24,6 @@ Packager: Base class
 
 from pybombs import pb_logging
 from pybombs.config_manager import config_manager
-from pybombs.utils import vcompare
 
 class PackagerBase(object):
     """
@@ -106,7 +105,7 @@ class PackagerBase(object):
         """
         try:
             satisfy_rule = recipe.get_package_reqs(self.pkgtype)
-        except KeyError as e:
+        except KeyError:
             self.log.debug("No satisfy rule for package type {}".format(self.pkgtype))
             return False
         if satisfy_rule is None:

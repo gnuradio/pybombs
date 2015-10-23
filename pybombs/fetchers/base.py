@@ -23,9 +23,7 @@ Fetcher: Base class
 """
 
 from pybombs import pb_logging
-from pybombs.pb_exception import PBException
 from pybombs.config_manager import config_manager
-
 
 class FetcherBase(object):
     """
@@ -37,20 +35,25 @@ class FetcherBase(object):
         self.cfg = config_manager
         self.log = pb_logging.logger.getChild("Fetcher.{}".format(self.url_type))
 
-    def _fetch(self, url, recipe):
+    def fetch_url(self, src, dest, dirname, args={}):
         """
-        Overload this to implement the actual fetch.
+        - src: URL, without the <type>+ prefix.
+        - dest: Store the fetched stuff into here
+        - dirname: Put the result into a dir with this name, it'll be a subdir of dest
+        - args: Additional args to pass to the actual fetcher
         """
-        raise RuntimeError("Can't fetch {} -- Function not implemented!".format(url))
+        raise NotImplementedError
 
-    def _clean(self):
+    def update_src(self, src, dest, dirname, args={}):
         """
-        Overload this to implement the actual fetch.
+        - src: URL, without the <type>+ prefix.
+        - dest: Store the fetched stuff into here
+        - dirname: Put the result into a dir with this name, it'll be a subdir of dest
+        - args: Additional args to pass to the actual fetcher
         """
-        raise RuntimeError("Can't clean -- Function not implemented!")
+        raise NotImplementedError
 
-
-# Factory functions
+### Factory functions #######################################################
 def get_all():
     """
     Return dictionary of Fetchers
@@ -65,15 +68,15 @@ def get_all():
             pass
     return fetcher_dict
 
-
 def get_by_name(url_type):
-        """
-        Return fetcher for specific url type
-        """
-        from pybombs import fetchers
-        for g in fetchers.__dict__.values():
-            try:
-                if issubclass(g, FetcherBase) and g.url_type == url_type:
-                    return g()
-            except (TypeError, AttributeError):
-                pass
+    """
+    Return fetcher for specific url type
+    """
+    from pybombs import fetchers
+    for g in fetchers.__dict__.values():
+        try:
+            if issubclass(g, FetcherBase) and g.url_type == url_type:
+                return g()
+        except (TypeError, AttributeError):
+            pass
+

@@ -23,25 +23,20 @@ Packager: Source packages
 """
 
 import os
-import re
-import copy
-import shutil
 from pybombs import pb_logging
 from pybombs import inventory
 from pybombs.utils import subproc
 from pybombs.utils import output_proc
 from pybombs.pb_exception import PBException
 from pybombs.fetcher import Fetcher
-from pybombs.config_manager import config_manager
 from pybombs.packagers.base import PackagerBase
 
-
 class Source(PackagerBase):
-    name = "source"
-
     """
     Source package manager.
     """
+    name = "source"
+
     def __init__(self):
         PackagerBase.__init__(self)
         if self.cfg.get_active_prefix().prefix_dir is None:
@@ -72,11 +67,11 @@ class Source(PackagerBase):
         We read the version number from the inventory. It might not exist,
         but that's OK.
         """
-        if self.inventory.has(recipe.id) and self.inventory.get_state(recipe.id) == 'installed':
+        if self.inventory.get_state(recipe.id) == self.inventory.STATE_INSTALLED:
             return self.inventory.get_version(recipe.id, True)
         return False
 
-    def install(self, recipe, static=False):
+    def install(self, recipe, static=False, update=False):
         """
         Run the source installation process for package 'recipe'.
 
@@ -86,14 +81,21 @@ class Source(PackagerBase):
         self.static = static
         recipe.set_static(static)
         cwd = os.getcwd()
+        get_state = lambda: (self.inventory.get_state(recipe.id) or 0)
+        set_state = lambda state: self.inventory.set_state(recipe.id, state)
         if not hasattr(recipe, 'source') or len(recipe.source) == 0:
             self.log.warn("Cannot find a source URI for package {0}".format(recipe.id))
             return False
         try:
-            initial_state = self.inventory.get_state(recipe.id) or 0
-            self.log.debug("State on package {} is {}".format(recipe.id, initial_state))
+            if update:
+                if get_state() < self.inventory.STATE_CONFIGURED:
+                    self.log.error("Can't update package {0}, it's not yet configured.".format(recipe.id))
+                    exit(1)
+                Fetcher().update(recipe)
+                set_state(self.inventory.STATE_BUILT)
+            self.log.debug("State on package {0} is {1}".format(recipe.id, get_state()))
             # First, make sure we have the sources
-            if self.inventory.get_state(recipe.id) < self.inventory.STATE_FETCHED:
+            if not update and get_state() < self.inventory.STATE_FETCHED:
                 Fetcher().fetch(recipe)
             else:
                 self.log.debug("Package {} is already fetched.".format(recipe.id))
@@ -106,26 +108,30 @@ class Source(PackagerBase):
                 return False
             if os.path.exists(os.path.join(pkg_src_dir, builddir)):
                 #shutil.rmtree(builddir)
-                self.log.warn("Build dir already exists: {}".format(builddir))
+                if not update:
+                    self.log.warn("Build dir already exists: {}".format(builddir))
             else:
+                if update:
+                    self.log.error("Can't update package {0}, build directory seems to be missing.".format(recipe.id))
+                    exit(1)
                 os.mkdir(builddir)
             os.chdir(builddir)
             ### Run the build process
-            if self.inventory.get_state(recipe.id) < self.inventory.STATE_CONFIGURED:
+            if get_state() < self.inventory.STATE_CONFIGURED:
                 self.configure(recipe)
-                self.inventory.set_state(recipe.id, self.inventory.STATE_CONFIGURED)
+                set_state(self.inventory.STATE_CONFIGURED)
                 self.inventory.save()
             else:
                 self.log.debug("Package {} is already configured.".format(recipe.id))
-            if self.inventory.get_state(recipe.id) < self.inventory.STATE_BUILT:
+            if get_state() < self.inventory.STATE_BUILT:
                 self.make(recipe)
-                self.inventory.set_state(recipe.id, self.inventory.STATE_BUILT)
+                set_state(self.inventory.STATE_BUILT)
                 self.inventory.save()
             else:
                 self.log.debug("Package {} is already built.".format(recipe.id))
-            if self.inventory.get_state(recipe.id) < self.inventory.STATE_INSTALLED:
+            if get_state() < self.inventory.STATE_INSTALLED:
                 self.make_install(recipe)
-                self.inventory.set_state(recipe.id, self.inventory.STATE_INSTALLED)
+                set_state(self.inventory.STATE_INSTALLED)
                 self.inventory.save()
             else:
                 self.log.debug("Package {} is already installed.".format(recipe.id))
@@ -138,9 +144,18 @@ class Source(PackagerBase):
         return True
 
     def update(self, recipe):
-        # tbw
-        raise NotImplementedError
-        pass
+        """
+        Update the source package. Algorithm:
+        - Check its at least in state 'configured'
+        - Do a fetch-update
+        - Set state to 'configured'
+        - Jump straight to 'make' step
+        - Continue like install()
+
+        This is actually handled by the install() function.
+        """
+        return self.install(recipe, update=True)
+
 
     #########################################################################
     # Build methods: All of these must raise a PBException when something
