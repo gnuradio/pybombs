@@ -62,7 +62,7 @@ class DepManager(object):
         Recursively add dependencies to the install tree.
         """
         # Load deps:
-        deps = recipe.get_recipe(pkg).get_local_package_data()['depends']
+        deps = recipe.get_recipe(pkg).get_local_package_data()['depends'] or []
         # Filter for illegal stuff:
         for dep in deps:
             if not self.pm.exists(pkg):
@@ -70,7 +70,7 @@ class DepManager(object):
                 exit(1)
         # Filter all packages either already in the tree, or not wanted:
         deps_to_install = filter(
-            lambda pkg: filter_callback(pkg) and pkg not in install_tree.get_nodes(),
+            lambda pkg: pkg is not None and filter_callback(pkg) and pkg not in install_tree.get_nodes(),
             deps
         )
         if len(deps_to_install) == 0:
