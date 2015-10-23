@@ -25,24 +25,25 @@ Fetcher. Whoa.
 
 import os
 import re
+import shutil
 
 from pybombs import pb_logging
 from pybombs import inventory
-from pybombs.utils import subproc
-from pybombs.utils import output_proc
 from pybombs.pb_exception import PBException
 from pybombs.config_manager import config_manager
-from pybombs.utils import vcompare
 
 from pybombs import fetchers
-from pybombs import pb_logging
-from pybombs.pb_exception import PBException
 
+# TODO: Move these into the fetcher modules!
 URI_TYPES = ('file', 'wget', 'git', 'svn')
+# For every URI type, list regexes which identify it.
 URI_REGEXES = {
         'git': (
             r'.*\.git$',
             r'git@',
+        ),
+        'wget': (
+            r'https?://.*\.gz$',
         ),
 }
 
@@ -75,82 +76,95 @@ class Fetcher(object):
     """
     This will attempt to download source from all the recipe's urls using the available fetchers.
     """
-
     def __init__(self):
         self.cfg = config_manager
-        # Set up logger:
         self.log = pb_logging.logger.getChild("Fetcher")
         self.prefix = self.cfg.get_active_prefix()
         self.src_dir = self.prefix.src_dir
         self.inventory = inventory.Inventory(self.prefix.inv_file)
-
         if not os.path.isdir(self.src_dir):
             self.log.warning("Source dir does not exist! [{}]".format(self.src_dir))
             try:
                 os.mkdir(self.src_dir)
             except:
                 raise PBException("Unable to create the source directory!")
-
-        # Get the available fetcher objects.
         self.available = fetchers.get_all()
+
+    def get_fetcher(self, src):
+        """
+        Return scrubbed URL and fetcher for src.
+        """
+        (url_type, url) = parse_uri(src)
+        self.log.debug("Getting fetcher for {url}, type {t}".format(url=url, t=url_type))
+        fetcher = self.available.get(url_type)
+        if not fetcher:
+            raise PBException("No fetcher for type {t}".format(t=url_type))
+        self.log.debug("Using fetcher {}".format(fetcher))
+        return (fetcher, url)
+
+    def fetch_url(self, src, dest, dirname, args={}):
+        """
+        - src: Source URL
+        - dest: Store the fetched stuff into here
+        - dirname: Put the result into a dir with this name, it'll be a subdir of dest
+        - args: Additional args to pass to the actual fetcher
+        """
+        (fetcher, url) = self.get_fetcher(src)
+        return fetcher.fetch_url(url, dest, dirname, args)
+
+    def update_src(self, src, dest, dirname, args={}):
+        """
+        - src: Source URL
+        - dest: Store the fetched stuff into here
+        - dirname: Update the result inside a dir with this name, it'll be a subdir of dest
+        - args: Additional args to pass to the actual fetcher
+        """
+        (fetcher, url) = self.get_fetcher(src)
+        return fetcher.update_src(url, dest, dirname, args)
 
     def fetch(self, recipe):
         """
-        Do the fetch. Return version?
-        If something goes wrong then throw a PBException
-        """
-        self.log.debug("Fetching source for recipe: {}".format(recipe.id))
+        Fetch a package identified by its recipe into the current prefix.
+        If a package was already fetched, do nothing.
 
-        # Should this be checking the inventory or the src directory?
+        Contract:
+        - Will either raise PBException or the fetch was successful.
         """
-        if self.check_fetched(recipe, url):
-            self.log.info("Already fetched: {}".format(recipe.id))
+        self.log.debug("Fetching source for recipe: {0}".format(recipe.id))
+        if self.check_fetched(recipe):
+            self.log.info("Already fetched: {0}".format(recipe.id))
             return True
-        """
-
         # Jump to the src directory
         cwd = os.getcwd()
-        self.log.debug("Switching to src directory: {}".format(self.src_dir))
+        self.log.debug("Switching to src directory: {0}".format(self.src_dir))
         os.chdir(self.src_dir)
-
+        if os.path.exists(os.path.join(self.src_dir, recipe.id)):
+            raise PBException("Directory {d} already exists!".format(d=os.path.join(self.src_dir, recipe.id)))
         # Do the fetch
-        fetched = False
         for src in recipe.source:
-            self.log.obnoxious("Trying to fetch {}".format(src))
+            self.log.obnoxious("Trying to fetch {0}".format(src))
             try:
-                # Get the right fetcher
-                (url_type, url) = parse_uri(src)
-                self.log.debug("Fetching {url}, type {t}".format(url=url, t=url_type))
-                fetcher = self.available[url_type]
-                self.log.debug("Using fetcher {}".format(fetcher))
-                # TODO: Use an exception rather than true/false
-                if not fetcher._fetch(url, recipe):
-                    self.log.warning("Fetching source {0} failed.".format(src))
-                    continue
-                fetched = True
-                break
-
+                if self.fetch_url(src, self.src_dir, recipe.id, recipe.get_local_package_data()):
+                    self.log.obnoxious("Success.")
+                    if self.inventory.get_state(recipe.id) < self.inventory.STATE_FETCHED:
+                        self.inventory.set_state(recipe.id, self.inventory.STATE_FETCHED)
+                        self.inventory.save()
+                    os.chdir(cwd)
+                    return True
+            except PBException as ex:
+                self.log.debug("That didn't work.")
+                self.log.debug(str(ex))
             except Exception as ex:
-                self.log.error("Unable to fetch {}".format(recipe))
+                self.log.error("Unexpected error while fetching {0}.".format(src))
                 self.log.error(ex)
+        # Ideally, we've left the function at this point.
+        raise PBException("Unable to fetch recipe {0}".format(recipe.id))
 
-        # Always switch back
-        os.chdir(cwd)
-
-        if not fetched:
-            raise PBException("Unable to fetch recipe {}".format(recipe.id))
-
-        # Save status to the inventory
-        self.inventory.set_state(recipe.id, self.inventory.STATE_FETCHED)
-        self.inventory.save()
-        return True
-
-    #TODO: Same as fetch, except wipe out the source directory first
-    # Make sure that they don't have path conflicts?
     def refetch(self, recipe):
         """
         Do a fetch even though already fetched. Default behaviour is to kill
         the dir and do a new fetch. Returns the fetch result.
+        Note this usually nukes the build directory, too.
         """
         dst_dir = os.path.join(self.src_dir, recipe.id)
         if os.path.isdir(dst_dir):
@@ -158,26 +172,68 @@ class Fetcher(object):
             shutil.rmtree(dst_dir, ignore_errors=True)
             if os.path.isdir(dst_dir):
                 raise PBException("Can't nuke existing directory {}".format(dst_dir))
-            # TODO We should update the inventory here
-        return self.fetch(recipe, url)
+        res = self.fetch(recipe)
+        if res:
+            # Fetch may not set state to fetched, but here we have to.
+            self.inventory.set_state(recipe.id, self.inventory.STATE_FETCHED)
+            self.inventory.save()
+        return res
+
+    def update(self, recipe):
+        """
+        Try to softly update the source directory.
+        This means the build dir might actually survive.
+        """
+        self.log.debug("Updating source for recipe: {0}".format(recipe.id))
+        if not self.check_fetched(recipe):
+            self.log.error("Cannot update recipe {r}, it is not yet fetched.".format(r=recipe.id))
+            return False
+        # Jump to the src directory
+        cwd = os.getcwd()
+        self.log.debug("Switching to src directory: {0}".format(self.src_dir))
+        os.chdir(self.src_dir)
+        if not os.path.isdir(os.path.join(self.src_dir, recipe.id)):
+            raise PBException("Source directory {d} does not exist!!".format(
+                d=os.path.join(self.src_dir, recipe.id))
+            )
+        # Figure out which source was used before
+        src = self.inventory.get_key(recipe.id, 'source')
+        if not src:
+            raise PBException("Cannot establish prior source for package {p}".format(p=recipe.id))
+        # Do the update
+        self.log.obnoxious("Trying to update from {0}".format(src))
+        try:
+            if self.update_src(src, self.src_dir, recipe.id, recipe.get_local_package_data()):
+                self.log.obnoxious("Success.")
+                if self.inventory.get_state(recipe.id) < self.inventory.STATE_FETCHED:
+                    self.inventory.set_state(recipe.id, self.inventory.STATE_FETCHED)
+                    self.inventory.save()
+                os.chdir(cwd)
+                return True
+        except PBException as ex:
+            self.log.debug("That didn't work.")
+            self.log.debug(str(ex))
+        except Exception as ex:
+            self.log.error("Unexpected error while fetching {0}.".format(src))
+            self.log.error(ex)
+        # Ideally, we've left the function at this point.
+        raise PBException("Unable to update recipe {0}".format(recipe.id))
 
     def check_fetched(self, recipe):
         """
         Check if the recipe was downloaded to the current source directory
+        # Should this be checking the inventory or the src directory?
+        # Or both?
         """
         dst_dir = os.path.join(self.src_dir, recipe.id)
         return os.path.isdir(dst_dir)
 
     def get_version(self, recipe):
-        if not self.check_fetched(recipe, url):
+        """
+        FIXME TODO fix
+        """
+        # FIXME TODO fix
+        if not self.check_fetched(recipe):
             self.log.error("Can't return version for {}, not fetched!".format(recipe.id))
         return None
 
-
-# Some test code:
-if __name__ == "__main__":
-    f = Fetcher()
-    f.fetch()
-    #print pm.exists('gcc')
-    #print pm.installed('gcc')
-    #print pm.install('gcc')
