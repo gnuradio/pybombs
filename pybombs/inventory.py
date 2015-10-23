@@ -124,7 +124,7 @@ class Inventory(object):
         This throws a PBException if the package doesn't exist.
         If no version was set, return default_version (defaults to None).
         """
-        if not has(pkg):
+        if not self.has(pkg):
             raise PBException("Cannot get version for package {} if it's not in the inventory!".format(pkg))
         try:
             return self._contents[pkg]["version"]
@@ -136,10 +136,30 @@ class Inventory(object):
         Sets the version of pkg to version.
         This throws a PBException if the package doesn't exist.
         """
-        if not has(pkg):
+        if not self.has(pkg):
             raise PBException("Cannot set version for package {} if it's not in the inventory!".format(pkg))
         self.log.debug("Setting version to {}".format(version))
         self._contents[pkg]["version"] = version
+
+    def set_key(self, pkg, key, value):
+        """
+        Set an arbitrary key
+        """
+        if key == 'state':
+            return self.set_state(pkg, value)
+        if key == 'version':
+            return self.set_version(pkg, value)
+        self._contents[pkg][key] = value
+
+    def get_key(self, pkg, key):
+        """
+        Get an arbitrary key
+        """
+        if key == 'state':
+            return self.get_state(pkg)
+        if key == 'version':
+            return self.get_version(pkg)
+        return self._contents.get(key)
 
     def get_valid_states(self):
         """
