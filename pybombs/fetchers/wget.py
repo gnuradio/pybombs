@@ -18,20 +18,42 @@
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
 #
+"""
+wget-style fetcher
+"""
 
-
+import math
 import os
-
-from pybombs import pb_logging
-from pybombs.pb_exception import PBException
-from pybombs.config_manager import config_manager
-from pybombs.utils import output_proc
-from pybombs.utils import subproc
+import sys
+import requests
 from pybombs.utils import utils
-from pybombs.utils import vcompare
-
 from pybombs.fetchers.base import FetcherBase
 
+def _download(url):
+    """
+    Do a wget: Download the file specified in url to the cwd.
+    Return the filename.
+    """
+    filename = os.path.split(url)[1]
+    req = requests.get(url, stream=True, headers={'User-Agent': 'PyBOMBS'})
+    filesize = float(req.headers['content-length'])
+    filesize_dl = 0
+    with open(filename, "wb") as f:
+        for buff in req.iter_content(chunk_size=8192):
+            if buff:
+                f.write(buff)
+                filesize_dl += len(buff)
+            # TODO wrap this into an output processor or at least
+            # standardize the progress bars we use
+            status = r"%05d kB / %05d kB (%03d%%)" % (
+                    int(math.ceil(filesize_dl/1000.)),
+                    int(math.ceil(filesize/1000.)),
+                    int(math.ceil(filesize_dl*100.)/filesize)
+            )
+            status += chr(8)*(len(status)+1)
+            sys.stdout.write(status)
+    sys.stdout.write("\n")
+    return filename
 
 class Wget(FetcherBase):
     """
@@ -40,44 +62,33 @@ class Wget(FetcherBase):
     """
     url_type = 'wget'
 
-    def _fetch(self, url, recipe):
+    def fetch_url(self, url, dest, dirname, args=None):
         """
-        do download
+        - src: URL, without the <type>+ prefix.
+        - dest: Store the fetched stuff into here
+        - dirname: Put the result into a dir with this name, it'll be a subdir of dest
+        - args: Additional args to pass to the actual fetcher
         """
-        # Inspired by http://stackoverflow.com/questions/22676/how-do-i-download-a-file-over-http-using-python
-
-        import urllib2
-        filename = os.path.split(url)[1]
-        self.log.debug("Downloading {}".format(url))
-
-        u = urllib2.urlopen(url)
-        f = open(filename, 'wb')
-        meta = u.info()
-        file_size = int(meta.getheaders("Content-Length")[0])
-        print "Downloading: %s Bytes: %s" % (filename, file_size)
-        file_size_dl = 0
-        block_sz = 8192
-        while True:
-            buffer = u.read(block_sz)
-            if not buffer:
-                break
-            file_size_dl += len(buffer)
-            f.write(buffer)
-            status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-            status = status + chr(8)*(len(status)+1)
-            print status,
-        f.close()
+        filename = _download(url)
         if utils.is_archive(filename):
-            # Move to the correct source location.
-            prefix = utils.extract(filename)
-            self.log.debug("Moving {} to {}".format(prefix, recipe.id))
-            os.rename(prefix, recipe.id) # Will work if arguments are equal
-            # Remove the tar file once it has been extracted
+            # Move archive contents to the correct source location:
+            dir_prefix = utils.extract(filename)
+            self.log.debug("Moving {} to {}".format(dir_prefix, dirname))
+            os.rename(dir_prefix, dirname) # Will work if arguments are equal
+            # Remove the archive once it has been extracted:
             os.remove(filename)
         return True
 
-    def get_version(self, recipe, url):
-        # TODO tbw
-        url = recipe.srcs[0]
-        filename = url.split('/')[-1]
-        return None
+    def update_src(self, src, dest, dirname, args=None):
+        """
+        For an update, we grab the archive and copy it over into the existing
+        directory. Luckily, that's exactly the same as fetch_url().
+        """
+        return self.fetch_url(src, dest, dirname, args)
+
+    #def get_version(self, recipe, url):
+        ## TODO tbw
+        #url = recipe.srcs[0]
+        #filename = url.split('/')[-1]
+        #return None
+
