@@ -58,8 +58,7 @@ class CommandBase(object):
             self.log.error("No prefix specified. Aborting.")
             exit(1)
         if require_inventory and require_prefix:
-            self.inventory = inventory.Inventory(self.prefix.inv_file)
-            self.inventory.load()
+            self.inventory = self.prefix.inventory
 
     @staticmethod
     def setup_subparser(parser, cmd=None):
