@@ -18,17 +18,13 @@
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
 #
+"""
+'file' pseudo-fetcher
+"""
 
 import os
-
-from pybombs import pb_logging
-from pybombs.utils import subproc
-from pybombs.utils import output_proc
-from pybombs.pb_exception import PBException
-from pybombs.utils import vcompare
 from pybombs.utils import utils
 from pybombs.fetchers.base import FetcherBase
-
 
 class File(FetcherBase):
     """
@@ -37,45 +33,58 @@ class File(FetcherBase):
     """
     url_type = 'file'
 
-    def _fetch(self, url, recipe):
+    def fetch_url(self, url, dest, dirname, args=None):
         """
-        symlink + extract
+        - url: File we'll link in.
+        - dest: Store the fetched stuff into here
+        - dirname: Put the result into a dir with this name, it'll be a subdir of dest
+        - args: Additional args to pass to the actual fetcher
         """
+        if not os.path.isfile(url):
+            self.log.error("File not found: {}".format(url))
+            return False
         filename = os.path.split(url)[-1]
         self.log.debug("Looking for file: {}".format(filename))
         if os.path.isfile(filename):
             self.log.info("File already exists in source dir: {}".format(filename))
-            return True
-        if not os.path.isfile(url):
-            self.log.error("File not found: {}".format(url))
-            return False
-        if url[0] != "/":
-            url = os.path.join("..", url)
-        os.symlink(url, os.path.join(self.cfg.get_active_prefix().src_dir, filename))
+        else:
+            self.log.debug("Symlinking file to source dir.")
+            os.symlink(url, os.path.join(os.getcwd(), filename))
         if utils.is_archive(filename):
             self.log.debug("Unpacking {ar}".format(ar=filename))
             # Move to the correct source location.
             prefix = utils.extract(filename)
-            self.log.debug("Moving {} to {}".format(prefix, recipe.id))
-            os.rename(prefix, recipe.id) # Will work if arguments are equal
+            self.log.debug("Moving {} to {}".format(prefix, dirname))
+            os.rename(prefix, dirname) # Will work if arguments are equal
             # Remove the tar file once it has been extracted
             os.remove(filename)
         return True
 
+    def update_src(self, url, dest, dirname, args=None):
+        """
+        - src: URL, without the <type>+ prefix.
+        - dest: Store the fetched stuff into here
+        - dirname: Put the result into a dir with this name, it'll be a subdir of dest
+        - args: Additional args to pass to the actual fetcher
+        """
+        filename = os.path.split(url)[-1]
+        if os.path.isfile(filename):
+            os.remove(filename)
+        return self.fetch_url(url, dest, dirname, args)
 
-    def get_version(self, recipe, url):
-        if not self.check_fetched(recipe, url):
-            self.log.error("Can't return version for {}, not fetched!".format(recipe.id))
-            return None
-        cwd = os.getcwd()
-        repo_dir = os.path.join(self.cfg.get_active_prefix().src_dir, recipe.id)
-        self.log.obnoxious("Switching cwd to: {}".format(repo_dir))
-        os.chdir(repo_dir)
-        # TODO run this process properly
-        out1 = subprocess.check_output("svnversion {}".format(repo_dir), shell=True)
-        rm = re.search("\d*:*(\d+).*", out1)
-        self.version = rm.group(1)
-        self.log.debug("Found version: {}".format(self.version))
-        self.log.obnoxious("Switching cwd to: {}".format(cwd))
-        os.chdir(cwd)
-        return self.version
+    #def get_version(self, recipe, url):
+        #if not self.check_fetched(recipe, url):
+            #self.log.error("Can't return version for {}, not fetched!".format(recipe.id))
+            #return None
+        #cwd = os.getcwd()
+        #repo_dir = os.path.join(self.cfg.get_active_prefix().src_dir, recipe.id)
+        #self.log.obnoxious("Switching cwd to: {}".format(repo_dir))
+        #os.chdir(repo_dir)
+        ## TODO run this process properly
+        #out1 = subprocess.check_output("svnversion {}".format(repo_dir), shell=True)
+        #rm = re.search("\d*:*(\d+).*", out1)
+        #self.version = rm.group(1)
+        #self.log.debug("Found version: {}".format(self.version))
+        #self.log.obnoxious("Switching cwd to: {}".format(cwd))
+        #os.chdir(cwd)
+        #return self.version

@@ -23,7 +23,6 @@ git fetcher functions
 """
 
 import os
-import subprocess
 from pybombs.fetchers.base import FetcherBase
 from pybombs.utils import subproc
 
@@ -76,7 +75,7 @@ class Git(FetcherBase):
         cwd = os.getcwd()
         src_dir = os.path.join(dest, dirname)
         self.log.obnoxious("Switching cwd to: {}".format(src_dir))
-        os.chdir(os.path.join(dest, dirname))
+        os.chdir(src_dir)
         if args.get('gitrev'):
             # If we have a rev or tag specified, fetch, then checkout.
             git_cmds = [
