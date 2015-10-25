@@ -170,3 +170,9 @@ class Inventory(object):
         """
         return self._valid_states.keys()
 
+    def get_packages(self):
+        """
+        Return a list of package names installed to this inventory.
+        """
+        return self._contents.keys()
+
