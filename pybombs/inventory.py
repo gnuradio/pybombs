@@ -149,6 +149,9 @@ class Inventory(object):
             return self.set_state(pkg, value)
         if key == 'version':
             return self.set_version(pkg, value)
+        if not self.has(pkg):
+            self._contents[pkg] = {}
+        self.log.obnoxious("Setting key {k} on package {p} to {v}.".format(k=key, p=pkg, v=value))
         self._contents[pkg][key] = value
 
     def get_key(self, pkg, key):
@@ -159,7 +162,7 @@ class Inventory(object):
             return self.get_state(pkg)
         if key == 'version':
             return self.get_version(pkg)
-        return self._contents.get(key)
+        return self._contents[pkg].get(key)
 
     def get_valid_states(self):
         """

@@ -34,6 +34,7 @@ import yaml
 import pb_logging
 from pb_exception import PBException
 from pybombs.utils import dict_merge
+from pybombs import inventory
 
 def extract_cfg_items(filename, section, throw_ex=True):
     """
@@ -122,6 +123,7 @@ class PrefixInfo(object):
         self.inv_file = os.path.join(self.prefix_cfg_dir, self.inv_file_name)
         if not os.path.isfile(self.inv_file):
             self.log.warn("Prefix inventory file not found: {}".format(self.inv_file))
+        self.inventory = inventory.Inventory(inventory_file=self.inv_file)
         # 6) Prefix-specific recipes. There's two places for these:
         # - A 'recipes/' subdirectory
         # - Anything declared in the config.yml file inside the prefix

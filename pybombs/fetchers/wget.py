@@ -23,7 +23,6 @@
 import os
 
 from pybombs import pb_logging
-from pybombs import inventory
 from pybombs.pb_exception import PBException
 from pybombs.config_manager import config_manager
 from pybombs.utils import output_proc

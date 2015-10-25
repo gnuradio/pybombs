@@ -86,8 +86,8 @@ class Init(CommandBase):
         config.write("  grc_blocks_path: \"$GRC_BLOCKS_PATH:$GRPREFIX/share/gnuradio/grc/blocks\"\n")
         config.close()
 
-        inventory = open('.pybombs/inventory.yml', 'w+')
-        inventory.close()
+        #inventory = open('.pybombs/inventory.yml', 'w+')
+        #inventory.close()
 
         # Switch back
         os.chdir(cwd)

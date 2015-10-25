@@ -81,7 +81,7 @@ class Fetcher(object):
         self.log = pb_logging.logger.getChild("Fetcher")
         self.prefix = self.cfg.get_active_prefix()
         self.src_dir = self.prefix.src_dir
-        self.inventory = inventory.Inventory(self.prefix.inv_file)
+        self.inventory = self.prefix.inventory
         if not os.path.isdir(self.src_dir):
             self.log.warning("Source dir does not exist! [{}]".format(self.src_dir))
             try:
@@ -146,9 +146,10 @@ class Fetcher(object):
             try:
                 if self.fetch_url(src, self.src_dir, recipe.id, recipe.get_local_package_data()):
                     self.log.obnoxious("Success.")
+                    self.inventory.set_key(recipe.id, 'source', src)
                     if self.inventory.get_state(recipe.id) < self.inventory.STATE_FETCHED:
                         self.inventory.set_state(recipe.id, self.inventory.STATE_FETCHED)
-                        self.inventory.save()
+                    self.inventory.save()
                     os.chdir(cwd)
                     return True
             except PBException as ex:
