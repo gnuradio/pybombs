@@ -21,8 +21,6 @@
 
 C="src-reference"
 
-echo $# "$*"
-
 if [ \( $# -ne 0 \) -a \( \( $# -eq 1 \) -a \( "x$1" != "x-a" \) \) ] ; then
 	echo "Usage: $0 [-a]"
 	echo ""
@@ -44,6 +42,14 @@ elif [ -e $C ] ; then
 	exit 1
 else
 	mkdir $C
+	(cd $C ; git init .)
+fi
+
+#add the new reference directory to the config
+if [ -f config.dat ] ; then
+	if ! grep -q "gitoptions.*--reference" config.dat ; then
+		sed -i.old -re "s,(gitoptions.*),\1 --reference='${PWD}/$C'," config.dat
+	fi
 fi
 
 cd $C
@@ -69,10 +75,3 @@ fi
 # check out all the sources
 git remote update -p
 cd ..
-
-#add the new reference directory to the config
-if [ -f config.dat ] ; then
-	if ! grep -q "gitoptions.*--reference" config.dat ; then
-		sed -i.old -re "s,(gitoptions.*),\1 --reference='${PWD}/$C'," config.dat
-	fi
-fi
