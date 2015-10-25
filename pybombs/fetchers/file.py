@@ -22,7 +22,6 @@
 import os
 
 from pybombs import pb_logging
-from pybombs import inventory
 from pybombs.utils import subproc
 from pybombs.utils import output_proc
 from pybombs.pb_exception import PBException

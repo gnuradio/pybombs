@@ -24,7 +24,6 @@ Packager: Source packages
 
 import os
 from pybombs import pb_logging
-from pybombs import inventory
 from pybombs.utils import subproc
 from pybombs.utils import output_proc
 from pybombs.pb_exception import PBException
@@ -43,7 +42,7 @@ class Source(PackagerBase):
             self.log.error("No prefix specified. Aborting.")
             exit(1)
         self.prefix = self.cfg.get_active_prefix()
-        self.inventory = inventory.Inventory(self.prefix.inv_file)
+        self.inventory = self.prefix.inventory
         self.static = False
 
     def supported(self):
