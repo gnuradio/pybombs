@@ -64,20 +64,34 @@ class Install(CommandBase):
                     help="If packages are already installed, update them instead.",
                     action='store_true',
             )
+        elif cmd == 'update':
+            parser.add_argument(
+                    '-a', '--all',
+                    help="Update all packages installed to current prefix, including dependencies.",
+                    action='store_true',
+            )
 
     def __init__(self, cmd, args):
         CommandBase.__init__(self,
                 cmd, args,
                 load_recipes=True,
                 require_prefix=True,
-                require_inventory=False,
+                require_inventory=True,
         )
         self.args.packages = args.packages[0]
-        if len(self.args.packages) == 0 and not args.all:
-            self.log.error("No packages specified.")
-            exit(1)
+        get_all_pkgs = False
+        if len(self.args.packages) == 0:
+            if cmd == 'update':
+                get_all_pkgs = True
+                if not self.args.all:
+                    self.args.no_deps = True
+            else:
+                self.log.error("No packages specified.")
+                exit(1)
         self.update_if_exists = (cmd == 'update' or self.args.update)
         self.fail_if_not_exists = (cmd == 'update')
+        if get_all_pkgs:
+            self.args.packages = self.get_all_prefix_packages()
         self.pm = package_manager.PackageManager()
 
     def _check_if_pkg_goes_into_tree(self, pkg):
@@ -119,6 +133,13 @@ class Install(CommandBase):
                     self.log.error("Error installing package {0}. Aborting.".format(pkg))
                     exit(1)
                 self.log.info("Installation successful.")
+
+    def get_all_prefix_packages(self):
+        """
+        Return a list of all package names that are installed into the
+        current prefix.
+        """
+        return self.inventory.get_packages()
 
 ### Damn, you found it :)
 class Moo(CommandBase):
