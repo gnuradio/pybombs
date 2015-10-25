@@ -205,11 +205,16 @@ class Fetcher(object):
         self.log.obnoxious("Trying to update from {0}".format(src))
         try:
             if self.update_src(src, self.src_dir, recipe.id, recipe.get_local_package_data()):
-                self.log.obnoxious("Success.")
-                if self.inventory.get_state(recipe.id) < self.inventory.STATE_FETCHED:
+                self.log.obnoxious("Update successful.")
+                if self.inventory.get_state(recipe.id) >= self.inventory.STATE_CONFIGURED:
+                    self.log.obnoxious("Setting package state to 'configured'.")
+                    self.inventory.set_state(recipe.id, self.inventory.STATE_CONFIGURED)
+                else:
+                    self.log.obnoxious("Setting package state to 'fetched'.")
                     self.inventory.set_state(recipe.id, self.inventory.STATE_FETCHED)
-                    self.inventory.save()
+                self.inventory.save()
                 os.chdir(cwd)
+                self.log.obnoxious("Update completed.")
                 return True
         except PBException as ex:
             self.log.debug("That didn't work.")

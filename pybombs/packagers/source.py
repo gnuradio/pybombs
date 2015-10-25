@@ -81,7 +81,7 @@ class Source(PackagerBase):
         recipe.set_static(static)
         cwd = os.getcwd()
         get_state = lambda: (self.inventory.get_state(recipe.id) or 0)
-        set_state = lambda state: self.inventory.set_state(recipe.id, state)
+        set_state = lambda state: self.inventory.set_state(recipe.id, state) and self.inventory.save()
         if not hasattr(recipe, 'source') or len(recipe.source) == 0:
             self.log.warn("Cannot find a source URI for package {0}".format(recipe.id))
             return False
@@ -91,7 +91,7 @@ class Source(PackagerBase):
                     self.log.error("Can't update package {0}, it's not yet configured.".format(recipe.id))
                     exit(1)
                 Fetcher().update(recipe)
-                set_state(self.inventory.STATE_BUILT)
+                set_state(self.inventory.STATE_CONFIGURED)
             self.log.debug("State on package {0} is {1}".format(recipe.id, get_state()))
             # First, make sure we have the sources
             if not update and get_state() < self.inventory.STATE_FETCHED:
@@ -119,19 +119,16 @@ class Source(PackagerBase):
             if get_state() < self.inventory.STATE_CONFIGURED:
                 self.configure(recipe)
                 set_state(self.inventory.STATE_CONFIGURED)
-                self.inventory.save()
             else:
                 self.log.debug("Package {} is already configured.".format(recipe.id))
             if get_state() < self.inventory.STATE_BUILT:
                 self.make(recipe)
                 set_state(self.inventory.STATE_BUILT)
-                self.inventory.save()
             else:
                 self.log.debug("Package {} is already built.".format(recipe.id))
             if get_state() < self.inventory.STATE_INSTALLED:
                 self.make_install(recipe)
                 set_state(self.inventory.STATE_INSTALLED)
-                self.inventory.save()
             else:
                 self.log.debug("Package {} is already installed.".format(recipe.id))
         except PBException as err:
