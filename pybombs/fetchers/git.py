@@ -25,6 +25,7 @@ git fetcher functions
 import os
 import subprocess
 from pybombs.fetchers.base import FetcherBase
+from pybombs.utils import subproc
 
 class Git(FetcherBase):
     """
@@ -37,79 +38,69 @@ class Git(FetcherBase):
         git clone
         """
         self.log.debug("Using url - {}".format(url))
-        gitcache = self.cfg.get("git-cache", "")
-        if len(gitcache): # Check if this is a directory
-            self.log.debug("Using gitcache at {}", gitcache)
-            gitcache = " --reference {}".format(gitcache)
-        git_cmd = "git clone {gitargs}{gitcache} -b {branch} {url} {name}".format(
-            gitargs=args.get('gitargs', ''),
-            gitcache=gitcache,
-            branch=args.get('gitbranch', ''),
-            url=url,
-            name=dirname,
+        git_cmd = ['git', 'clone', url, dirname]
+        if args.get('gitargs'):
+            git_cmd.append(args.get('gitargs'))
+        if self.cfg.get("git-cache", False):
+            git_cmd.append('--reference')
+            git_cmd.append(self.cfg.get("git-cache"))
+        if args.get('gitbranch'):
+            git_cmd.append('-b')
+            git_cmd.append(args.get('gitbranch'))
+        subproc.monitor_process(
+            args=git_cmd,
+            #o_proc=foo, # FIXME
+            throw_ex=True,
         )
-        self.log.debug("Calling '{0}'".format(git_cmd))
-        # TODO:
-        # - Run the clone process in a process monitor
-        # - Pipe its output through an output processor
-        if subprocess.call(git_cmd, shell=True) != 0:
-            return False
-        # Jump to the cloned repo
-        # We are already in the source directory for the prefix
-        cwd = os.getcwd()
-        src_dir = os.path.join(dest, dirname)
-        self.log.obnoxious("Switching cwd to: {}".format(src_dir))
-        os.chdir(src_dir)
+        # If we have a specific revision, checkout that
         if args.get('gitrev'):
-            git_co_cmd = "git checkout {rev}".format(args.get('gitrev'))
-            self.log.debug("Calling '{}'".format(git_co_cmd))
-            # TODO:
-            # - Run the clone process in a process monitor
-            # - Pipe its output through an output processor
-            if subprocess.call(git_co_cmd, shell=True) != 0:
-                return False
-        self.log.obnoxious("Switching cwd to: {}".format(cwd))
-        os.chdir(cwd)
+            cwd = os.getcwd()
+            src_dir = os.path.join(dest, dirname)
+            self.log.obnoxious("Switching cwd to: {}".format(src_dir))
+            os.chdir(src_dir)
+            git_co_cmd = ["git", "checkout", "--force", args.get('gitrev')]
+            subproc.monitor_process(
+                args=git_co_cmd,
+                #o_proc=foo, # FIXME
+                throw_ex=True,
+            )
+            self.log.obnoxious("Switching cwd to: {}".format(cwd))
+            os.chdir(cwd)
         return True
 
     def update_src(self, url, dest, dirname, args={}):
         """
-        git pull
+        git pull / git checkout
         """
-        assert False
-        self.log.debug("Using url - {}".format(url))
+        self.log.debug("Using url {0}".format(url))
         cwd = os.getcwd()
-        os.chdir(os.path.join(dest, dirname))
-        gitcache = self.cfg.get("git-cache", "")
-        if len(gitcache): # Check if this is a directory
-            self.log.debug("Using gitcache at {}", gitcache)
-            gitcache = " --reference {}".format(gitcache)
-        git_cmd = "git clone {gitargs}{gitcache} -b {branch} {url} {name}".format(
-            gitargs=args.get('gitargs', ''),
-            gitcache=gitcache,
-            branch=args.get('gitbranch', ''),
-            url=url,
-            name=dirname,
-        )
-        self.log.debug("Calling '{}'".format(git_cmd))
-        # TODO:
-        # - Run the clone process in a process monitor
-        # - Pipe its output through an output processor
-        if subprocess.call(git_cmd, shell=True) != 0:
-            return False
-        # Jump to the cloned repo
-        # We are already in the source directory for the prefix
         src_dir = os.path.join(dest, dirname)
         self.log.obnoxious("Switching cwd to: {}".format(src_dir))
+        os.chdir(os.path.join(dest, dirname))
         if args.get('gitrev'):
-            git_co_cmd = "git checkout {rev}".format(args.get('gitrev'))
-            self.log.debug("Calling '{}'".format(git_co_cmd))
-            # TODO:
-            # - Run the clone process in a process monitor
-            # - Pipe its output through an output processor
-            if subprocess.call(git_co_cmd, shell=True) != 0:
-                return False
-        self.log.obnoxious("Switching cwd to: {}".format(cwd))
+            # If we have a rev or tag specified, fetch, then checkout.
+            git_cmds = [
+                ['git', 'fetch', '--tags', '--all', '--prune'],
+                ['git', 'checkout', '--force', args.get('gitrev')],
+            ]
+        elif args.get('gitbranch'):
+            # Branch is similar, only we make sure we're up to date
+            # with the remote branch
+            git_cmds = [
+                ['git', 'fetch', '--tags', '--all', '--prune'],
+                ['git', 'checkout', '--force', args.get('gitbranch')],
+                ['git', 'reset', '--hard', '@{u}'],
+            ]
+        else:
+            # Without a git rev, all we can do is try and pull
+            git_cmds = [
+                ['git', 'pull'],
+            ]
+        for cmd in git_cmds:
+            subproc.monitor_process(
+                args=cmd,
+            )
+        self.log.obnoxious("Switching cwd back to: {0}".format(cwd))
         os.chdir(cwd)
         return True
 
