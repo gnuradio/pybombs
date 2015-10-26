@@ -27,5 +27,6 @@ from install import Install, Moo
 from show import Show
 from recipes import Recipes
 from rebuild import Rebuild
+from remove import Remove
 # Leave this at the end
 #from help import Help
