@@ -170,8 +170,9 @@ class Source(PackagerBase):
         get_state = lambda: (self.inventory.get_state(recipe.id) or 0)
         set_state = lambda state: self.inventory.set_state(recipe.id, state) or self.inventory.save()
         # Set up the build dir
-        pkg_src_dir = os.path.join(self.prefix.src_dir, recipe.id)
-        builddir = os.path.join(pkg_src_dir, recipe.installdir)
+        pkg_src_dir = os.path.normpath(os.path.join(self.prefix.src_dir, recipe.id))
+        builddir = os.path.normpath(os.path.join(pkg_src_dir, recipe.installdir))
+        self.log.debug("Using build directory: {0}".format(builddir))
         # The package source dir must exist, or something is wrong.
         if not os.path.isdir(pkg_src_dir):
             raise PBException("There should be a source dir in {0}, but there isn't.".format(pkg_src_dir))
@@ -184,6 +185,7 @@ class Source(PackagerBase):
         else: # If the build dir is separate:
             if os.path.exists(builddir):
                 if nuke_builddir:
+                    self.log.info("Removing old build directory.")
                     shutil.rmtree(builddir)
                 elif warn_if_builddir_exists:
                     self.log.warn("Build dir already exists: {}".format(builddir))
