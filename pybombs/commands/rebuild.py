@@ -49,7 +49,7 @@ class Rebuild(CommandBase):
                 action='store_true',
         )
         parser.add_argument(
-                '--deps',
+                '-d', '--deps',
                 help="Also rebuild dependencies",
                 action='store_true',
         )
@@ -59,8 +59,8 @@ class Rebuild(CommandBase):
                 action='store_true',
         )
         parser.add_argument(
-                '-n', '--nuke-build',
-                help="Nuke build directory before rebuilding from source.",
+                '-k', '--keep-build',
+                help="Keep build directory before rebuilding from source (default is to nuke it).",
                 action='store_true',
         )
 
@@ -102,7 +102,7 @@ class Rebuild(CommandBase):
             if not self.pm.rebuild(
                 rec,
                 make_clean=self.args.clean,
-                nuke_builddir=self.args.nuke_build
+                nuke_builddir=not self.args.keep_build
             ):
                 self.log.error("Error rebuilding package {0}. Aborting.".format(pkg))
                 exit(1)
