@@ -91,7 +91,7 @@ class Install(CommandBase):
         self.update_if_exists = (cmd == 'update' or self.args.update)
         self.fail_if_not_exists = (cmd == 'update')
         if get_all_pkgs:
-            self.args.packages = self.get_all_prefix_packages()
+            self.args.packages = self.inventory.get_packages()
         self.pm = package_manager.PackageManager()
 
     def _check_if_pkg_goes_into_tree(self, pkg):
@@ -133,13 +133,6 @@ class Install(CommandBase):
                     self.log.error("Error installing package {0}. Aborting.".format(pkg))
                     exit(1)
                 self.log.info("Installation successful.")
-
-    def get_all_prefix_packages(self):
-        """
-        Return a list of all package names that are installed into the
-        current prefix.
-        """
-        return self.inventory.get_packages()
 
 ### Damn, you found it :)
 class Moo(CommandBase):
