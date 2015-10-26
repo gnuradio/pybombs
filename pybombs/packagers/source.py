@@ -23,6 +23,7 @@ Packager: Source packages
 """
 
 import os
+import shutil
 from pybombs import pb_logging
 from pybombs.utils import subproc
 from pybombs.utils import output_proc
@@ -59,7 +60,7 @@ class Source(PackagerBase):
             return None
         # Return a pseudo-version
         # TODO check if we can get something better from the inventory
-        return "0.0"
+        return True
 
     def installed(self, recipe):
         """
@@ -102,7 +103,8 @@ class Source(PackagerBase):
             self.run_build(
                 recipe,
                 nuke_builddir=False,
-                warn_if_builddir_exists=not bool(update)
+                warn_if_builddir_exists=not bool(update),
+                fail_if_builddir_exists=update,
             )
         except PBException as err:
             os.chdir(cwd)
@@ -115,9 +117,10 @@ class Source(PackagerBase):
     def update(self, recipe):
         """
         Update the source package. Algorithm:
-        - Check its at least in state 'configured'
+        - Check it's at least in state 'configured'
         - Do a fetch-update
-        - Set state to 'configured'
+        - Set state to 'fetched' if it was not configured, and 'configured'
+          otherwise
         - Jump straight to 'make' step
         - Continue like install()
 
@@ -125,7 +128,7 @@ class Source(PackagerBase):
         """
         return self.install(recipe, update=True)
 
-    def rebuild(self, recipe, nuke_builddir=False):
+    def rebuild(self, recipe, make_clean=False, nuke_builddir=False):
         """
         - Reset the state to 'fetched'
         - Trigger run_build
@@ -133,18 +136,37 @@ class Source(PackagerBase):
         self.inventory.set_state(recipe.id, self.inventory.STATE_FETCHED)
         cwd = os.getcwd() # run_build() will change the directory
         try:
-            result = self.run_build(recipe, nuke_builddir=nuke_builddir)
+            self.run_build(
+                recipe,
+                make_clean=make_clean,
+                nuke_builddir=nuke_builddir,
+            )
             os.chdir(cwd)
-            return result
+            return True
         except PBException as err:
-            self.log.error("Problem occured while building package {}:\n{}".format(recipe.id, str(err).strip()))
+            self.log.error("Problem occured while building package {0}:".format(recipe.id))
+            self.log.error(str(err).strip())
         os.chdir(cwd)
         return False
 
-    def run_build(self, recipe, nuke_builddir=False, warn_if_builddir_exists=False):
+    def run_build(self,
+            recipe,
+            make_clean=False,
+            nuke_builddir=False,
+            warn_if_builddir_exists=False,
+            fail_if_builddir_exists=False,
+        ):
         """
-        Assumes source dir is in place.
+        Goes through the actual steps of configuring, building and installing
+        a source package.
+
+        Assumes source dir is in place (fetch was successful).
+
+        Does not return a value, only raises PBException if something goes
+        wrong ("net g'meckert isch lob genug").
         """
+        if nuke_builddir:
+            make_clean = False
         get_state = lambda: (self.inventory.get_state(recipe.id) or 0)
         set_state = lambda state: self.inventory.set_state(recipe.id, state) or self.inventory.save()
         # Set up the build dir
@@ -152,18 +174,24 @@ class Source(PackagerBase):
         builddir = os.path.join(pkg_src_dir, recipe.installdir)
         # The package source dir must exist, or something is wrong.
         if not os.path.isdir(pkg_src_dir):
-            self.log.error("There should be a source dir in {}, but there isn't.".format(pkg_src_dir))
-            return False
-        if os.path.exists(os.path.join(pkg_src_dir, builddir)):
+            raise PBException("There should be a source dir in {0}, but there isn't.".format(pkg_src_dir))
+        if builddir == pkg_src_dir:
             if nuke_builddir:
-                shutil.rmtree(builddir)
-            elif warn_if_builddir_exists:
-                self.log.warn("Build dir already exists: {}".format(builddir))
-        else:
-            if update:
-                self.log.error("Can't update package {0}, build directory seems to be missing.".format(recipe.id))
-                exit(1)
-            os.mkdir(builddir)
+                # We can't nuke the build dir for in-tree builds, so fall back
+                # to make clean:
+                nuke_builddir = False
+                make_clean = True
+        else: # If the build dir is separate:
+            if os.path.exists(builddir):
+                if nuke_builddir:
+                    shutil.rmtree(builddir)
+                elif warn_if_builddir_exists:
+                    self.log.warn("Build dir already exists: {}".format(builddir))
+            else:
+                if fail_if_builddir_exists:
+                    self.log.error("Can't update package {0}, build directory seems to be missing.".format(recipe.id))
+                    exit(1)
+                os.mkdir(builddir)
         os.chdir(builddir)
         ### Run the build process
         if get_state() < self.inventory.STATE_CONFIGURED:
@@ -172,6 +200,8 @@ class Source(PackagerBase):
         else:
             self.log.debug("Package {} is already configured.".format(recipe.id))
         if get_state() < self.inventory.STATE_BUILT:
+            if make_clean:
+                self.make_clean(recipe)
             self.make(recipe)
             set_state(self.inventory.STATE_BUILT)
         else:
@@ -211,6 +241,12 @@ class Source(PackagerBase):
             self.log.error("Configuration failed after running at least twice.")
             raise PBException("Configuration failed")
 
+    def make_clean(self, recipe, try_again=False):
+        """
+        Run 'make test' or whatever clears a build before recompiling
+        """
+        self.log.warn("make clean not yet implemented")
+
     def make(self, recipe, try_again=False):
         """
         Build this recipe.
@@ -235,6 +271,12 @@ class Source(PackagerBase):
         else:
             self.log.error("Build failed. See output above for error messages.")
             raise PBException("Build failed.")
+
+    def verify(self, recipe, try_again=False):
+        """
+        Run 'make test' or whatever checks a build was successful
+        """
+        self.log.warn("make test not yet implemented")
 
     def make_install(self, recipe):
         """
