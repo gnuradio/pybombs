@@ -81,7 +81,7 @@ class Source(PackagerBase):
         recipe.set_static(static)
         cwd = os.getcwd()
         get_state = lambda: (self.inventory.get_state(recipe.id) or 0)
-        set_state = lambda state: self.inventory.set_state(recipe.id, state) and self.inventory.save()
+        set_state = lambda state: self.inventory.set_state(recipe.id, state) or self.inventory.save()
         if not hasattr(recipe, 'source') or len(recipe.source) == 0:
             self.log.warn("Cannot find a source URI for package {0}".format(recipe.id))
             return False
@@ -98,39 +98,12 @@ class Source(PackagerBase):
                 Fetcher().fetch(recipe)
             else:
                 self.log.debug("Package {} is already fetched.".format(recipe.id))
-            # Set up the build dir
-            pkg_src_dir = os.path.join(self.prefix.src_dir, recipe.id)
-            builddir = os.path.join(pkg_src_dir, recipe.installdir)
-            # The package source dir must exist, or something is wrong.
-            if not os.path.isdir(pkg_src_dir):
-                self.log.error("There should be a source dir in {}, but there isn't.".format(pkg_src_dir))
-                return False
-            if os.path.exists(os.path.join(pkg_src_dir, builddir)):
-                #shutil.rmtree(builddir)
-                if not update:
-                    self.log.warn("Build dir already exists: {}".format(builddir))
-            else:
-                if update:
-                    self.log.error("Can't update package {0}, build directory seems to be missing.".format(recipe.id))
-                    exit(1)
-                os.mkdir(builddir)
-            os.chdir(builddir)
-            ### Run the build process
-            if get_state() < self.inventory.STATE_CONFIGURED:
-                self.configure(recipe)
-                set_state(self.inventory.STATE_CONFIGURED)
-            else:
-                self.log.debug("Package {} is already configured.".format(recipe.id))
-            if get_state() < self.inventory.STATE_BUILT:
-                self.make(recipe)
-                set_state(self.inventory.STATE_BUILT)
-            else:
-                self.log.debug("Package {} is already built.".format(recipe.id))
-            if get_state() < self.inventory.STATE_INSTALLED:
-                self.make_install(recipe)
-                set_state(self.inventory.STATE_INSTALLED)
-            else:
-                self.log.debug("Package {} is already installed.".format(recipe.id))
+            # If we know the package is fetched, we can attempt to build:
+            self.run_build(
+                recipe,
+                nuke_builddir=False,
+                warn_if_builddir_exists=not bool(update)
+            )
         except PBException as err:
             os.chdir(cwd)
             self.log.error("Problem occured while building package {}:\n{}".format(recipe.id, str(err).strip()))
@@ -152,6 +125,62 @@ class Source(PackagerBase):
         """
         return self.install(recipe, update=True)
 
+    def rebuild(self, recipe, nuke_builddir=False):
+        """
+        - Reset the state to 'fetched'
+        - Trigger run_build
+        """
+        self.inventory.set_state(recipe.id, self.inventory.STATE_FETCHED)
+        cwd = os.getcwd() # run_build() will change the directory
+        try:
+            result = self.run_build(recipe, nuke_builddir=nuke_builddir)
+            os.chdir(cwd)
+            return result
+        except PBException as err:
+            self.log.error("Problem occured while building package {}:\n{}".format(recipe.id, str(err).strip()))
+        os.chdir(cwd)
+        return False
+
+    def run_build(self, recipe, nuke_builddir=False, warn_if_builddir_exists=False):
+        """
+        Assumes source dir is in place.
+        """
+        get_state = lambda: (self.inventory.get_state(recipe.id) or 0)
+        set_state = lambda state: self.inventory.set_state(recipe.id, state) or self.inventory.save()
+        # Set up the build dir
+        pkg_src_dir = os.path.join(self.prefix.src_dir, recipe.id)
+        builddir = os.path.join(pkg_src_dir, recipe.installdir)
+        # The package source dir must exist, or something is wrong.
+        if not os.path.isdir(pkg_src_dir):
+            self.log.error("There should be a source dir in {}, but there isn't.".format(pkg_src_dir))
+            return False
+        if os.path.exists(os.path.join(pkg_src_dir, builddir)):
+            if nuke_builddir:
+                shutil.rmtree(builddir)
+            elif warn_if_builddir_exists:
+                self.log.warn("Build dir already exists: {}".format(builddir))
+        else:
+            if update:
+                self.log.error("Can't update package {0}, build directory seems to be missing.".format(recipe.id))
+                exit(1)
+            os.mkdir(builddir)
+        os.chdir(builddir)
+        ### Run the build process
+        if get_state() < self.inventory.STATE_CONFIGURED:
+            self.configure(recipe)
+            set_state(self.inventory.STATE_CONFIGURED)
+        else:
+            self.log.debug("Package {} is already configured.".format(recipe.id))
+        if get_state() < self.inventory.STATE_BUILT:
+            self.make(recipe)
+            set_state(self.inventory.STATE_BUILT)
+        else:
+            self.log.debug("Package {} is already built.".format(recipe.id))
+        if get_state() < self.inventory.STATE_INSTALLED:
+            self.make_install(recipe)
+            set_state(self.inventory.STATE_INSTALLED)
+        else:
+            self.log.debug("Package {} is already installed.".format(recipe.id))
 
     #########################################################################
     # Build methods: All of these must raise a PBException when something
