@@ -39,7 +39,8 @@ class Git(FetcherBase):
         self.log.debug("Using url - {}".format(url))
         git_cmd = ['git', 'clone', url, dirname]
         if args.get('gitargs'):
-            git_cmd.append(args.get('gitargs'))
+            for arg in args.get('gitargs').split():
+                git_cmd.append(arg)
         if self.cfg.get("git-cache", False):
             git_cmd.append('--reference')
             git_cmd.append(self.cfg.get("git-cache"))

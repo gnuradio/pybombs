@@ -24,7 +24,7 @@ import os
 import shutil
 from pybombs.commands import CommandBase
 from pybombs import package_manager
-from pybombs import dep_manager
+from pybombs import recipe
 
 class Remove(CommandBase):
     """ Remove a package from this prefix """
@@ -44,6 +44,11 @@ class Remove(CommandBase):
                 default=[],
                 nargs='*'
         )
+        parser.add_argument(
+                '-d', '--no-deps',
+                help="Do not remove dependees. May leave prefix in unusable state.",
+                action='store_true',
+        )
 
     def __init__(self, cmd, args):
         CommandBase.__init__(self,
@@ -53,9 +58,14 @@ class Remove(CommandBase):
                 require_inventory=True,
         )
         self.args.packages = args.packages[0]
+        if len(self.args.packages) == 0:
+            self.log.error("No packages specified.")
+            exit(1)
         # Do not allow any non-source packagers for this:
         self.cfg.set('packagers', '')
         self.pm = package_manager.PackageManager()
+        if not self.args.no_deps:
+            self.args.packages = self.get_dependees(self.args.packages)
 
     def run(self):
         """ Go, go, go! """
@@ -79,4 +89,25 @@ class Remove(CommandBase):
             self.log.debug("Removing package from inventory.")
             self.inventory.remove(pkg)
             self.inventory.save()
+
+    def get_dependees(self, pkgs):
+        """
+        From a list of pkgs, return a list that also includes packages
+        which depend on them.
+        """
+        self.log.debug("Resolving dependency list for clean removal.")
+        other_installed_pkgs = [x for x in self.inventory.get_packages() if not x in pkgs]
+        new_pkgs = []
+        for other_installed_pkg in other_installed_pkgs:
+            self.log.obnoxious("Checking if {0} is a dependee...".format(other_installed_pkg))
+            deps = recipe.get_recipe(other_installed_pkg).get_local_package_data()['depends'] or []
+            for pkg in pkgs:
+                if pkg in deps:
+                    self.log.obnoxious("Yup, it is.")
+                    new_pkgs.append(other_installed_pkg)
+                    break
+        if len(new_pkgs) > 0:
+            pkgs = pkgs + new_pkgs
+            return self.get_dependees(pkgs)
+        return pkgs
 
