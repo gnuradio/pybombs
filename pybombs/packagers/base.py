@@ -92,6 +92,13 @@ class PackagerBase(object):
         self.log.obnoxious("Checking if recipe {} is installed".format(recipe.id))
         return self._packager_run_tree(recipe, self._package_installed)
 
+    def uninstall(self, recipe):
+        """
+
+        Return True on Success or False on failure.
+        """
+        self.log.info("No uninstall method specify for this this packager.")
+
     ### Package-manager specific helpers ####################################
     # Most packagers will work with a system packager in the background (e.g.
     # ap-get, dnf, etc. All of these pretty much have the same behaviour, and

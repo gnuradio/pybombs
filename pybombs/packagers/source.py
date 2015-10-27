@@ -128,6 +128,32 @@ class Source(PackagerBase):
         """
         return self.install(recipe, update=True)
 
+    def uninstall(self, recipe):
+        """
+        """
+        cwd = os.getcwd()
+        pkg_src_dir = os.path.normpath(os.path.join(self.prefix.src_dir, recipe.id))
+        builddir = os.path.normpath(os.path.join(pkg_src_dir, recipe.installdir))
+        os.chdir(builddir)
+        self.log.debug("Using build directory: {0}".format(builddir))
+        if not os.path.isdir(pkg_src_dir):
+            os.chdir(cwd)
+            raise PBException("There should be a source dir in {0}, but there isn't.".format(pkg_src_dir))
+        get_state = lambda: (self.inventory.get_state(recipe.id) or 0)
+        set_state = lambda state: self.inventory.set_state(recipe.id, state) or self.inventory.save()
+        if get_state() >= self.inventory.STATE_INSTALLED:
+            try:
+                self.make_clean(recipe)
+            except PBException as ex:
+                self.log.warn("Uninstall failed: {0}.".format(str(ex)))
+                return False
+            set_state(self.inventory.STATE_CONFIGURED)
+        else:
+            self.log.debug("Package {0} is not yet installed.".format(recipe.id))
+        os.chdir(cwd)
+        self.log.obnoxious("Uninstall complete.")
+        return True
+
     def rebuild(self, recipe, make_clean=False, nuke_builddir=False):
         """
         - Reset the state to 'fetched'
@@ -245,9 +271,25 @@ class Source(PackagerBase):
 
     def make_clean(self, recipe, try_again=False):
         """
-        Run 'make test' or whatever clears a build before recompiling
+        Run 'make clean' or whatever clears a build before recompiling
         """
-        self.log.warn("make clean not yet implemented")
+        self.log.debug("Uninstalling from recipe {}".format(recipe.id))
+        self.log.debug("In cwd - {}".format(os.getcwd()))
+        o_proc = None
+        if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
+            o_proc = output_proc.OutputProcessorMake(preamble="Uninstalling: ")
+        cmd = recipe.var_replace_all(self.get_command('uninstall', recipe))
+        cmd = self.filter_cmd(cmd, recipe, 'uninstall_filter')
+        if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
+            self.log.debug("Uninstall successful")
+            return True
+        # OK, something bad happened.
+        if try_again == False:
+            recipe.vars['makewidth'] = '1'
+            self.make_clean(recipe, try_again=True)
+        else:
+            self.log.error("Uninstall failed. See output above for error messages.")
+            raise PBException("Uninstall failed.")
 
     def make(self, recipe, try_again=False):
         """
@@ -295,6 +337,7 @@ class Source(PackagerBase):
             self.log.debug("Installation successful")
             return True
         raise PBException("Installation failed")
+
 
     #########################################################################
     # Helpers
