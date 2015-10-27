@@ -53,6 +53,7 @@ class Remove(CommandBase):
                 require_inventory=True,
         )
         self.args.packages = args.packages[0]
+        # Do not allow any non-source packagers for this:
         self.cfg.set('packagers', '')
         self.pm = package_manager.PackageManager()
 
@@ -66,6 +67,10 @@ class Remove(CommandBase):
         ### Remove packages
         for pkg in self.args.packages:
             self.log.info("Removing package {0}.".format(pkg))
+            # Uninstall:
+            self.log.debug("Uninstalling.")
+            if not self.pm.uninstall(pkg):
+                self.log.warn("Could not uninstall {0} from prefix.".format(pkg))
             # Remove source dir:
             pkg_src_dir = os.path.join(self.prefix.src_dir, pkg)
             self.log.debug("Removing directory {0}.".format(pkg_src_dir))

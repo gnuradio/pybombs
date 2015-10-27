@@ -159,10 +159,10 @@ class PackageManager(object):
             self.log.debug("Trying to use packager {}".format(pkgr.name))
             try:
                 install_result = pkgr.install(r, static)
-            except PBException as e:
+            except PBException as ex:
                 self.log.error(
                     "Something went wrong while trying to install {} using {}: {}".format(
-                        name, pkgr.name, str(e).strip()
+                        name, pkgr.name, str(ex).strip()
                     )
                 )
                 continue
@@ -178,10 +178,10 @@ class PackageManager(object):
         for pkgr in self.get_packagers(name):
             try:
                 update_result = pkgr.update(r)
-            except PBException as e:
+            except PBException as ex:
                 self.log.error(
                     "Something went wrong while trying to update {} using {}: {}".format(
-                        name, pkgr.name, str(e)
+                        name, pkgr.name, str(ex).strip()
                     )
                 )
                 continue
@@ -189,11 +189,23 @@ class PackageManager(object):
                 return True
         return False
 
-# Some test code:
-if __name__ == "__main__":
-    config_manager.set('packagers', 'dummy')
-    config_manager.set('satisfy_order', 'native')
-    pm = PackageManager()
-    print pm.exists('gcc')
-    print pm.installed('gcc')
-    print pm.install('gcc')
+    def uninstall(self, name):
+        """
+        Uninstall the given package.
+        Returns True if successful, False otherwise.
+        """
+        rec = recipe.get_recipe(name)
+        for pkgr in self.get_packagers(name):
+            try:
+                update_result = pkgr.uninstall(rec)
+            except PBException as ex:
+                self.log.error(
+                    "Something went wrong while trying to uninstall `{}' using `{}': {}".format(
+                        name, pkgr.name, str(ex)
+                    )
+                )
+                continue
+            if update_result:
+                return True
+        return False
+
