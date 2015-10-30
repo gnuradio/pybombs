@@ -110,7 +110,11 @@ class Fetcher(object):
         - args: Additional args to pass to the actual fetcher
         """
         (fetcher, url) = self.get_fetcher(src)
-        return fetcher.fetch_url(url, dest, dirname, args)
+        cwd = os.getcwd()
+        os.chdir(dest)
+        result = fetcher.fetch_url(url, dest, dirname, args)
+        os.chdir(cwd)
+        return result
 
     def update_src(self, src, dest, dirname, args={}):
         """
@@ -120,7 +124,11 @@ class Fetcher(object):
         - args: Additional args to pass to the actual fetcher
         """
         (fetcher, url) = self.get_fetcher(src)
-        return fetcher.update_src(url, dest, dirname, args)
+        cwd = os.getcwd()
+        os.chdir(dest)
+        result = fetcher.update_src(url, dest, dirname, args)
+        os.chdir(cwd)
+        return result
 
     def fetch(self, recipe):
         """
