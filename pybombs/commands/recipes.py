@@ -27,7 +27,7 @@ import shutil
 import yaml
 from pybombs.commands import CommandBase
 from pybombs.utils import subproc
-from pybombs.fetcher import parse_uri
+from pybombs.fetcher import Fetcher
 
 class Recipes(CommandBase):
     """
@@ -36,7 +36,6 @@ class Recipes(CommandBase):
     cmds = {
         'recipes': 'Manage recipe lists',
     }
-    remote_location_types = ('git', 'http')
 
     @staticmethod
     def setup_subparser(parser, cmd=None):
@@ -106,12 +105,6 @@ class Recipes(CommandBase):
         else:
             self.log.error("Illegal recipes command: {}".format(self.args.recipe_command))
 
-    def uri_is_remote(self, uri):
-        """
-        Return True if uri is a remote URL, False otherwise.
-        """
-        return any([uri.find('{proto}+'.format(proto=x)) for x in self.remote_location_types])
-
     def _add_recipes(self):
         """
         Add recipe location:
@@ -120,7 +113,7 @@ class Recipes(CommandBase):
         - Check alias is not already used
         """
         alias = self.args.alias
-        uri   = self.args.uri[0]
+        uri = self.args.uri[0]
         self.log.debug("Preparing to add recipe location {name} -> {uri}".format(
             name=alias, uri=uri
         ))
@@ -140,32 +133,31 @@ class Recipes(CommandBase):
         recipe_cache = None
         if store_to_prefix:
             cfg_file = self.prefix.cfg_file
-            recipe_cache = os.path.join(self.prefix.prefix_cfg_dir, self.cfg.recipe_cache_dir, alias)
+            recipe_cache_top_level = os.path.join(self.prefix.prefix_cfg_dir, self.cfg.recipe_cache_dir)
         else:
             cfg_file = self.cfg.local_cfg
-            recipe_cache = os.path.join(self.cfg.local_cfg_dir, self.cfg.recipe_cache_dir, alias)
+            recipe_cache_top_level = os.path.join(self.cfg.local_cfg_dir, self.cfg.recipe_cache_dir)
+        recipe_cache = os.path.join(recipe_cache_top_level, alias)
         self.log.debug("Storing new recipe location to {cfg_file}".format(cfg_file=cfg_file))
         assert cfg_file is not None
+        assert recipe_cache_top_level is not None
         assert recipe_cache is not None
-        # Detect recipe URI type
-        (uri_type, uri) = parse_uri(uri)
-        uri = "{proto}+{url}".format(proto=uri_type, url=uri)
-        # Write this to config file
-        cfg_data = yaml.safe_load(open(cfg_file).read())
-        if not cfg_data.has_key('recipes'):
-            cfg_data['recipes'] = {}
-        cfg_data['recipes'][alias] = uri
-        open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
-        if uri_type == 'file':
-            return
+        assert alias
         # Now make sure we don't already have a cache dir
         if os.path.isdir(recipe_cache):
             self.log.warn("Cache dir {cdir} for remote recipe location {alias} already exists! Deleting.".format(
                 cdir=recipe_cache, alias=alias
             ))
             shutil.rmtree(recipe_cache)
-        # All's ready now, so let's download
-        self._update_recipes(uri, recipe_cache)
+        # Write this to config file
+        cfg_data = yaml.safe_load(open(cfg_file).read())
+        if not cfg_data.has_key('recipes'):
+            cfg_data['recipes'] = {}
+        cfg_data['recipes'][alias] = uri
+        open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
+        # Let the fetcher download the location
+        self.log.debug("Cloning into directory: {0}/{1}".format(recipe_cache_top_level, alias))
+        Fetcher().fetch_url(uri, recipe_cache_top_level, alias, {}) # No args
 
     def _remove_recipes(self):
         """
@@ -179,60 +171,35 @@ class Recipes(CommandBase):
         cfg_data = yaml.safe_load(open(cfg_file).read())
         cfg_data['recipes'].pop(self.args.alias, None)
         open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
-        # If remote, remove cache
-        if not self.uri_is_remote(self.cfg.get_named_recipe_locations()[self.args.alias]):
-            return
         recipe_cache_dir = os.path.join(
             os.path.split(cfg_file)[0],
             self.cfg.recipe_cache_dir,
             self.args.alias,
         )
+        # If the recipe cache is not inside a PyBOMBS dir, don't delete it.
+        if self.cfg.pybombs_dir not in recipe_cache_dir:
+            return
         if os.path.exists(recipe_cache_dir):
             self.log.info("Removing directory: {cdir}".format(cdir=recipe_cache_dir))
             shutil.rmtree(recipe_cache_dir)
 
-    def _update_recipes(self, uri=None, target_dir=None):
+    def _update_recipes(self):
         """
-        Update a remote recipe location. A remote recipe location
-        may still be uninitialized at this point (e.g. a git repo
-        might not have been cloned yet).
+        Update a remote recipe location.
         """
-        if uri is None:
-            try:
-                uri = self.cfg.get_named_recipe_locations()[self.args.alias]
-            except KeyError:
-                self.log.error("Error looking up recipe alias '{alias}'".format(alias=self.args.alias))
-                exit(1)
-        if target_dir is None:
-            target_dir = os.path.join(
-                os.path.split(self.cfg.get_named_recipe_source(self.args.alias))[0],
-                    self.cfg.recipe_cache_dir,
-                    self.args.alias
-            )
-        # If this is local, we need to do nothing
-        if not self.uri_is_remote(uri):
-            self.log.info("Local recipe directories can't be updated through PyBOMBS.")
-            return
-        # Make sure the top cache dir exists (e.g. ~/.pybombs/recipes)
-        if not os.path.isdir(os.path.split(target_dir)[0]):
-            os.mkdir(os.path.split(target_dir)[0])
-        protocol, uri = uri.split('+', 1)
+        try:
+            uri = self.cfg.get_named_recipe_locations()[self.args.alias]
+        except KeyError:
+            self.log.error("Error looking up recipe alias '{alias}'".format(alias=self.args.alias))
+            exit(1)
+        target_dir_top_level = os.path.join(
+            os.path.split(self.cfg.get_named_recipe_source(self.args.alias))[0],
+            self.cfg.recipe_cache_dir,
+        )
+        if not os.path.isdir(os.path.join(target_dir_top_level, self.args.alias)):
+            self.log.error("Recipe location does not exist. Run `recipes add --force' to add recipes.")
+            exit(1)
         # Do actual update
-        update_callback = {
-            'git': self._update_recipes_git,
-        }
         self.log.info("Updating recipe location '{alias}'...".format(alias=self.args.alias))
-        update_callback[protocol](uri, target_dir)
-
-    def _update_recipes_git(self, url, target_dir):
-        """
-        Update a recipe URL that's in a git repo
-        """
-        if os.path.isdir(target_dir):
-            os.chdir(target_dir)
-            subproc.monitor_process(['git', 'pull', '--rebase'])
-        else:
-            target_dir_base, target_dir_top = os.path.split(target_dir)
-            os.chdir(target_dir_base)
-            subproc.monitor_process(['git', 'clone', '--depth=1', url, target_dir_top])
+        Fetcher().update_src(uri, target_dir_top_level, self.args.alias, {})
 
