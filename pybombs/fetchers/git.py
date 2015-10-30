@@ -94,7 +94,7 @@ class Git(FetcherBase):
         else:
             # Without a git rev, all we can do is try and pull
             git_cmds = [
-                ['git', 'pull'],
+                ['git', 'pull', '--rebase'],
             ]
         for cmd in git_cmds:
             subproc.monitor_process(
