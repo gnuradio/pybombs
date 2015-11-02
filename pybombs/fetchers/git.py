@@ -31,6 +31,10 @@ class Git(FetcherBase):
     git fetcher
     """
     url_type = 'git'
+    host_sys_deps = ['git',]
+
+    def __init__(self):
+        FetcherBase.__init__(self)
 
     def fetch_url(self, url, dest, dirname, args={}):
         """

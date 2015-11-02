@@ -33,6 +33,9 @@ class File(FetcherBase):
     """
     url_type = 'file'
 
+    def __init__(self):
+        FetcherBase.__init__(self)
+
     def fetch_url(self, url, dest, dirname, args=None):
         """
         - url: File we'll link in.

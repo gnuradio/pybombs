@@ -61,6 +61,10 @@ class Wget(FetcherBase):
     Doesn't actually use wget, name is just for historical reasons.
     """
     url_type = 'wget'
+    host_sys_deps = ['python-requests',]
+
+    def __init__(self):
+        FetcherBase.__init__(self)
 
     def fetch_url(self, url, dest, dirname, args=None):
         """
