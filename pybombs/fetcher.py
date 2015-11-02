@@ -28,11 +28,8 @@ import re
 import shutil
 
 from pybombs import pb_logging
-from pybombs import inventory
 from pybombs.pb_exception import PBException
 from pybombs.config_manager import config_manager
-
-from pybombs import fetchers
 
 # TODO: Move these into the fetcher modules!
 URI_TYPES = ('file', 'wget', 'git', 'svn')
@@ -88,6 +85,7 @@ class Fetcher(object):
                 os.mkdir(self.src_dir)
             except:
                 raise PBException("Unable to create the source directory!")
+        from pybombs import fetchers
         self.available = fetchers.get_all()
 
     def get_fetcher(self, src):
@@ -102,7 +100,7 @@ class Fetcher(object):
         self.log.debug("Using fetcher {}".format(fetcher))
         return (fetcher, url)
 
-    def fetch_url(self, src, dest, dirname, args={}):
+    def fetch_url(self, src, dest, dirname, args=None):
         """
         - src: Source URL
         - dest: Store the fetched stuff into here
@@ -112,11 +110,12 @@ class Fetcher(object):
         (fetcher, url) = self.get_fetcher(src)
         cwd = os.getcwd()
         os.chdir(dest)
+        fetcher.assert_requirements()
         result = fetcher.fetch_url(url, dest, dirname, args)
         os.chdir(cwd)
         return result
 
-    def update_src(self, src, dest, dirname, args={}):
+    def update_src(self, src, dest, dirname, args=None):
         """
         - src: Source URL
         - dest: Store the fetched stuff into here
@@ -126,6 +125,7 @@ class Fetcher(object):
         (fetcher, url) = self.get_fetcher(src)
         cwd = os.getcwd()
         os.chdir(dest)
+        fetcher.assert_requirements()
         result = fetcher.update_src(url, dest, dirname, args)
         os.chdir(cwd)
         return result

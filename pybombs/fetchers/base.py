@@ -24,19 +24,23 @@ Fetcher: Base class
 
 from pybombs import pb_logging
 from pybombs.config_manager import config_manager
+from pybombs.requirer import Requirer
 
-class FetcherBase(object):
+class FetcherBase(Requirer):
     """
     Base class for fetchers.
     """
     url_type = None
 
     def __init__(self):
+        Requirer.__init__(self)
         self.cfg = config_manager
         self.log = pb_logging.logger.getChild("Fetcher.{}".format(self.url_type))
 
-    def fetch_url(self, src, dest, dirname, args={}):
+    def fetch_url(self, url, dest, dirname, args=None):
         """
+        Do an initial fetch of `url' into directory `dest/dirname'.
+
         - src: URL, without the <type>+ prefix.
         - dest: Store the fetched stuff into here
         - dirname: Put the result into a dir with this name, it'll be a subdir of dest
@@ -44,8 +48,11 @@ class FetcherBase(object):
         """
         raise NotImplementedError
 
-    def update_src(self, src, dest, dirname, args={}):
+    def update_src(self, url, dest, dirname, args=None):
         """
+        Update a previously fetched source. It must be located in
+        `dest/dirname`, and it must have been fetched using `url'.
+
         - src: URL, without the <type>+ prefix.
         - dest: Store the fetched stuff into here
         - dirname: Put the result into a dir with this name, it'll be a subdir of dest

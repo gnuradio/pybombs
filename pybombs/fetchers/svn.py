@@ -31,6 +31,11 @@ class Svn(FetcherBase):
     svn fetcher
     """
     url_type = 'svn'
+    # TODO: add svn dependency
+    #host_sys_deps = ['svn',]
+
+    def __init__(self):
+        FetcherBase.__init__(self)
 
     def fetch_url(self, url, dest, dirname, args=None):
         """
