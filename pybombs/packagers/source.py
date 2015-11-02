@@ -28,7 +28,6 @@ from pybombs import pb_logging
 from pybombs.utils import subproc
 from pybombs.utils import output_proc
 from pybombs.pb_exception import PBException
-from pybombs.fetcher import Fetcher
 from pybombs.packagers.base import PackagerBase
 
 class Source(PackagerBase):
@@ -48,9 +47,9 @@ class Source(PackagerBase):
 
     def supported(self):
         """
-        We can always build source packages.
+        We can always build source packages unless disabled in the config.
         """
-        return True
+        return 'src' in self.cfg.get('satisfy_order')
 
     def exists(self, recipe):
         """
@@ -86,6 +85,7 @@ class Source(PackagerBase):
         if not hasattr(recipe, 'source') or len(recipe.source) == 0:
             self.log.warn("Cannot find a source URI for package {0}".format(recipe.id))
             return False
+        from pybombs.fetcher import Fetcher
         try:
             if update:
                 if get_state() < self.inventory.STATE_CONFIGURED:
