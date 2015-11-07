@@ -102,14 +102,14 @@ class OutputProcessorMake(OutputProcessor):
         progress_bar_len = get_console_width() - len(preamble) - 2 - 7
         chars_left  = int(progress_bar_len * .01 * self.percentage)
         chars_right = progress_bar_len - chars_left - 1
-        self.status_line = chr(8) + '{0}({1:>3}%) [{2}{3}{4}]'.format(
+        self.status_line = chr(8) + '\n{0}({1:>3}%) [{2}{3}{4}]'.format(
                 preamble,
                 self.percentage,
                 '=' * chars_left,
                 ROTATION_ANIM[self.call_count % len(ROTATION_ANIM)],
                 ' ' * chars_right
         )
-        return self.status_line + chr(8)*(len(self.status_line)+1)
+        return self.status_line + '\r'
 
     def _make_generic_progress_line(self):
         preamble = self.preamble
@@ -117,13 +117,13 @@ class OutputProcessorMake(OutputProcessor):
         fraction = float(int((self.call_count / 10) % progress_bar_len)) / progress_bar_len
         chars_left = int(progress_bar_len * fraction)
         chars_right = progress_bar_len - chars_left - 1
-        self.status_line = chr(8) + '{0}[{1}{2}{3}]'.format(
+        self.status_line = chr(8) + '\n{0}[{1}{2}{3}]'.format(
                 preamble,
                 ' ' * chars_left,
                 ROTATION_ANIM[self.call_count % len(ROTATION_ANIM)],
                 ' ' * chars_right
         )
-        return self.status_line + chr(8)*(len(self.status_line)+1)
+        return self.status_line + '\r'
 
     def process_final(self):
         progress_bar_len = get_console_width() - len(self.preamble) - 2 - 7
