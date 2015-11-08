@@ -22,12 +22,12 @@
 """ PyBOMBS dispatcher. This will figure out which module to call
     and call it. """
 
-from pybombs.commands import *
+from pybombs.commands import dispatch
 
 def main():
     " Go, go, go! "
     try:
-        dispatch(globals().values())
+        dispatch()
     except KeyboardInterrupt:
         pass
 

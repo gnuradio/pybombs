@@ -74,38 +74,47 @@ class CommandBase(object):
 ##############################################################################
 # Argument Parser
 ##############################################################################
-def init_arg_parser(cmd_list):
+def init_arg_parser(show_help_for=None):
     """
     Create a base argument parser
     """
+    cmd_list = get_cmd_list(hide_hidden=True)
     # Set up global options:
-    parser = argparse.ArgumentParser(description='pybombs yo')
+    parser = argparse.ArgumentParser(
+        description='PyBOMBS: A meta-package manager integrated with CGRAN.',
+        epilog='Run `pybombs <command> --help to learn about command-specific options.',
+        add_help=False,
+    )
     config_manager.setup_parser(parser)
     subparsers = parser.add_subparsers(
-            help="PyBOMBS Commands:",
+            title='PyBOMBS subcommands',
+            #description='valid subcommands',
+            help="Description:",
             dest='command',
+            metavar='<command>',
     )
     # Set up options for each command:
-    cmd_name_list = []
     for cmd in cmd_list:
         for cmd_name, cmd_help in cmd.cmds.iteritems():
-            subparser = subparsers.add_parser(cmd_name, help=cmd_help)
+            subparser = subparsers.add_parser(cmd_name, help=cmd_help, add_help=True)
             cmd.setup_subparser(subparser, cmd_name)
-            cmd_name_list.append(cmd_name)
-    cmd_name_list.append('help')
+            if cmd_name == show_help_for:
+                subparser.print_help()
+                exit(0)
     return parser
 
 ##############################################################################
 # Dispatcher functions
 ##############################################################################
-def get_cmd_list(the_globals):
+def get_cmd_list(hide_hidden=False):
     """
     Returns a list of all command classes, excluding PyBombsCmd
     """
+    from pybombs import commands
     cmd_list = []
-    for g in the_globals:
+    for g in commands.__dict__.values():
         try:
-            if issubclass(g, CommandBase) and len(g.cmds):
+            if issubclass(g, CommandBase) and len(g.cmds) and not (hide_hidden and g.hidden):
                 cmd_list.append(g)
         except (TypeError, AttributeError):
             pass
@@ -121,13 +130,11 @@ def get_cmd_dict(cmd_list):
             cmd_dict[cmd_name] = cmd
     return cmd_dict
 
-def dispatch(the_globals):
+def dispatch():
     """
     Dispatch the actual command class
     """
-    cmd_list = get_cmd_list(the_globals)
-    parser = init_arg_parser(cmd_list)
-    args = parser.parse_args()
-    cmd_name = args.command
-    cmd_obj = get_cmd_dict(cmd_list)[cmd_name](cmd=cmd_name, args=args)
-    cmd_obj.run()
+    args = init_arg_parser().parse_args()
+    cmd_list = get_cmd_list()
+    get_cmd_dict(cmd_list)[args.command](cmd=args.command, args=args).run()
+

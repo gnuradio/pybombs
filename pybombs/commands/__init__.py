@@ -29,4 +29,4 @@ from recipes import Recipes
 from rebuild import Rebuild
 from remove import Remove
 # Leave this at the end
-#from help import Help
+from help import Help
