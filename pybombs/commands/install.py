@@ -36,36 +36,38 @@ class Install(CommandBase):
         """
         Set up a subparser for 'install'
         """
-        parser.add_argument(
+        group = parser.add_argument_group("Install arguments" if cmd == 'install' else "Update arguments")
+        group.add_argument(
                 'packages',
-                help="List of packages to install",
+                help="List of packages to install/update",
                 action='append',
                 default=[],
-                nargs='*'
+                nargs='*',
+                metavar='PACKAGES'
         )
-        parser.add_argument(
+        group.add_argument(
                 '--print-tree',
                 help="Print dependency tree",
                 action='store_true',
         )
-        parser.add_argument(
+        group.add_argument(
                 '--no-deps',
-                help="Skip dependencies",
+                help="Skip dependencies (may cause builds to fail!)",
                 action='store_true',
         )
         if cmd == 'install':
-            parser.add_argument(
+            group.add_argument(
                     '--static',
                     help="Build package(s) statically (implies source build)",
                     action='store_true',
             )
-            parser.add_argument(
+            group.add_argument(
                     '-u', '--update',
                     help="If packages are already installed, update them instead.",
                     action='store_true',
             )
         elif cmd == 'update':
-            parser.add_argument(
+            group.add_argument(
                     '-a', '--all',
                     help="Update all packages installed to current prefix, including dependencies.",
                     action='store_true',
@@ -159,3 +161,4 @@ class Moo(CommandBase):
         print(" *  /\---/\      ")
         print("    ~~   ~~      ")
         print("....\"Have you mooed today?\"...")
+
