@@ -35,6 +35,7 @@ import pb_logging
 from pb_exception import PBException
 from pybombs.utils import dict_merge
 from pybombs import inventory
+from pybombs import __version__
 
 def extract_cfg_items(filename, section, throw_ex=True):
     """
@@ -149,7 +150,7 @@ class PrefixInfo(object):
                 continue
             setattr(self, k, v)
 
-    def _merge_config_info_from_file(self, cfg_file, cfg_data={}):
+    def _merge_config_info_from_file(self, cfg_file, cfg_data):
         """
         Load a config file, load its contents, and merge it into cfg_info.
         Return the result.
@@ -191,14 +192,14 @@ class PrefixInfo(object):
         if os.getcwd() != os.path.expanduser('~') and os.path.isdir(os.path.join('.', self.prefix_conf_dir)):
             self.prefix_dir = os.getcwd()
             self.prefix_src = 'cwd'
-            self.log.info('Using CWD as prefix ({})'.format(self.prefix_dir))
+            self.log.debug('Using CWD as prefix ({})'.format(self.prefix_dir))
             return
         if self._cfg_info.get('config', {}).get('default_prefix'):
             self.prefix_dir = self._cfg_info['config']['default_prefix']
             if self._cfg_info['prefix_aliases'].has_key(self.prefix_dir):
                 self.log.debug("Resolving prefix alias {}.".format(self.prefix_dir))
                 self.prefix_dir = self._cfg_info['prefix_aliases'][self.prefix_dir]
-            self.log.info('Using default_prefix as prefix ({})'.format(self.prefix_dir))
+            self.log.debug('Using default_prefix as prefix ({})'.format(self.prefix_dir))
             self.prefix_src = 'default'
             return
         self.prefix_src = None
@@ -485,46 +486,61 @@ class ConfigManager(object):
         Initialize an ArgParser with all the args required for this
         class to operate.
         """
-        parser.add_argument(
+        group = parser.add_argument_group(
+            title='General Options',
+        )
+        group.add_argument(
+            '-h', '--help',
+            help="Show help and exit",
+            action='store_true',
+        )
+        group.add_argument(
+            '--version',
+            help="Show version and exit",
+            action='version',
+            version=__version__,
+        )
+        group.add_argument(
             '-p', '--prefix',
             help="Specify a prefix directory",
         )
-        parser.add_argument(
+        group.add_argument(
             '--prefix-conf',
             help="Specify a prefix configuration file",
             type=file,
             default=None
         )
-        parser.add_argument(
+        group.add_argument(
             '--config',
-            help="Set a config.yml option via command line. May be used multiple times",
+            help="Set a config option via command line. May be used multiple times",
             action='append',
             default=[],
         )
-        parser.add_argument(
+        group.add_argument(
             '--config-file',
             help="Specify a config file via command line",
             type=file,
             default=None,
         )
-        parser.add_argument(
+        group.add_argument(
             '-r', '--recipes',
             help="Specify a recipe location. May be used multiple times",
             action='append',
             default=[],
         )
-        parser.add_argument(
+        group.add_argument(
             '-q', '--quiet',
-            help="Reduce the output",
+            help="Less output",
             action='count',
             default=0,
         )
-        parser.add_argument(
+        group.add_argument(
             '-v', '--verbose',
-            help="More output",
+            help="More output (can be stacked)",
             action='count',
             default=0,
         )
+        self.parser = parser
         return parser
 
 
