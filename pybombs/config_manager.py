@@ -489,11 +489,11 @@ class ConfigManager(object):
         group = parser.add_argument_group(
             title='General Options',
         )
-        group.add_argument(
-            '-h', '--help',
-            help="Show help and exit",
-            action='store_true',
-        )
+        #group.add_argument(
+            #'-h', '--help',
+            #help="Show help and exit",
+            #action='store_true',
+        #)
         group.add_argument(
             '--version',
             help="Show version and exit",
