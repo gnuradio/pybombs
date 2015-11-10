@@ -117,25 +117,32 @@ class PackageManager(object):
             return pkg_version
         return False
 
-    def installed(self, name):
+    def installed(self, name, return_pkgr_name=False):
         """
-        Check to see if this recipe is installed (identified by its name)
+        Check to see if this recipe is installed (identified by its name).
 
-        If yes, it returns True or a version string.
-        Otherwise, returns False.
+        If not, return False. If yes, return value depends on return_pkgr_name
+        and is either a list of packager name that installed it, or a version
+        string (if the version string can't be determined, returns True instead).
         """
         self.log.debug("Checking if package {} is installed.".format(name))
         if self.check_package_flag(name, 'forceinstalled'):
             self.log.debug("Package {} is forced to state 'installed'.".format(name))
             # TODO maybe we can figure out a version string
-            return True
+            return ['force-installed'] if return_pkgr_name else True
         r = recipe.get_recipe(name)
+        pkgrs = []
         for pkgr in self.get_packagers(name):
             pkg_version = pkgr.installed(r)
             if pkg_version is None or not pkg_version:
                 continue
             else:
-                return True
+                if return_pkgr_name:
+                    pkgrs.append(pkgr.name)
+                else:
+                    return True
+        if return_pkgr_name and len(pkgrs):
+            return pkgrs
         return False
 
     def install(self, name, static=False):
