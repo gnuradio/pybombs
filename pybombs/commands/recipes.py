@@ -21,13 +21,17 @@
 #
 """ PyBOMBS command: recipes """
 
+from __future__ import print_function
 import re
 import os
 import shutil
 import yaml
+import sys
 from pybombs.commands import CommandBase
-from pybombs.utils import subproc
 from pybombs.fetcher import Fetcher
+from pybombs.package_manager import PackageManager
+from pybombs.recipe_manager import RecipeListManager
+from pybombs import recipe
 
 class Recipes(CommandBase):
     """
@@ -69,6 +73,31 @@ class Recipes(CommandBase):
                 help="Name of recipe location to update",
                 nargs=1,
             )
+        def setup_subsubparser_list(parser):
+            parser.add_argument(
+                '-l', '--list',
+                help="List only packages that match pattern (default is to list any)",
+                default=None,
+            )
+            parser.add_argument(
+                '-i', '--installed',
+                help="List only packages that are installed (default is to list all)",
+                action='store_true',
+            )
+            parser.add_argument(
+                '-x', '--in-prefix',
+                help="List only packages that are installed into prefix (implies -i, default is to list all)",
+                action='store_true',
+            )
+            parser.add_argument(
+                '--format',
+                help="Comma-separated list of columns",
+                default="id,path,installed_by",
+            )
+            parser.add_argument(
+                '--sort-by',
+                help="Column to sort output by",
+            )
         ###### Start of setup_subparser()
         subparsers = parser.add_subparsers(
                 help="Recipe Commands:",
@@ -78,6 +107,7 @@ class Recipes(CommandBase):
             'add':    ('Add a new recipes location.', setup_subsubparser_add),
             'remove': ('Remove a recipes location.', setup_subsubparser_remove),
             'update': ('Update recipes with a remote repository', setup_subsubparser_update),
+            'list':   ('List recipes', setup_subsubparser_list),
         }
         for cmd_name, cmd_info in recipes_cmd_name_list.iteritems():
             subparser = subparsers.add_parser(cmd_name, help=cmd_info[0])
@@ -95,13 +125,16 @@ class Recipes(CommandBase):
 
     def run(self):
         """ Go, go, go! """
-        self.args.alias = self.args.alias[0]
+        if hasattr(self.args, 'alias'):
+            self.args.alias = self.args.alias[0]
         if self.args.recipe_command == 'add':
             self._add_recipes()
         elif self.args.recipe_command == 'remove':
             self._remove_recipes()
         elif self.args.recipe_command == 'update':
             self._update_recipes()
+        elif self.args.recipe_command == 'list':
+            self._list_recipes()
         else:
             self.log.error("Illegal recipes command: {}".format(self.args.recipe_command))
 
@@ -202,4 +235,71 @@ class Recipes(CommandBase):
         # Do actual update
         self.log.info("Updating recipe location '{alias}'...".format(alias=self.args.alias))
         Fetcher().update_src(uri, target_dir_top_level, self.args.alias, {})
+
+    def _list_recipes(self):
+        """
+        Print a list of recipes.
+        """
+        pkgmgr = PackageManager()
+        recmgr = RecipeListManager()
+        self.log.debug("Loading all package names")
+        all_recipes = recmgr.list_all()
+        not_installed_string = '-'
+        format_installed_by = lambda x: [not_installed_string] if not x else x
+        rows = []
+        row_titles = {
+            'id': "Package Name",
+            'path': "Recipe Filename",
+            'installed_by': "Installed By",
+        }
+        self.args.format = [x for x in self.args.format.split(",") if len(x)]
+        for col_id in self.args.format:
+            if not col_id in row_titles.keys():
+                self.log.error("Invalid column ID: {0}".format(col_id))
+                exit(1)
+        widths = {k: len(row_titles[k]) for k in row_titles.keys()}
+        print("Loading package information...", end="")
+        sys.stdout.flush()
+        home_dir = os.path.expanduser("~")
+        for pkg in all_recipes:
+            if self.args.list is not None and not re.search(self.args.list, pkg):
+                # TODO test this
+                continue
+            rec = recipe.get_recipe(pkg, target=None)
+            if rec.target != 'package':
+                continue
+            print(".", end="")
+            sys.stdout.flush()
+            row = {
+                'id': pkg,
+                'path': recmgr.get_recipe_filename(pkg).replace(home_dir, "~"),
+                'installed_by': format_installed_by(pkgmgr.installed(pkg, return_pkgr_name=True)),
+            }
+            if self.args.in_prefix and 'source' not in row['installed_by']:
+                continue
+            if row['installed_by'] == [not_installed_string] and (self.args.installed or self.args.in_prefix):
+                continue
+            row['installed_by'] = ",".join(row['installed_by'])
+            for key in row.iterkeys():
+                widths[key] = max(widths[key], len(row[key]))
+            rows.append(row)
+        print("\n")
+        # Sort rows
+        # FIXME
+        # Print Header
+        hdr_len = 0
+        for col_id in self.args.format:
+            format_string = "{0:" + str(widths[col_id]) + "}  "
+            hdr_title = format_string.format(row_titles[col_id])
+            print(hdr_title, end="")
+            hdr_len += len(hdr_title)
+        print("")
+        print("-" * hdr_len)
+        # Print Table
+        for row in rows:
+            for col_id in self.args.format:
+                format_string = "{{0:{width}}}  ".format(width=widths[col_id])
+                print(format_string.format(row[col_id]), end="")
+            print("")
+        print("")
 
