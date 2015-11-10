@@ -139,6 +139,8 @@ class Pip(PackagerBase):
             installed_packages = subprocess.check_output(["pip", "list"]).strip().split("\n")
             for pkg in installed_packages:
                 mobj = re.match(r'(?P<pkg>\S+)\s+\((?P<ver>[^)]+)\)', pkg)
+                if mobj is None:
+                    continue
                 PIP_INSTALLED_CACHE[mobj.group('pkg')] = mobj.group('ver')
             return
         except subprocess.CalledProcessError as e:
