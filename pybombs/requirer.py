@@ -37,11 +37,11 @@ def require_hostsys_dependencies(deps):
     # These are host system dependencies, so disallow source package manager
     config_manager.set('satisfy_order', 'native')
     args = argparse.Namespace(
-        packages = [deps],
-        update = False,
-        static = False
-        no_deps = False,
-        print_tree = False,
+        packages=[deps],
+        update=False,
+        static=False,
+        no_deps=False,
+        print_tree=False,
     )
     Install('install', args).run()
     # Restore previous settings
