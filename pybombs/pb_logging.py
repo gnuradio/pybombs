@@ -68,11 +68,11 @@ ch = ColoredConsoleHandler()
 formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-#logger.setLevel(OBNOXIOUS)
-logger.setLevel(DEBUG)
+# Set default level:
+logger.setLevel(INFO)
 
 if __name__ == "__main__":
-    print "Testing logger: "
+    print("Testing logger: ")
     logger.setLevel(1)
     logger.obnoxious("super-verbose message")
     logger.debug("debug message")
