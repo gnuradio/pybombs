@@ -97,6 +97,7 @@ class Recipes(CommandBase):
             parser.add_argument(
                 '--sort-by',
                 help="Column to sort output by",
+                default='id',
             )
         ###### Start of setup_subparser()
         subparsers = parser.add_subparsers(
@@ -244,6 +245,8 @@ class Recipes(CommandBase):
         recmgr = RecipeListManager()
         self.log.debug("Loading all package names")
         all_recipes = recmgr.list_all()
+        if self.args.list is not None:
+            all_recipes = [x for x in all_recipes if re.search(self.args.list, x)]
         not_installed_string = '-'
         format_installed_by = lambda x: [not_installed_string] if not x else x
         rows = []
@@ -262,11 +265,7 @@ class Recipes(CommandBase):
         sys.stdout.flush()
         home_dir = os.path.expanduser("~")
         for pkg in all_recipes:
-            if self.args.list is not None and not re.search(self.args.list, pkg):
-                # TODO test this
-                continue
-            rec = recipe.get_recipe(pkg, target=None)
-            if rec.target != 'package':
+            if recipe.get_recipe(pkg, target=None).target != 'package':
                 continue
             print(".", end="")
             sys.stdout.flush()
@@ -285,7 +284,8 @@ class Recipes(CommandBase):
             rows.append(row)
         print("\n")
         # Sort rows
-        # FIXME
+        if self.args.sort_by is not None and self.args.sort_by in row_titles.keys():
+            rows = sorted(rows, key=lambda k: k[self.args.sort_by])
         # Print Header
         hdr_len = 0
         for col_id in self.args.format:
