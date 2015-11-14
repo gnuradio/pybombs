@@ -155,7 +155,7 @@ class Recipes(CommandBase):
         if re.match(r'[a-z][a-z0-9_]*', alias) is None:
             self.log.error("Invalid recipe alias: {alias}".format(alias=alias))
             exit(1)
-        if self.cfg.get_named_recipe_locations().has_key(alias):
+        if self.cfg.get_named_recipe_dirs().has_key(alias):
             if not self.args.force:
                 self.log.error("Recipe name {alias} is already taken!".format(alias=alias))
                 exit(1)
@@ -190,18 +190,18 @@ class Recipes(CommandBase):
         cfg_data['recipes'][alias] = uri
         open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
         # Let the fetcher download the location
-        self.log.debug("Cloning into directory: {0}/{1}".format(recipe_cache_top_level, alias))
+        self.log.debug("Fetching into directory: {0}/{1}".format(recipe_cache_top_level, alias))
         Fetcher().fetch_url(uri, recipe_cache_top_level, alias, {}) # No args
 
     def _remove_recipes(self):
         """
         Remove a recipe alias and, if applicable, its cache.
         """
-        if not self.cfg.get_named_recipe_locations().has_key(self.args.alias):
+        if not self.cfg.get_named_recipe_dirs().has_key(self.args.alias):
             self.log.error("Unknown recipe alias: {alias}".format(alias=self.args.alias))
             exit(1)
         # Remove from config file
-        cfg_file = self.cfg.get_named_recipe_source(self.args.alias)
+        cfg_file = self.cfg.get_named_recipe_cfg_file(self.args.alias)
         cfg_data = yaml.safe_load(open(cfg_file).read())
         cfg_data['recipes'].pop(self.args.alias, None)
         open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
@@ -222,20 +222,18 @@ class Recipes(CommandBase):
         Update a remote recipe location.
         """
         try:
-            uri = self.cfg.get_named_recipe_locations()[self.args.alias]
+            uri = self.cfg.get_named_recipe_sources()[self.args.alias]
+            recipes_dir = self.cfg.get_named_recipe_dirs()[self.args.alias]
         except KeyError:
             self.log.error("Error looking up recipe alias '{alias}'".format(alias=self.args.alias))
             exit(1)
-        target_dir_top_level = os.path.join(
-            os.path.split(self.cfg.get_named_recipe_source(self.args.alias))[0],
-            self.cfg.recipe_cache_dir,
-        )
-        if not os.path.isdir(os.path.join(target_dir_top_level, self.args.alias)):
+        if not os.path.isdir(recipes_dir):
             self.log.error("Recipe location does not exist. Run `recipes add --force' to add recipes.")
             exit(1)
+        cache_dir_top_level, cache_dir = os.path.split(os.path.normpath(recipes_dir))
         # Do actual update
-        self.log.info("Updating recipe location '{alias}'...".format(alias=self.args.alias))
-        Fetcher().update_src(uri, target_dir_top_level, self.args.alias, {})
+        self.log.info("Updating recipe location `{alias}'...".format(alias=self.args.alias))
+        Fetcher().update_src(uri, cache_dir_top_level, cache_dir, {})
 
     def _list_recipes(self):
         """
