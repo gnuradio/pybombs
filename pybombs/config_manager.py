@@ -31,8 +31,8 @@ import argparse
 import subprocess
 import yaml
 
-import pb_logging
-from pb_exception import PBException
+from pybombs import pb_logging
+from pybombs.pb_exception import PBException
 from pybombs.utils import dict_merge
 from pybombs import inventory
 from pybombs import __version__
@@ -341,8 +341,9 @@ class ConfigManager(object):
         # Go through cfg files, then env variable, then command line args
         # From command line:
         self._recipe_locations = []
-        self._named_recipe_locations = {}
+        self._named_recipe_dirs = {}
         self._named_recipe_sources = {}
+        self._named_recipe_cfg_files = {}
         for r_loc in args.recipes:
             if r_loc:
                 self._recipe_locations.append(r_loc)
@@ -360,11 +361,11 @@ class ConfigManager(object):
                     uri, name, os.path.join(os.path.split(cfg_file)[0], 'recipes')
                 )
                 self._recipe_locations.append(local_recipe_dir)
-                self._named_recipe_locations[name] = uri
-                self._named_recipe_sources[name] = cfg_file
+                self._named_recipe_dirs[name] = local_recipe_dir
+                self._named_recipe_sources[name] = uri
+                self._named_recipe_cfg_files[name] = cfg_file
         self.log.debug("Full list of recipe locations: {}".format(self._recipe_locations))
-        self.log.debug("Named recipe locations: {}".format(self._named_recipe_locations))
-
+        self.log.debug("Named recipe locations: {}".format(self._named_recipe_sources))
 
     def _append_cfg_from_file(self, cfg_filename):
         """
@@ -433,18 +434,24 @@ class ConfigManager(object):
         """
         return self._recipe_locations
 
-    def get_named_recipe_locations(self):
+    def get_named_recipe_dirs(self):
         """
-        Returns a dictionary of named recipe locations. Note that
+        Returns the directory where a named recipe is stored.
+        """
+        return self._named_recipe_dirs
+
+    def get_named_recipe_sources(self):
+        """
+        Returns a dictionary of named recipe sources. Note that
         these are not resolved locations.
         """
-        return self._named_recipe_locations
+        return self._named_recipe_sources
 
-    def get_named_recipe_source(self, recipe_alias):
+    def get_named_recipe_cfg_file(self, recipe_alias):
         """
         Returns the path of the config file which declared a recipe by name.
         """
-        return self._named_recipe_sources[recipe_alias]
+        return self._named_recipe_cfg_files[recipe_alias]
 
     def get_template_dir(self):
         """
@@ -460,7 +467,7 @@ class ConfigManager(object):
         is already a directory, then return that. Or it's a remote
         URI; in that case, return the cache directory.
         """
-        if re.match(r'^[a-z]{3,4}\+', uri) is None:
+        if os.path.isdir(uri):
             return uri
         return os.path.join(cache_dir, name)
 
