@@ -24,8 +24,8 @@ Recipe Manager: Handles the available recipes
 """
 
 import os
-import config_manager
-import pb_logging
+from pybombs import config_manager
+from pybombs import pb_logging
 from pybombs.pb_exception import PBException
 
 class RecipeListManager(object):
