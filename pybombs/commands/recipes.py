@@ -183,15 +183,15 @@ class Recipes(CommandBase):
                 cdir=recipe_cache, alias=alias
             ))
             shutil.rmtree(recipe_cache)
+        # Let the fetcher download the location
+        self.log.debug("Fetching into directory: {0}/{1}".format(recipe_cache_top_level, alias))
+        Fetcher().fetch_url(uri, recipe_cache_top_level, alias, {}) # No args
         # Write this to config file
         cfg_data = yaml.safe_load(open(cfg_file).read())
         if not cfg_data.has_key('recipes'):
             cfg_data['recipes'] = {}
         cfg_data['recipes'][alias] = uri
         open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
-        # Let the fetcher download the location
-        self.log.debug("Fetching into directory: {0}/{1}".format(recipe_cache_top_level, alias))
-        Fetcher().fetch_url(uri, recipe_cache_top_level, alias, {}) # No args
 
     def _remove_recipes(self):
         """

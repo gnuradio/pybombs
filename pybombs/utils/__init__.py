@@ -19,5 +19,6 @@
 # Boston, MA 02110-1301, USA.
 #
 
+from archives import *
 from utils import *
 from vcompare import vcompare

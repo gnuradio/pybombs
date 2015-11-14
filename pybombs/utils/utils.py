@@ -35,45 +35,10 @@ import signal
 import operator
 import sys
 import subprocess
-import zipfile
-import tarfile
-
 from pybombs import pb_logging
 
 log = pb_logging.logger.getChild("utils")
 
-
-#############################################################################
-# Archives
-#############################################################################
-def extract(filename):
-    """
-    Extract an archive into the cwd. Return the prefix for the extracted files.
-    """
-    if tarfile.is_tarfile(filename):
-        log.debug("Untaring {}".format(filename))
-        archive = tarfile.open(filename)
-        prefix = os.path.commonprefix(archive.getnames())
-        log.debug("Common prefix {}".format(prefix))
-        archive.extractall()
-        archive.close()
-        return prefix
-    if zipfile.is_zipfile(filename):
-        log.debug("Unzipping {}".format(filename))
-        archive = zipfile.open(filename)
-        prefix = os.path.commonprefix(archive.getnames())
-        log.debug("Common prefix {}".format(prefix))
-        archive.extractall()
-        archive.close()
-        return prefix
-    raise RuntimeError("Cannot extract {}: Unknown archive type")
-
-def is_archive(filename):
-    """
-    Return True if 'filename' is a zipped archive.
-    """
-    return os.path.isfile(filename) and \
-            (tarfile.is_tarfile(filename) or zipfile.is_zipfile(filename))
 
 #############################################################################
 # Execute other scripts

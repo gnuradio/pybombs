@@ -26,7 +26,7 @@ import math
 import os
 import sys
 import requests
-from pybombs.utils import utils
+from pybombs import utils
 from pybombs.fetchers.base import FetcherBase
 
 def _download(url):
@@ -76,9 +76,7 @@ class Wget(FetcherBase):
         filename = _download(url)
         if utils.is_archive(filename):
             # Move archive contents to the correct source location:
-            dir_prefix = utils.extract(filename)
-            self.log.debug("Moving {} to {}".format(dir_prefix, dirname))
-            os.rename(dir_prefix, dirname) # Will work if arguments are equal
+            utils.extract_to(filename, dirname)
             # Remove the archive once it has been extracted:
             os.remove(filename)
         return True
