@@ -23,7 +23,7 @@
 """
 
 import os
-from pybombs.utils import utils
+from pybombs import utils
 from pybombs.fetchers.base import FetcherBase
 
 class File(FetcherBase):
@@ -56,10 +56,8 @@ class File(FetcherBase):
         if utils.is_archive(filename):
             self.log.debug("Unpacking {ar}".format(ar=filename))
             # Move to the correct source location.
-            prefix = utils.extract(filename)
-            self.log.debug("Moving {} to {}".format(prefix, dirname))
-            os.rename(prefix, dirname) # Will work if arguments are equal
-            # Remove the tar file once it has been extracted
+            utils.extract_to(filename, dirname)
+            # Remove the archive once it has been extracted
             os.remove(filename)
         return True
 
