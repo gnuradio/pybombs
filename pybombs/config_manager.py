@@ -55,6 +55,7 @@ class PrefixInfo(object):
     Stores information about the current prefix being used.
     """
     prefix_conf_dir = '.pybombs'
+    src_dir_name = 'src'
     env_prefix_var = 'PYBOMBS_PREFIX'
     env_srcdir_var = 'PYBOMBS_PREFIX_SRC'
     inv_file_name = 'inventory.yml'
@@ -114,7 +115,7 @@ class PrefixInfo(object):
             config_section = extract_cfg_items(self.cfg_file, 'config', False)
             self._cfg_info = self._merge_config_info_from_file(self.cfg_file, self._cfg_info)
         # 4) Find the src dir
-        self.src_dir = config_section.get('srcdir', os.path.join(self.prefix_dir, 'src'))
+        self.src_dir = config_section.get('srcdir', os.path.join(self.prefix_dir, self.src_dir_name))
         self.log.debug("Prefix source dir is: {}".format(self.src_dir))
         if not os.path.isdir(self.src_dir):
             self.log.debug("Creating source dir.")

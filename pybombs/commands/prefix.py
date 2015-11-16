@@ -38,16 +38,30 @@ def setup_subsubparser_initsdk(parser):
         nargs=1,
     )
 
+def setup_subsubparser_init(parser):
+    parser.add_argument(
+        'path',
+        help="Path to the new prefix (defaults to CWD).",
+        default=".",
+    )
+    parser.add_argument(
+        '--sdk',
+        dest='sdkname',
+        help="Initialize prefix with SDK Package",
+    )
+    parser.add_argument(
+        '-a', '--alias',
+        help="If specified, store an alias to this new prefix in the local config file.",
+    )
+
 ### Class definition
 class Prefix(CommandBase):
     """
     Prefix operations
     """
     cmds = {
-        'prefix': 'Prefix commands', # TODO nicer
+        'prefix': 'Prefix commands',
     }
-    # These sections are copied from the recipe to the config file
-    sdk_recipe_keys_for_config = ('config', 'packages', 'categories', 'env')
 
     @staticmethod
     def setup_subparser(parser, cmd=None):
@@ -98,24 +112,74 @@ class Prefix(CommandBase):
         """
         pybombs prefix install-sdk
         """
-        self._install_sdk_to_prefix(self.args.sdkname[0])
+        self._install_sdk_to_prefix(
+            self.args.sdkname[0],
+        )
 
     def _run_init(self):
         """
         pybombs prefix init
         """
-        # tbw
-        pass
-
+        # Make sure the directory is writable
+        path = self.args.path
+        if not os.path.isdir(path):
+            self.log.info("Creating directory `{0}'".format(path))
+            os.mkdir(path)
+        assert os.path.isdir(path)
+        if not os.access(path, os.W_OK|os.X_OK):
+            self.log.error("Cannot write to prefix path `{0}'.".format(path))
+            exit(1)
+        # Copy template
+        # TODO: I'm not too happy about this, all the hard coded stuff. Needs
+        # cleaning up, for sure. Especially that setup_env.sh stuff at the end.
+        # Ideally, we could switch prefix templates.
+        skel_dir = os.path.join(self.cfg.module_dir, 'skel')
+        for p in os.listdir(skel_dir):
+            if os.path.exists(os.path.join(path, p)):
+                self.log.obnoxious("Skipping {0}".format(p))
+                continue
+            self.log.obnoxious("Copying {0}".format(p))
+            p_full = os.path.join(skel_dir, p)
+            if os.path.isdir(p_full):
+                shutil.copytree(
+                    p_full, os.path.join(path, p),
+                    ignore=shutil.ignore_patterns('.ignore')
+                )
+            else:
+                shutil.copy(p_full, path)
+        open(os.path.join(path, 'setup_env.sh'), 'w').write(
+            open(os.path.join(skel_dir, 'setup_env.sh')).read().format(
+                PYBOMBS_PREFIX=path,
+            )
+        )
+        # Register alias
+        if self.args.alias is not None:
+            cfg_data = yaml.safe_load(open(self.cfg.local_cfg).read())
+            # TODO warn if alias already exists (issue #48)
+            cfg_data = dict_merge(
+                cfg_data,
+                {'prefix_aliases': {self.args.alias: path}},
+            )
+            open(self.cfg.local_cfg, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
+        # Install SDK if so desired
+        if self.args.sdkname is not None:
+            self.log.info("Reloading configuration...")
+            self.cfg.load(select_prefix=path)
+            self.prefix = self.cfg.get_active_prefix()
+            self.inventory = self.prefix.inventory
+            self._install_sdk_to_prefix(self.args.sdkname)
 
     def _install_sdk_to_prefix(self, sdkname):
         """
         Read recipe for sdkname, and install the SDK to the prefix.
         """
+        src_dir = self.prefix.src_dir
+        cfg_file = self.prefix.cfg_file,
         ### Get the recipe
         r = recipe.get_recipe(sdkname, target='sdk')
         try:
-            os.chdir(self.prefix.src_dir)
+            self.log.obnoxious("Switching CWD to {0}".format(src_dir))
+            os.chdir(src_dir)
         except:
             self.log.error("Source dir required to install SDK.")
             exit(1)
@@ -135,8 +199,8 @@ class Prefix(CommandBase):
         if len(files_to_delete):
             self.log.info("Cleaning up files...")
         for ftd in files_to_delete:
-            ftd = os.path.normpath(os.path.join(self.prefix.src_dir, ftd))
-            if os.path.commonprefix((self.prefix.src_dir, ftd)) != self.prefix.src_dir:
+            ftd = os.path.normpath(os.path.join(src_dir, ftd))
+            if os.path.commonprefix((src_dir, ftd)) != src_dir:
                 self.log.warn("Not removing {ftd} -- outside source dir!".format(ftd=ftd))
                 continue
             self.log.debug("Removing {ftd}...".format(ftd=ftd))
@@ -150,34 +214,40 @@ class Prefix(CommandBase):
         ### Update the prefix-local config file
         self.log.debug("Updating config file with SDK recipe info.")
         try:
-            old_cfg_data = yaml.safe_load(open(self.prefix.cfg_file).read()) or {}
+            old_cfg_data = yaml.safe_load(open(cfg_file).read()) or {}
         except IOError:
             self.log.debug("There doesn't seem to be a config file yet for this prefix.")
             old_cfg_data = {}
         # Filter out keys we don't care about:
-        sdk_cfg_data = {k: v for k, v in r.get_dict().iteritems() if k in self.sdk_recipe_keys_for_config}
+        sdk_recipe_keys_for_config = ('config', 'packages', 'categories', 'env')
+        sdk_cfg_data = {k: v for k, v in r.get_dict().iteritems() if k in sdk_recipe_keys_for_config}
         self.log.obnoxious("New data: {new}".format(new=sdk_cfg_data))
         cfg_data = dict_merge(old_cfg_data, sdk_cfg_data)
-        open(self.prefix.cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
+        open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
 
     #########################################################################
     # Sub-commands:
     prefix_cmd_name_list = {
-            'info': {
-                'help': 'Display information on the currently used prefix.',
-                'parser': lambda p: None,
-                'run': _print_prefix_info,
-            },
-            'env': {
-                'help': 'Print the environment variables used in this prefix.',
-                'parser': lambda p: None,
-                'run': _print_prefix_info,
-            },
-            'install-sdk': {
-                'help': 'Install an SDK into the prefix.',
-                'parser': setup_subsubparser_initsdk,
-                'run': _run_installsdk,
-            },
+        'info': {
+            'help': 'Display information on the currently used prefix.',
+            'parser': lambda p: None,
+            'run': _print_prefix_info,
+        },
+        'init': {
+            'help': 'Create and initialize a prefix.',
+            'parser': setup_subsubparser_init,
+            'run': _run_init,
+        },
+        'env': {
+            'help': 'Print the environment variables used in this prefix.',
+            'parser': lambda p: None,
+            'run': _print_prefix_info,
+        },
+        'install-sdk': {
+            'help': 'Install an SDK into the prefix.',
+            'parser': setup_subsubparser_initsdk,
+            'run': _run_installsdk,
+        },
     }
     #########################################################################
 
