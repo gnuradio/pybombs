@@ -79,7 +79,10 @@ packages = [
 ]
 
 package_data = {
-    'pybombs': ['templates/*.lwt',],
+    'pybombs': [
+        'templates/*.lwt',
+        'skel/*',
+    ],
 }
 
 deps = [
