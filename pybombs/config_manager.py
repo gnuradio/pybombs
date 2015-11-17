@@ -68,7 +68,7 @@ class PrefixInfo(object):
             'categories': {'common': {'forcebuild': True}},
     }
 
-    def __init__(self, args, cfg_list):
+    def __init__(self, args, cfg_list, select_prefix=None):
         self.log = pb_logging.logger.getChild("ConfigManager.PrefixInfo")
         self.prefix_dir = None
         self.prefix_cfg_dir = None
@@ -81,6 +81,8 @@ class PrefixInfo(object):
         self.target_dir = None
         self.env = os.environ
         self._cfg_info = self.default_config_info
+        if select_prefix is not None:
+            args.prefix = select_prefix
         # 1) Load the config info
         for cfg_file in reversed(cfg_list):
             self._cfg_info = self._merge_config_info_from_file(cfg_file, self._cfg_info)
@@ -285,7 +287,16 @@ class ConfigManager(object):
     LAYER_CMDLINE_ARGS = 5
     LAYER_VOLATILE = 6
 
-    def __init__(self,):
+    def __init__(self, select_prefix=None):
+        ## Get location of module
+        self.module_dir = os.path.dirname(pb_logging.__file__)
+        self.load(select_prefix)
+
+    def load(self, select_prefix=None):
+        """
+        Load the actual configuration. We put this outside the ctor so we can
+        reload on the same object. In that case, anything unsaved is reset!
+        """
         ## Get command line args:
         parser = argparse.ArgumentParser(add_help=False)
         self.setup_parser(parser)
@@ -333,10 +344,10 @@ class ConfigManager(object):
         # After this, no more dicts should be appended to cfg_cascade.
         assert len(self.cfg_cascade) == self.LAYER_VOLATILE + 1
         # Find recipe templates:
-        self._template_dir = os.path.join(os.path.dirname(pb_logging.__file__), 'templates')
+        self._template_dir = os.path.join(self.module_dir, 'templates')
         self.log.debug("Template directory: {}".format(self._template_dir))
         ## Init prefix:
-        self._prefix_info = PrefixInfo(args, cfg_files)
+        self._prefix_info = PrefixInfo(args, cfg_files, select_prefix)
         ## Init recipe-lists:
         # Go through cfg files, then env variable, then command line args
         # From command line:
