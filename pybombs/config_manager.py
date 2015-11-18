@@ -109,8 +109,7 @@ class PrefixInfo(object):
         self.cfg_file = os.path.join(self.prefix_cfg_dir, ConfigManager.cfg_file_name)
         config_section = {}
         if not os.path.isfile(self.cfg_file):
-            self.log.warn("Prefix configuration file not found: {}".format(self.cfg_file))
-            self.cfg_file = None
+            self.log.warn("Prefix configuration file not found: {}, assuming empty.".format(self.cfg_file))
         else:
             config_section = extract_cfg_items(self.cfg_file, 'config', False)
             self._cfg_info = self._merge_config_info_from_file(self.cfg_file, self._cfg_info)
