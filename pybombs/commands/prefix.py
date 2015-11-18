@@ -174,7 +174,7 @@ class Prefix(CommandBase):
         Read recipe for sdkname, and install the SDK to the prefix.
         """
         src_dir = self.prefix.src_dir
-        cfg_file = self.prefix.cfg_file,
+        cfg_file = self.prefix.cfg_file
         ### Get the recipe
         r = recipe.get_recipe(sdkname, target='sdk')
         try:
@@ -223,6 +223,7 @@ class Prefix(CommandBase):
         sdk_cfg_data = {k: v for k, v in r.get_dict().iteritems() if k in sdk_recipe_keys_for_config}
         self.log.obnoxious("New data: {new}".format(new=sdk_cfg_data))
         cfg_data = dict_merge(old_cfg_data, sdk_cfg_data)
+        self.log.debug("Writing updated prefix config to `{0}'".format(cfg_file))
         open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
 
     #########################################################################
