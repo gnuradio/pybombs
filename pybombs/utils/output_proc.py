@@ -27,13 +27,7 @@ import os
 import re
 import sys
 from subprocess import Popen, PIPE, STDOUT
-from threading  import Thread
-try:
-    from Queue import Queue, Empty
-except ImportError:
-    from queue import Queue, Empty  # Py3k
 
-READ_TIMEOUT = 0.1 # s
 ROTATION_ANIM = ('-', '\\', '|', '/',)
 DEFAULT_CONSOLE_WIDTH = 80
 
@@ -162,42 +156,4 @@ class OutputProcessorMake(OutputProcessor):
         )
         print self.status_line
 
-
-def run_with_output_processing(p, o_proc):
-    """
-    Run a previously created process p through
-    an output processor o_proc.
-    """
-    def enqueue_output(stdout_data, stdout_queue, stderr_data, stderr_queue):
-        " Puts the output from the process into the queue "
-        for line in iter(stdout_data.readline, b''):
-            stdout_queue.put(line)
-        stdout_data.close()
-        if stderr_data is not None:
-            for line in iter(stderr_data.readline, b''):
-                stderr_queue.put(line)
-            stderr_data.close()
-    def poll_queue(q):
-        " Safe polling from queue "
-        line = ""
-        try:
-            line = q.get(timeout=READ_TIMEOUT)
-        except Empty:
-            return ""
-        # Got line:
-        return line
-    # Init thread and queue
-    q_stdout = Queue()
-    q_stderr = Queue()
-    t = Thread(target=enqueue_output, args=(p.stdout, q_stdout, p.stderr, q_stderr))
-    # End the thread when the program terminates
-    t.daemon = True
-    t.start()
-    # Run loop
-    while p.poll() is None: # Run while process is alive
-        line_stdout = poll_queue(q_stdout)
-        line_stderr = poll_queue(q_stderr)
-        o_proc.process_output(line_stdout, line_stderr)
-    o_proc.process_final()
-    return p.returncode
 
