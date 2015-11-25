@@ -62,6 +62,7 @@ class PBLogger(logging.getLoggerClass()):
         self.log(OBNOXIOUS, *args, **kwargs)
 
 
+logging.addLevelName(OBNOXIOUS, 'OBNOXIOUS')
 logging.setLoggerClass(PBLogger)
 logger = logging.getLogger('PyBombs')
 ch = ColoredConsoleHandler()
