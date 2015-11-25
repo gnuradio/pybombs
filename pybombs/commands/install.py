@@ -117,6 +117,9 @@ class Install(CommandBase):
             self.args.packages,
             self._check_if_pkg_goes_into_tree if not self.args.no_deps else lambda x: bool(x in self.args.packages)
         )
+        if install_tree.empty():
+            self.log.info("No packages to install.")
+            exit(0)
         self.log.debug("Install tree:")
         if self.log.getEffectiveLevel() <= 20 or self.args.print_tree:
             install_tree.pretty_print()
