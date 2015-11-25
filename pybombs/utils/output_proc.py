@@ -23,6 +23,7 @@
 Output Processors
 """
 
+import os
 import re
 import sys
 from subprocess import Popen, PIPE, STDOUT
@@ -34,10 +35,31 @@ except ImportError:
 
 READ_TIMEOUT = 0.1 # s
 ROTATION_ANIM = ('-', '\\', '|', '/',)
+DEFAULT_CONSOLE_WIDTH = 80
 
-# FIXME write this
 def get_console_width():
-    return 80
+    '''
+    http://stackoverflow.com/questions/566746/how-to-get-console-window-width-in-python
+    '''
+    env = os.environ
+    def ioctl_GWINSZ(fd):
+        try:
+            import fcntl, termios, struct
+            cr = struct.unpack('hh', fcntl.ioctl(fd, termios.TIOCGWINSZ, '1234'))
+        except:
+            return
+        return cr
+    cr = ioctl_GWINSZ(0) or ioctl_GWINSZ(1) or ioctl_GWINSZ(2)
+    if not cr:
+        try:
+            fd = os.open(os.ctermid(), os.O_RDONLY)
+            cr = ioctl_GWINSZ(fd)
+            os.close(fd)
+        except:
+            pass
+    if not cr:
+        cr = (env.get('LINES', 25), env.get('COLUMNS', 80))
+    return cr[1]
 
 class OutputProcessor(object):
     """ Output processor. Meant to parse output from a running command. """
@@ -103,40 +125,42 @@ class OutputProcessorMake(OutputProcessor):
 
     def _make_percentage_line(self):
         preamble = self.preamble
+        # 2 for '[*]', 7 for '(xxx%) '
         progress_bar_len = get_console_width() - len(preamble) - 2 - 7
-        chars_left  = int(progress_bar_len * .01 * self.percentage)
-        chars_right = progress_bar_len - chars_left - 1
-        self.status_line = chr(8) + '{0}({1:>3}%) [{2}{3}{4}]'.format(
+        # subtract 1 to account for the rotation animation
+        chars_left  = int((progress_bar_len-1) * .01 * self.percentage)
+        chars_right = progress_bar_len - chars_left - 2
+        self.status_line = '\r{0}({1:>3}%) [{2}{3}{4}]\r'.format(
                 preamble,
                 self.percentage,
                 '=' * chars_left,
                 ROTATION_ANIM[self.call_count % len(ROTATION_ANIM)],
                 ' ' * chars_right
         )
-        return self.status_line + chr(8)*(len(self.status_line)+1)
+        return self.status_line
 
     def _make_generic_progress_line(self):
         preamble = self.preamble
         progress_bar_len = get_console_width() - len(preamble) - 2
         fraction = float(int((self.call_count / 10) % progress_bar_len)) / progress_bar_len
         chars_left = int(progress_bar_len * fraction)
-        chars_right = progress_bar_len - chars_left - 1
-        self.status_line = chr(8) + '{0}[{1}{2}{3}]'.format(
+        chars_right = progress_bar_len - chars_left - 2
+        self.status_line = '\r{0}[{1}{2}{3}]'.format(
                 preamble,
                 ' ' * chars_left,
                 ROTATION_ANIM[self.call_count % len(ROTATION_ANIM)],
                 ' ' * chars_right
         )
-        return self.status_line + chr(8)*(len(self.status_line)+1)
+        return self.status_line
 
     def process_final(self):
         progress_bar_len = get_console_width() - len(self.preamble) - 2 - 7
-        self.status_line = chr(8) + '{0}({1:>3}%) [{2}]'.format(
+        self.status_line = '\r{0}({1:>3}%) [{2}]'.format(
                 self.preamble,
                 100,
-                '=' * progress_bar_len,
+                '=' * (progress_bar_len-1),
         )
-        print(self.status_line)
+        print self.status_line
 
 
 def run_with_output_processing(p, o_proc):
