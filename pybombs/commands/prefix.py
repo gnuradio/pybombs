@@ -121,7 +121,7 @@ class Prefix(CommandBase):
         pybombs prefix init
         """
         # Make sure the directory is writable
-        path = self.args.path
+        path = os.path.abspath(os.path.normpath(self.args.path))
         if not os.path.isdir(path):
             self.log.info("Creating directory `{0}'".format(path))
             os.mkdir(path)
