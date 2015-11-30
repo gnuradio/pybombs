@@ -25,7 +25,6 @@ and reading/setting values.
 Used as a central cache for all kinds of settings.
 """
 
-import re
 import os
 import argparse
 import subprocess
