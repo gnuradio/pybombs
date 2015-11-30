@@ -350,11 +350,11 @@ class ConfigManager(object):
         self._prefix_info = PrefixInfo(args, cfg_files, select_prefix)
         ## Init recipe-lists:
         # Go through cfg files, then env variable, then command line args
-        # From command line:
         self._recipe_locations = []
         self._named_recipe_dirs = {}
         self._named_recipe_sources = {}
         self._named_recipe_cfg_files = {}
+        # From command line:
         for r_loc in args.recipes:
             if r_loc:
                 self._recipe_locations.append(r_loc)
@@ -375,6 +375,8 @@ class ConfigManager(object):
                 self._named_recipe_dirs[name] = local_recipe_dir
                 self._named_recipe_sources[name] = uri
                 self._named_recipe_cfg_files[name] = cfg_file
+        # Internal recipe list:
+        self._recipe_locations.append(os.path.join(self.module_dir, 'recipes'))
         self.log.debug("Full list of recipe locations: {}".format(self._recipe_locations))
         self.log.debug("Named recipe locations: {}".format(self._named_recipe_sources))
 
