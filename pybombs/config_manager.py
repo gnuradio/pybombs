@@ -50,6 +50,12 @@ def extract_cfg_items(filename, section, throw_ex=True):
             raise e
     return {}
 
+def npath(path):
+    """
+    Normalize path and expand user.
+    """
+    return os.path.expanduser(os.path.normpath(path))
+
 class PrefixInfo(object):
     """
     Stores information about the current prefix being used.
@@ -94,19 +100,19 @@ class PrefixInfo(object):
             return
         assert self.prefix_dir is not None
         if self.alias is not None and self._cfg_info['prefix_config_dir'].has_key(self.alias):
-            self.prefix_cfg_dir = self._cfg_info['prefix_config_dir'][self.alias]
+            self.prefix_cfg_dir = npath(self._cfg_info['prefix_config_dir'][self.alias])
             self.log.debug("Choosing prefix config dir from alias: {}".format(self.prefix_cfg_dir))
         elif self._cfg_info['prefix_config_dir'].has_key(self.prefix_dir):
-            self.prefix_cfg_dir = self._cfg_info['prefix_config_dir'][self.prefix_dir]
+            self.prefix_cfg_dir = npath(self._cfg_info['prefix_config_dir'][self.prefix_dir])
             self.log.debug("Choosing prefix config dir from path lookup in prefix_config_dir: {}".format(self.prefix_cfg_dir))
         else:
-            self.prefix_cfg_dir = os.path.join(self.prefix_dir, self.prefix_conf_dir)
+            self.prefix_cfg_dir = npath(os.path.join(self.prefix_dir, self.prefix_conf_dir))
             self.log.debug("Choosing default prefix config dir: {}".format(self.prefix_cfg_dir))
         if not os.path.isdir(self.prefix_cfg_dir):
             self.log.debug("Config dir does not yet exist, creating it.")
             os.mkdir(self.prefix_cfg_dir)
         # 3) Find the config file
-        self.cfg_file = os.path.join(self.prefix_cfg_dir, ConfigManager.cfg_file_name)
+        self.cfg_file = npath(os.path.join(self.prefix_cfg_dir, ConfigManager.cfg_file_name))
         config_section = {}
         if not os.path.isfile(self.cfg_file):
             self.log.warn("Prefix configuration file not found: {}, assuming empty.".format(self.cfg_file))
@@ -114,7 +120,7 @@ class PrefixInfo(object):
             config_section = extract_cfg_items(self.cfg_file, 'config', False)
             self._cfg_info = self._merge_config_info_from_file(self.cfg_file, self._cfg_info)
         # 4) Find the src dir
-        self.src_dir = config_section.get('srcdir', os.path.join(self.prefix_dir, self.src_dir_name))
+        self.src_dir = npath(config_section.get('srcdir', os.path.join(self.prefix_dir, self.src_dir_name)))
         self.log.debug("Prefix source dir is: {}".format(self.src_dir))
         if not os.path.isdir(self.src_dir):
             self.log.debug("Creating source dir.")
@@ -123,14 +129,14 @@ class PrefixInfo(object):
             except:
                 self.log.warn("No source directory, and failed to create it.")
         # 5) Find the inventory file
-        self.inv_file = os.path.join(self.prefix_cfg_dir, self.inv_file_name)
+        self.inv_file = npath(os.path.join(self.prefix_cfg_dir, self.inv_file_name))
         if not os.path.isfile(self.inv_file):
             self.log.warn("Prefix inventory file not found: {}".format(self.inv_file))
         self.inventory = inventory.Inventory(inventory_file=self.inv_file)
         # 6) Prefix-specific recipes. There's two places for these:
         # - A 'recipes/' subdirectory
         # - Anything declared in the config.yml file inside the prefix
-        self.recipe_dir = config_section.get('recipes', os.path.join(self.prefix_dir, 'recipes'))
+        self.recipe_dir = npath(config_section.get('recipes', os.path.join(self.prefix_dir, 'recipes')))
         if os.path.isdir(self.recipe_dir):
             self.log.debug("Prefix-local recipe dir is: {}".format(self.recipe_dir))
         else:
@@ -328,8 +334,8 @@ class ConfigManager(object):
         self.cfg_cascade.append({})
         # Config file specified on command line:
         if args.config_file is not None:
-            self._append_cfg_from_file(args.config_file)
-            cfg_files.insert(0, args.config_file)
+            self._append_cfg_from_file(npath(args.config_file))
+            cfg_files.insert(0, npath(args.config_file))
         else:
             self.cfg_cascade.append({})
         # Config args specified on command line:
@@ -357,10 +363,14 @@ class ConfigManager(object):
         # From command line:
         for r_loc in args.recipes:
             if r_loc:
-                self._recipe_locations.append(r_loc)
+                self._recipe_locations.append(npath(r_loc))
         # From environment variable:
         if len(os.environ.get("PYBOMBS_RECIPE_DIR", "").strip()):
-            self._recipe_locations += os.environ.get("PYBOMBS_RECIPE_DIR", "").split(";")
+            self._recipe_locations += [
+                npath(x) \
+                for x in os.environ.get("PYBOMBS_RECIPE_DIR", "").split(";") \
+                if len(x.strip())
+            ]
         # From prefix info:
         if self._prefix_info.recipe_dir is not None:
             self._recipe_locations.append(self._prefix_info.recipe_dir)
@@ -407,7 +417,7 @@ class ConfigManager(object):
         """
         if prefix_dir is None:
             prefix_dir = os.path.expanduser("~")
-        return os.path.join(prefix_dir, self.pybombs_dir)
+        return npath(os.path.join(prefix_dir, self.pybombs_dir))
 
     def get(self, key, default=None):
         """ Return the value for a given key. """
@@ -481,8 +491,8 @@ class ConfigManager(object):
         URI; in that case, return the cache directory.
         """
         if os.path.isdir(uri):
-            return uri
-        return os.path.join(cache_dir, name)
+            return npath(uri)
+        return npath(os.path.join(cache_dir, name))
 
     def get_package_flags(self, pkgname, categoryname=None):
         """
