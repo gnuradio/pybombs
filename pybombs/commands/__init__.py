@@ -21,6 +21,7 @@
 
 ### List of commands:
 from base import CommandBase, dispatch
+from config import Config
 from fetch import Fetch
 from prefix import Prefix
 from install import Install, Moo
