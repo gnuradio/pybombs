@@ -22,8 +22,6 @@
 
 from pybombs.commands import CommandBase
 from pybombs.pb_exception import PBException
-from pybombs import recipe
-
 
 class Fetch(CommandBase):
     """ Fetch a package """
@@ -72,7 +70,7 @@ class Fetch(CommandBase):
     def run(self):
         """ Go, go, go! """
         from pybombs.fetcher import Fetcher
-
+        from pybombs import recipe
         recipe_list = []
         if self.args.all:
             self.log.debug("Loading all recipes!")
@@ -94,3 +92,4 @@ class Fetch(CommandBase):
             except PBException as ex:
                 self.log.error("Unable to fetch package {}".format(r.id))
                 self.log.error(ex)
+

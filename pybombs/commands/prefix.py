@@ -27,7 +27,6 @@ import yaml
 from pybombs.commands import CommandBase
 from pybombs.utils import dict_merge
 from pybombs.utils import subproc
-from pybombs import recipe
 from pybombs import fetcher
 
 ### Parser Helpers
@@ -174,6 +173,7 @@ class Prefix(CommandBase):
         """
         Read recipe for sdkname, and install the SDK to the prefix.
         """
+        from pybombs import recipe
         src_dir = self.prefix.src_dir
         cfg_file = self.prefix.cfg_file
         ### Get the recipe
