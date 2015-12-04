@@ -427,6 +427,14 @@ class ConfigManager(object):
             return default
         raise PBException("Invalid configuration key: {}".format(key))
 
+    def get_all_keys(self):
+        """ Return all currently active config keys """
+        all_keys = set()
+        for set_of_vals in self.cfg_cascade:
+            for key in set_of_vals.keys():
+                all_keys.add(key)
+        return tuple(all_keys)
+
     def set(self, key, value):
         """
         Set a configuration setting. This is not persistent!
@@ -509,6 +517,26 @@ class ConfigManager(object):
             getattr(self._prefix_info, 'categories').get(categoryname, {}),
             getattr(self._prefix_info, 'packages').get(pkgname, {})
         )
+
+    def update_cfg_file(self, new_data, cfg_file=None):
+        """
+        Write new data to a config file.
+
+        If no config file is specified, the local config file
+        is used (e.g., on Linux, the one in ~/.pybombs/).
+        """
+        if cfg_file is None:
+            cfg_file = self.local_cfg
+        self.log.obnoxious(
+            "Updating file {0} with new data: {1}".format(cfg_file, new_data)
+        )
+        try:
+            old_cfg_data = yaml.safe_load(open(cfg_file).read()) or {}
+        except IOError:
+            self.log.debug("Error opening config file {0}.".format(cfg_file))
+            old_cfg_data = {}
+        cfg_data = dict_merge(old_cfg_data, new_data)
+        open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
 
     def setup_parser(self, parser):
         """
