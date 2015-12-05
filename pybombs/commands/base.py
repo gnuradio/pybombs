@@ -20,11 +20,8 @@
 #
 """ Base class for PyBOMBS commands """
 
-import os
-import re
 import argparse
 from pybombs import pb_logging
-from pybombs import inventory
 from pybombs.config_manager import config_manager
 from pybombs.pb_exception import PBException
 
@@ -33,8 +30,8 @@ class CommandBase(object):
     Base class for all PyBOMBS commands classes.
     All PyBOMBS command classes must derive from this.
     """
-    cmds = {}
-    hidden = False
+    cmds = {} # Add a key for every command; the value is the help string.
+    hidden = False # Set to True if you don't want the command to show up in the help
     def __init__(self,
             cmd, args,
             load_recipes=False,
@@ -69,7 +66,7 @@ class CommandBase(object):
 
     def run(self):
         """ Override this. """
-        raise PBException("run() method not implemented for command {1}!".format(self._cmd))
+        raise PBException("run() method not implemented for command {1}!".format(self.cmd))
 
 ##############################################################################
 # Argument Parser
