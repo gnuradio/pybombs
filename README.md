@@ -31,16 +31,19 @@ PyBOMBS can be installed using Python's setuptools. From the top
 level of the source code repository, run
 
     $ python setup.py build
+
+or
+
     $ sudo python setup.py install
 
 This will install PyBOMBS and all required dependencies. See
 
-   $ python setup.py build --help
-   $ python setup.py install --help
+    $ python setup.py build --help
+    $ python setup.py install --help
 
 for additional settings.
 
-For development purposes, it's possible to run pybombs without
+For development purposes, it's possible to run PyBOMBS without
 installation. Simply run `pybombs/main.py` and make sure `pybombs/`
 is in reach.
 
@@ -123,9 +126,15 @@ config:
 
 ### Recipe Format
 
-Recipes files are in YAML format.
+Recipes files are in YAML format. To write new recipes, the easiest way is to
+use other recipes as examples.
 
-tbw
+Important keys in the recipe files include:
+
+- `inherit`: This will load the values from a template file (`*.lwt`) before
+  using the values from the recipe, to set up suitable defaults.
+- `category`: Can technically be anything, but certain categories
+  carry certain meanings
 
 ### Recipe Management
 
@@ -140,7 +149,7 @@ chosen from the most specific. The precise order is:
 - Global recipe locations
 
 This mechanism can be used to override recipes for certain prefixes. For
-example, the `gnuradio.lwt` file could be copied and adapted to use a
+example, the `gnuradio.lwr` file could be copied and adapted to use a
 different branch than the default recipe does.
 
 Recipe management can be mostly done through the command line using
@@ -158,7 +167,7 @@ simply read any .lwr file from this directory, without traversing into
 subdirectories), or a remote location.
 Remote locations can be:
 - git repositories
-- http locations
+- Remotely stored .tar.gz archives
 
 Remote locations are copied into a local directory, so PyBOMBS can read the .lwr
 files locally. This local cache of recipes are stored in the same directory
@@ -184,6 +193,7 @@ The config.yml files are in YAML format. A typical file looks like this:
 
 ```{.yml}
 # All configuration options:
+# (Run `pybombs config` to learn which options are recognized)
 config:
 	satisfy_order: native,src
 	default_prefix: default
@@ -209,13 +219,19 @@ recipes:
 # Package flags:
 packages:
 	gnuradio:
-		forcebuild: True
+		forcebuild: True # This will skip any packagers for this package
+                                 # and use a source build
+                forceinstalled: False # This will always assume this package is
+                                      # installed and skip installing it
+                # Any other option here will override whatever's in the
+                # recipe corresponding
 
 # Like package flags, but applies flags to all packages
 # in a certain category. 'common' is all OOTs.
 categories:
 	common:
-		forcebuild: True
+		forcebuild: True # This would force source builds for any package in the
+                                 # `common` category
 
 # Environment variables
 env:
