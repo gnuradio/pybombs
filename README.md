@@ -71,6 +71,17 @@ to have multiple prefixes, e.g. one for system-wide installation, one for
 a user-specific installation, and one for cross-compiling to a different
 platform.
 
+### Initializing Prefixes
+
+Any directory can function as a prefix, and PyBOMBS will make sure all the
+required files and directories are created. However, PyBOMBS provides a way
+to initialize a directory to be a full PyBOMBS prefix:
+
+    $ pybombs prefix init /path/to/prefix [-a alias]
+
+This is similar to `git init`. The optional alias allows you to access the
+prefix with the alias instead of the full path.
+
 ### Aliases
 
 In order to make prefix selection more easy, it is possible to assign names
