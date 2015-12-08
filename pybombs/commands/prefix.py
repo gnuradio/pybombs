@@ -84,7 +84,7 @@ class Prefix(CommandBase):
         CommandBase.__init__(self,
                 cmd, args,
                 load_recipes=True,
-                require_prefix=True,
+                require_prefix=(args.prefix_command != 'init'),
                 require_inventory=True
         )
 
