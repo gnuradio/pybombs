@@ -154,13 +154,7 @@ class Prefix(CommandBase):
         )
         # Register alias
         if self.args.alias is not None:
-            cfg_data = yaml.safe_load(open(self.cfg.local_cfg).read())
-            # TODO warn if alias already exists (issue #48)
-            cfg_data = dict_merge(
-                cfg_data,
-                {'prefix_aliases': {self.args.alias: path}},
-            )
-            open(self.cfg.local_cfg, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
+            self.cfg.update_cfg_file({'prefix_aliases': {self.args.alias: path}})
         # Install SDK if so desired
         if self.args.sdkname is not None:
             self.log.info("Reloading configuration...")
