@@ -81,6 +81,7 @@ packages = [
 package_data = {
     'pybombs': [
         'templates/*.lwt',
+        'recipes/*.lwr',
         'skel/src/.ignore',
         'skel/.pybombs/recipes/.ignore',
         'skel/setup_env.sh',
