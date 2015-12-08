@@ -520,8 +520,8 @@ class ConfigManager(object):
         and then merge the package flags on top of it.
         """
         return dict_merge(
-            getattr(self._prefix_info, 'categories').get(categoryname, {}),
-            getattr(self._prefix_info, 'packages').get(pkgname, {})
+            getattr(self._prefix_info, 'categories', {}).get(categoryname, {}),
+            getattr(self._prefix_info, 'packages', {}).get(pkgname, {})
         )
 
     def update_cfg_file(self, new_data, cfg_file=None):
