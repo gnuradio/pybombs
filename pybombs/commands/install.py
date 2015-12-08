@@ -77,7 +77,7 @@ class Install(CommandBase):
         CommandBase.__init__(self,
                 cmd, args,
                 load_recipes=True,
-                require_prefix=True,
+                require_prefix=False, # Not required for non-source builds
                 require_inventory=True,
         )
         self.args.packages = args.packages[0]
@@ -119,7 +119,7 @@ class Install(CommandBase):
         )
         if install_tree.empty():
             self.log.info("No packages to install.")
-            exit(0)
+            return 0
         self.log.debug("Install tree:")
         if self.log.getEffectiveLevel() <= 20 or self.args.print_tree:
             install_tree.pretty_print()
