@@ -41,7 +41,8 @@ def setup_subsubparser_init(parser):
     parser.add_argument(
         'path',
         help="Path to the new prefix (defaults to CWD).",
-        default=".",
+        nargs="?",
+        default=os.getcwd(),
     )
     parser.add_argument(
         '--sdk',
@@ -246,4 +247,3 @@ class Prefix(CommandBase):
         },
     }
     #########################################################################
-
