@@ -527,15 +527,19 @@ class ConfigManager(object):
         """
         if cfg_file is None:
             cfg_file = self.local_cfg
-        self.log.obnoxious(
-            "Updating file {0} with new data: {1}".format(cfg_file, new_data)
-        )
-        try:
-            old_cfg_data = yaml.safe_load(open(cfg_file).read()) or {}
-        except IOError:
-            self.log.debug("Error opening config file {0}.".format(cfg_file))
-            old_cfg_data = {}
-        cfg_data = dict_merge(old_cfg_data, new_data)
+        if not os.path.isfile(cfg_file):
+            self.log.info("Creating new config file {0}".format(cfg_file))
+            cfg_data = new_data
+        else:
+            self.log.obnoxious(
+                "Updating file {0} with new data: {1}".format(cfg_file, new_data)
+            )
+            try:
+                old_cfg_data = yaml.safe_load(open(cfg_file).read()) or {}
+            except IOError:
+                self.log.debug("Error opening config file {0}.".format(cfg_file))
+                old_cfg_data = {}
+            cfg_data = dict_merge(old_cfg_data, new_data)
         open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
 
     def setup_parser(self, parser):
