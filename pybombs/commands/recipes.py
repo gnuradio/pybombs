@@ -171,10 +171,13 @@ class Recipes(CommandBase):
         else:
             cfg_file = self.cfg.local_cfg
             recipe_cache_top_level = os.path.join(self.cfg.local_cfg_dir, self.cfg.recipe_cache_dir)
+        if not os.path.isdir(recipe_cache_top_level):
+            self.log.debug("Recipe cache dir does not exist, creating {0}".format(recipe_cache_top_level))
+            os.mkdir(recipe_cache_top_level)
         recipe_cache = os.path.join(recipe_cache_top_level, alias)
         self.log.debug("Storing new recipe location to {cfg_file}".format(cfg_file=cfg_file))
         assert cfg_file is not None
-        assert recipe_cache_top_level is not None
+        assert os.path.isdir(recipe_cache_top_level)
         assert recipe_cache is not None
         assert alias
         # Now make sure we don't already have a cache dir
@@ -187,11 +190,7 @@ class Recipes(CommandBase):
         self.log.debug("Fetching into directory: {0}/{1}".format(recipe_cache_top_level, alias))
         Fetcher().fetch_url(uri, recipe_cache_top_level, alias, {}) # No args
         # Write this to config file
-        cfg_data = yaml.safe_load(open(cfg_file).read())
-        if not cfg_data.has_key('recipes'):
-            cfg_data['recipes'] = {}
-        cfg_data['recipes'][alias] = uri
-        open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
+        self.cfg.update_cfg_file({'recipes': {alias: uri}}, cfg_file=cfg_file)
 
     def _remove_recipes(self):
         """
