@@ -95,7 +95,7 @@ class PrefixInfo(object):
         # 2) Find the prefix directory
         self._find_prefix_dir(args)
         if self.prefix_dir is None:
-            self.log.warn("Cannot establish a prefix directory. This may cause issues down the line.")
+            self.log.debug("Cannot establish a prefix directory. This may cause issues down the line.")
             return
         assert self.prefix_dir is not None
         if self.alias is not None and self._cfg_info['prefix_config_dir'].has_key(self.alias):
@@ -114,7 +114,7 @@ class PrefixInfo(object):
         self.cfg_file = npath(os.path.join(self.prefix_cfg_dir, ConfigManager.cfg_file_name))
         config_section = {}
         if not os.path.isfile(self.cfg_file):
-            self.log.warn("Prefix configuration file not found: {}, assuming empty.".format(self.cfg_file))
+            self.log.debug("Prefix configuration file not found: {}, assuming empty.".format(self.cfg_file))
         else:
             config_section = extract_cfg_items(self.cfg_file, 'config', False)
             self._cfg_info = self._merge_config_info_from_file(self.cfg_file, self._cfg_info)
@@ -130,7 +130,7 @@ class PrefixInfo(object):
         # 5) Find the inventory file
         self.inv_file = npath(os.path.join(self.prefix_cfg_dir, self.inv_file_name))
         if not os.path.isfile(self.inv_file):
-            self.log.warn("Prefix inventory file not found: {}".format(self.inv_file))
+            self.log.debug("Prefix inventory file not found: {}".format(self.inv_file))
         self.inventory = inventory.Inventory(inventory_file=self.inv_file)
         # 6) Prefix-specific recipes. There's two places for these:
         # - A 'recipes/' subdirectory
