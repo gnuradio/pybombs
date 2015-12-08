@@ -326,6 +326,12 @@ class ConfigManager(object):
             cfg_files.insert(0, global_cfg)
         # Home directory:
         self.local_cfg_dir = self.get_pybombs_dir()
+        if not os.path.isdir(self.local_cfg_dir):
+            try:
+                self.log.debug("Creating local config dir {0}".format(self.local_cfg_dir))
+                os.mkdir(self.local_cfg_dir)
+            except IOError, OSError:
+                self.log.debug("Failed.")
         self.local_cfg = os.path.join(self.local_cfg_dir, self.cfg_file_name)
         if self._append_cfg_from_file(self.local_cfg):
             cfg_files.insert(0, self.local_cfg)
