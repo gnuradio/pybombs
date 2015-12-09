@@ -72,45 +72,45 @@ class YumDnf(PackagerBase):
 
     def _package_install(self, pkgname, comparator=">=", required_version=None, cmd='install'):
         """
-        Call 'yum install pkgname' if we can satisfy the version requirements.
+        Call 'COMMAND install pkgname' if we can satisfy the version requirements.
         """
         available_version = self.get_available_version_from_pkgr(pkgname)
         if required_version is not None and not vcompare(comparator, available_version, required_version):
             return False
         try:
-            sysutils.monitor_process(["sudo", "yum", "-y", cmd, pkgname])
+            sysutils.monitor_process(["sudo", self.command, "-y", cmd, pkgname])
             return True
         except Exception as ex:
-            self.log.error("Running `yum install' failed.")
+            self.log.error("Running `{0} install' failed.".format(self.command))
             self.log.obnoxious(str(ex))
         return False
 
     def _package_update(self, pkgname, comparator=">=", required_version=None):
         """
-        Call 'yum update pkgname' if we can satisfy the version requirements.
+        Call 'COMMAND update pkgname' if we can satisfy the version requirements.
         """
         return self._package_install(pkgname, comparator, required_version, cmd='update')
 
-    ### yum specific functions:
+    ### packager-specific functions:
     def get_available_version_from_pkgr(self, pkgname):
         """
-        Check which version is available in yum.
+        Check which version is available in the packager.
         """
         try:
-            out = subprocess.check_output(["yum", "info", pkgname]).strip()
+            out = subprocess.check_output([self.command, "info", pkgname]).strip()
             if len(out) == 0:
-                self.log.debug("Did not expect empty output for `yum info'...")
+                self.log.debug("Did not expect empty output for `{0} info'...".format(self.command))
                 return False
             ver = re.search(r'^Version\s+:\s+(?P<ver>.*$)', out, re.MULTILINE).group('ver')
-            self.log.debug("Package {} has version {} in yum".format(pkgname, ver))
+            self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.command))
             return ver
         except subprocess.CalledProcessError as ex:
             # This usually means the package was not found, so don't worry
-            self.log.obnoxious("`yum info' returned non-zero exit status.")
+            self.log.obnoxious("`{0} info' returned non-zero exit status.".format(self.command))
             self.log.obnoxious(str(ex))
             return False
         except Exception as ex:
-            self.log.error("Error parsing yum info")
+            self.log.error("Error parsing {0} info".format(self.command))
             self.log.error(str(ex))
         return False
 
@@ -119,7 +119,7 @@ class YumDnf(PackagerBase):
         Check which version is currently installed.
         """
         try:
-            # yum list installed will return non-zero if package does not exist, thus will throw
+            # 'list installed' will return non-zero if package does not exist, thus will throw
             out = subprocess.check_output(
                     [self.command, "list", "installed", pkgname],
                     stderr=subprocess.STDOUT
