@@ -80,15 +80,14 @@ def init_arg_parser(show_help_for=None):
     parser = argparse.ArgumentParser(
         description='PyBOMBS: A meta-package manager integrated with CGRAN.',
         epilog='Run `pybombs <command> --help to learn about command-specific options.',
-        add_help=False,
     )
     config_manager.setup_parser(parser)
     subparsers = parser.add_subparsers(
-            title='PyBOMBS subcommands',
-            #description='valid subcommands',
-            help="Description:",
-            dest='command',
-            metavar='<command>',
+        title='PyBOMBS subcommands',
+        #description='valid subcommands',
+        help="Description:",
+        dest='command',
+        metavar='<command>',
     )
     # Set up options for each command:
     for cmd in cmd_list:
