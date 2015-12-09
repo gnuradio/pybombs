@@ -17,9 +17,9 @@
 # Boston, MA 02110-1301, USA.
 #
 
-# Depends on Python, but that's probably already installed if we got this far
-#depends: python
-inherit: empty
-make: python setup.py build_ext --library-dirs=$prefix/lib:$prefix/lib64
-install: python setup.py install --prefix=$prefix
-uninstall: 'echo "WARNING: no uninstall mechanism provided by python distutils"'
+inherit: autoconf
+category: baseline
+satisfy:
+  deb: (cmake >= 2.8.3) && (cmake-data >= 2.8.3)
+  rpm: (cmake >= 2.8.3)
+source: wget+http://www.cmake.org/files/v2.8/cmake-2.8.6.tar.gz
