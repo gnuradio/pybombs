@@ -97,7 +97,7 @@ class Config(CommandBase):
             return
         # If both are given, update the config file
         self.cfg.update_cfg_file(
-            new_data={self.args.key: self.args.value},
+            new_data={'config': {self.args.key: self.args.value}},
             cfg_file=self.cfg_file,
         )
 
