@@ -22,7 +22,7 @@
 from base import PackagerBase, get_by_name
 from pkgconfig import PkgConfig
 from aptget import AptGet
-from yum import Yum
+from yum import YumDnf
 from pip import Pip
 from dummy import Dummy
 from source import Source

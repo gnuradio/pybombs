@@ -19,7 +19,7 @@
 # Boston, MA 02110-1301, USA.
 #
 """
-Packager: yum
+Packager: yum or dnf
 """
 
 import re
@@ -28,28 +28,33 @@ from pybombs.packagers.base import PackagerBase
 from pybombs.utils import sysutils
 from pybombs.utils.vcompare import vcompare
 
-class Yum(PackagerBase):
+class YumDnf(PackagerBase):
     """
-    yum install xyz
+    yum/dnf install xyz
     """
-    name = 'yum'
+    name = 'yumdnf'
     pkgtype = 'rpm'
 
     def __init__(self):
         PackagerBase.__init__(self)
+        self.command = None
+        if sysutils.which('dnf') is not None:
+            self.command = 'dnf'
+        elif sysutils.which('yum') is not None:
+            self.command = 'yum'
 
     def supported(self):
         """
         Check if we can even run apt-get.
         Return True if so.
         """
-        return sysutils.which('yum') is not None
+        return self.command is not None
 
     def _package_exists(self, pkgname, comparator=">=", required_version=None):
         """
         See if an installable version of pkgname matches the version requirements.
         """
-        available_version = self.get_available_version_from_yum(pkgname)
+        available_version = self.get_available_version_from_pkgr(pkgname)
         if required_version is not None and not vcompare(comparator, available_version, required_version):
             return False
         return available_version
@@ -58,7 +63,7 @@ class Yum(PackagerBase):
         """
         See if the installed version of pkgname matches the version requirements.
         """
-        installed_version = self.get_installed_version_from_yum(pkgname)
+        installed_version = self.get_installed_version_from_pkgr(pkgname)
         if not installed_version:
             return False
         if required_version is None:
@@ -69,7 +74,7 @@ class Yum(PackagerBase):
         """
         Call 'yum install pkgname' if we can satisfy the version requirements.
         """
-        available_version = self.get_available_version_from_yum(pkgname)
+        available_version = self.get_available_version_from_pkgr(pkgname)
         if required_version is not None and not vcompare(comparator, available_version, required_version):
             return False
         try:
@@ -87,7 +92,7 @@ class Yum(PackagerBase):
         return self._package_install(pkgname, comparator, required_version, cmd='update')
 
     ### yum specific functions:
-    def get_available_version_from_yum(self, pkgname):
+    def get_available_version_from_pkgr(self, pkgname):
         """
         Check which version is available in yum.
         """
@@ -109,14 +114,14 @@ class Yum(PackagerBase):
             self.log.error(str(ex))
         return False
 
-    def get_installed_version_from_yum(self, pkgname):
+    def get_installed_version_from_pkgr(self, pkgname):
         """
         Check which version is currently installed.
         """
         try:
             # yum list installed will return non-zero if package does not exist, thus will throw
             out = subprocess.check_output(
-                    ["yum", "list", "installed", pkgname],
+                    [self.command, "list", "installed", pkgname],
                     stderr=subprocess.STDOUT
             ).strip().split("\n")
             # Output looks like this:
@@ -128,15 +133,14 @@ class Yum(PackagerBase):
                 mobj = re.match(r"^(?P<pkg>[^\.]+)\.(?P<arch>\S+)\s+(?P<ver>[0-9]+(\.[0-9]+){0,2})", line)
                 if mobj and mobj.group('pkg') == pkgname:
                     ver = mobj.group('ver')
-                    self.log.debug("Package {} has version {} in yum".format(pkgname, ver))
+                    self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.command))
                     return ver
             return False
         except subprocess.CalledProcessError:
             # This usually means the packet is not installed
             return False
         except Exception as ex:
-            self.log.error("Parsing `yum list installed` failed.")
+            self.log.error("Parsing `{0} list installed` failed.".format(self.command))
             self.log.obnoxious(str(ex))
         return False
-
 
