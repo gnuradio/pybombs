@@ -320,7 +320,24 @@ class Source(PackagerBase):
         """
         Run 'make test' or whatever checks a build was successful
         """
-        self.log.warn("make test not yet implemented")
+        self.log.debug("Verifying package {}".format(recipe.id))
+        self.log.debug("In cwd - {}".format(os.getcwd()))
+        o_proc = None
+        if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
+            o_proc = output_proc.OutputProcessorMake(preamble="Verifying: ")
+        cmd = recipe.var_replace_all(self.get_command('verify', recipe))
+        cmd = self.filter_cmd(cmd, recipe, 'make_filter')
+        if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
+            self.log.debug("Verification successful")
+            return True
+        # OK, something bad happened.
+        if try_again == False:
+            self.log.warning("Verification failed. Retrying...")
+            recipe.vars['makewidth'] = '1'
+            self.verify(recipe, try_again=True)
+        else:
+            self.log.error("Verification failed. See output above for error messages.")
+            raise PBException("Verification failed.")
 
     def make_install(self, recipe):
         """

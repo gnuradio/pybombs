@@ -20,6 +20,7 @@
 #
 """ PyBOMBS command: install """
 
+from __future__ import print_function
 from pybombs.commands import CommandBase
 from pybombs import package_manager
 from pybombs import dep_manager
@@ -53,6 +54,11 @@ class Install(CommandBase):
         group.add_argument(
                 '--no-deps',
                 help="Skip dependencies (may cause builds to fail!)",
+                action='store_true',
+        )
+        group.add_argument(
+                '--verify',
+                help="Verify installs were successful",
                 action='store_true',
         )
         if cmd == 'install':
@@ -128,13 +134,13 @@ class Install(CommandBase):
             pkg = install_tree.pop_leaf_node()
             if self.pm.installed(pkg):
                 self.log.info("Updating package: {0}".format(pkg))
-                if not self.pm.update(pkg):
+                if not self.pm.update(pkg, verify=self.args.verify):
                     self.log.error("Error updating package {0}. Aborting.".format(pkg))
                     exit(1)
                 self.log.info("Update successful.")
             else:
                 self.log.info("Installing package: {0}".format(pkg))
-                if not self.pm.install(pkg, static=self.args.static):
+                if not self.pm.install(pkg, static=self.args.static, verify=self.args.verify):
                     self.log.error("Error installing package {0}. Aborting.".format(pkg))
                     exit(1)
                 self.log.info("Installation successful.")
@@ -157,11 +163,11 @@ class Moo(CommandBase):
 
     def run(self):
         """ Moo, Moo, Moo! """
-        print("         (__)    ")
-        print("         (oo)    ")
-        print("   /------\/     ")
-        print("  / |    ||      ")
-        print(" *  /\---/\      ")
-        print("    ~~   ~~      ")
-        print("....\"Have you mooed today?\"...")
+        print(r"         (__)    ")
+        print(r"         (oo)    ")
+        print(r"   /------\/     ")
+        print(r"  / |    ||      ")
+        print(r" *  /\---/\      ")
+        print(r"    ~~   ~~      ")
+        print(r"....\"Have you mooed today?\"...")
 

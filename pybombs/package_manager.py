@@ -28,7 +28,6 @@ from pybombs.pb_exception import PBException
 from pybombs.config_manager import config_manager
 from pybombs import recipe
 from pybombs import packagers
-from pybombs.utils import vcompare
 
 class PackageManager(object):
     """
@@ -145,74 +144,71 @@ class PackageManager(object):
             return pkgrs
         return False
 
-    def install(self, name, static=False):
+    def install(self, name, static=False, verify=False):
         """
         Install the given package. Returns True if successful, False otherwise.
         """
-        self.log.debug("install({})".format(name))
+        self.log.debug("install({}, static={})".format(name, static))
         if self.check_package_flag(name, 'forceinstalled'):
             self.log.debug("Package {} is assumed installed.".format(name))
             # TODO maybe we can figure out a version string
             return True
-        packagers = self.get_packagers(name)
+        pkgrs = self.get_packagers(name)
         if static:
             self.log.debug('Package will be built statically.')
             if not self.prefix_available:
                 self.log.error('Static builds require source builds.')
                 exit(1)
-            packagers = [self.src,]
-        r = recipe.get_recipe(name)
-        for pkgr in packagers:
-            self.log.debug("Trying to use packager {}".format(pkgr.name))
-            try:
-                install_result = pkgr.install(r, static)
-            except PBException as ex:
-                self.log.error(
-                    "Something went wrong while trying to install {} using {}: {}".format(
-                        name, pkgr.name, str(ex).strip()
-                    )
-                )
-                continue
-            if install_result:
-                return True
-        return False
+            pkgrs = [self.src,]
+        return self._std_package_operation(
+            name,
+            'install',
+            pkgrs,
+            verify=verify,
+            static=static,
+        )
 
-    def update(self, name):
+    def update(self, name, verify=False):
         """
         Update the given package. Returns True if successful, False otherwise.
         """
-        r = recipe.get_recipe(name)
-        for pkgr in self.get_packagers(name):
-            try:
-                update_result = pkgr.update(r)
-            except PBException as ex:
-                self.log.error(
-                    "Something went wrong while trying to update {} using {}: {}".format(
-                        name, pkgr.name, str(ex).strip()
-                    )
-                )
-                continue
-            if update_result:
-                return True
-        return False
+        return self._std_package_operation(
+            name,
+            'update',
+            self.get_packagers(name),
+            verify=verify,
+        )
 
     def uninstall(self, name):
         """
         Uninstall the given package.
         Returns True if successful, False otherwise.
         """
+        return self._std_package_operation(
+            name,
+            'uninstall',
+            self.get_packagers(name),
+        )
+
+    def _std_package_operation(self, name, operation, pkgrs, verify=False, **kwargs):
+        """
+        Standard package operation: Try an operation on all packagers.
+        """
         rec = recipe.get_recipe(name)
-        for pkgr in self.get_packagers(name):
+        for pkgr in pkgrs:
+            self.log.debug("Using packager {}".format(pkgr.name))
             try:
-                update_result = pkgr.uninstall(rec)
+                result = getattr(pkgr, operation)(rec, **kwargs)
+                if result:
+                    if verify and not pkgr.verify(rec):
+                        self.log.warn("Package reported successful {0}, but verification failed.".format(operation))
+                        continue
+                    return True
             except PBException as ex:
                 self.log.error(
-                    "Something went wrong while trying to uninstall `{}' using `{}': {}".format(
-                        name, pkgr.name, str(ex)
+                    "Something went wrong while trying to {} {} using {}: {}".format(
+                        operation, name, pkgr.name, str(ex).strip()
                     )
                 )
-                continue
-            if update_result:
-                return True
         return False
 
