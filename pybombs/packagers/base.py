@@ -77,7 +77,7 @@ class PackagerBase(object):
         """
         # If we run this code, the assumption is that we're running a
         # package manager. The source manager will override this function.
-        self.log.obnoxious("install({})".format(recipe.id))
+        self.log.obnoxious("install({}, static={})".format(recipe.id, static))
         return self._packager_run_tree(recipe, self._package_install)
 
     def update(self, recipe):
@@ -92,12 +92,23 @@ class PackagerBase(object):
         self.log.obnoxious("Checking if recipe {} is installed".format(recipe.id))
         return self._packager_run_tree(recipe, self._package_installed)
 
+    def verify(self, recipe):
+        """
+        Returns the updated version of package (identified by recipe)
+        as a string, or False if the package is not installed.
+        May also return True if a version can't be determined, but the
+        recipe is installed.
+        """
+        self.log.obnoxious("Skipping verification of recipe {0}".format(recipe.id))
+        return True
+
     def uninstall(self, recipe):
         """
+        Uninstalls the package (identified by recipe).
 
         Return True on Success or False on failure.
         """
-        self.log.info("No uninstall method specify for this this packager.")
+        self.log.info("No uninstall method specified for package {0}.".format(recipe.id))
 
     ### Package-manager specific helpers ####################################
     # Most packagers will work with a system packager in the background (e.g.
@@ -159,10 +170,10 @@ def get_by_name(name, objs):
     Return a package manager by its name field. Not meant to be
     called by the user.
     """
-    for g in objs:
+    for obj in objs:
         try:
-            if issubclass(g, PackagerBase) and g.name == name:
-                return g()
+            if issubclass(obj, PackagerBase) and obj.name == name:
+                return obj()
         except (TypeError, AttributeError):
             pass
     return None
