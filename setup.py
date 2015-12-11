@@ -40,7 +40,7 @@ Basic commands
 With PyBOMBS installed, you might want to install GNU Radio into a directory
 called `my_gnuradio`. First, you create a /prefix/ there:
 
-    $ pybombs init my_gnuradio
+    $ pybombs prefix init my_gnuradio
 
 Then, you call PyBOMBS to do the installation:
 
@@ -54,7 +54,7 @@ prefix.
 With slight modifications, the same commands would have worked to create
 a cross-compile environment and cross-compile GNU Radio:
 
-    $ pybombs init my_gnuradio --sdk e300
+    $ pybombs prefix init my_gnuradio --sdk e300
     $ pybombs install gnuradio
 
 For more informations see the `documentation`_.
@@ -91,6 +91,7 @@ package_data = {
 deps = [
     "plex",
     "PyYAML",
+    "requests",
 ]
 
 setup(name="PyBOMBS",
