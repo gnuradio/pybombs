@@ -43,14 +43,14 @@ class PBPackageRequirement(object):
     """
     def __init__(self, name):
         self.name = name
-        self.compare = ">="
+        self.compare = None
         self.version = None
 
     def ev(self, func):
         """
         Run func() with this requirement
         """
-        return func(self.name, self.compare, self.version)
+        return func(self.name, self.compare or ">=", self.version)
 
     def __str__(self, lvl=0):
         return " "*lvl + "PackageRequirement({}, {}, {})".format(self.name, self.compare, self.version)
@@ -90,7 +90,7 @@ class PBPackageRequirementScanner(Scanner):
     ### Plex: Patterns
     letter      = Range("AZaz")
     digit       = Range("09")
-    pkgname     = letter + Rep(letter | digit | Any("-.+_"))
+    pkgname     = Rep1(letter | Str("-")) + Rep(letter | digit | Any("-.+_"))
     space       = Any(" \t\n")
     rspace      = Rep(space)
     lpar        = Str("(")
@@ -125,12 +125,28 @@ class PBPackageRequirementScanner(Scanner):
 
     def pl_pkg(self, scanner, pkg_name):
         " Called in a package requirements list, when a package name is found "
-        self.log.obnoxious("Adding package with name {}".format(pkg_name))
-        new_pkg = PBPackageRequirement(pkg_name)
-        if self.preq is not None:
-            self.preq.second = new_pkg
+        if self.preq is None:
+            self.log.obnoxious("Adding package with name {}".format(pkg_name))
+            self.preq = PBPackageRequirement(pkg_name)
+        elif isinstance(self.preq, PBPackageRequirement):
+            if self.preq.compare is None:
+                self.preq.name =  " ".join((self.preq.name, pkg_name))
+                self.log.obnoxious("Extending package name {}".format(self.preq.name))
+            else:
+                raise PBException("Parsing Error. Did not expect package name here.")
+        elif isinstance(self.preq, PBPackageRequirementPair):
+            if self.preq.second is None:
+                self.log.obnoxious("Adding package with name {}".format(pkg_name))
+                self.preq.second = PBPackageRequirement(pkg_name)
+            else:
+                if self.preq.second.compare is None:
+                    self.preq.second.name = " ".join((self.preq.second.name, pkg_name))
+                    self.log.obnoxious("Extending package name {}".format(self.preq.second.name))
+                else:
+                    print(str(self.preq.second))
+                    raise PBException("Parsing Error. Did not expect package name here.")
         else:
-            self.preq = new_pkg
+            raise PBException("Random Foobar Parsing Error.")
 
     def pl_lpar(self, scanner, par):
         " Called in a package requirements list, when lparens are found "
