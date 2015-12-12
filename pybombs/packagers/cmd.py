@@ -58,7 +58,11 @@ class TestCommand(PackagerBase):
         installed_version = self.get_version_from_command(pkgname)
         if not installed_version:
             return False
-        if required_version is None or vcompare(comparator, installed_version, required_version):
+        if required_version is None:
+            return True
+        if installed_version is True:
+            return False
+        if vcompare(comparator, installed_version, required_version):
             self.log.debug("Package {pkg} found via command line.".format(pkg=pkgname))
             return True
         return False
@@ -90,7 +94,7 @@ class TestCommand(PackagerBase):
             # command in a shell, which would allow arbitrary commands.
             output = subprocess.check_output(command.split(), stderr=subprocess.STDOUT).strip()
             ver = re.search(
-                r'^Version: (?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+)',
+                r'(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+)',
                 output,
                 re.MULTILINE
             )
