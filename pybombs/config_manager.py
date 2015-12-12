@@ -282,7 +282,7 @@ class ConfigManager(object):
         'cc': ('', 'C Compiler Executable [gcc, clang, icc, etc]'),
         'cxx': ('', 'C++ Compiler Executable [g++, clang++, icpc, etc]'),
         'makewidth': ('4', 'Concurrent make threads [1,2,4,8...]'),
-        'packagers': ('pip,apt-get,yumdnf,pkgconfig', 'Priority of non-source package managers'),
+        'packagers': ('pip,apt-get,yumdnf,pkgconfig,cmd', 'Priority of non-source package managers'),
     }
     LAYER_DEFAULT = 0
     LAYER_GLOBALS = 1
