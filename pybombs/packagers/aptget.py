@@ -121,7 +121,11 @@ class AptGet(PackagerBase):
             out = subprocess.check_output(["dpkg", "-s", pkgname], stderr=subprocess.STDOUT)
             # Get the versions
             #ver = re.search(r'^Version: (?:\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n', out)
-            ver = re.search(r'^Version: (?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+)', out, re.MULTILINE)
+            ver = re.search(
+                r'^Version: (?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+)',
+                out,
+                re.MULTILINE
+            )
             if ver is None:
                 self.log.debug("Looks like dpkg -s can't find package {pkg}".format(pkg=pkgname))
                 return False

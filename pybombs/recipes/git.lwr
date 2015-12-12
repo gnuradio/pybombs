@@ -22,5 +22,6 @@ inherit: autoconf
 satisfy:
   deb: git-core || git
   rpm: git
+  #cmd: git --version >= 1.4
 source:
 - wget+http://git-core.googlecode.com/files/git-1.7.9.6.tar.gz
