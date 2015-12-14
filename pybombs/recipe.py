@@ -345,7 +345,7 @@ class Recipe(object):
 
 
 recipe_cache = {}
-def get_recipe(pkgname, target='package'):
+def get_recipe(pkgname, target='package', fail_easy=False):
     """
     Return a recipe object by its package name.
     """
@@ -356,6 +356,8 @@ def get_recipe(pkgname, target='package'):
     r = Recipe(recipe_manager.recipe_manager.get_recipe_filename(pkgname))
     recipe_cache[cache_key] = r
     if target is not None and r.target != target:
+        if fail_easy:
+            return None
         pb_logging.logger.getChild("get_recipe").error("Recipe for `{pkg}' found, but does not match request target type `{req}' (is `{actual}').".format(
             pkg=pkgname, req=target, actual=r.target
         ))
