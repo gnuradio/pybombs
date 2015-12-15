@@ -373,7 +373,7 @@ class ConfigManager(object):
         if len(os.environ.get("PYBOMBS_RECIPE_DIR", "").strip()):
             self._recipe_locations += [
                 npath(x) \
-                for x in os.environ.get("PYBOMBS_RECIPE_DIR", "").split(";") \
+                for x in os.environ.get("PYBOMBS_RECIPE_DIR").split(os.pathsep) \
                 if len(x.strip())
             ]
         # From prefix info:
@@ -433,7 +433,7 @@ class ConfigManager(object):
             return default
         raise PBException("Invalid configuration key: {}".format(key))
 
-    def get_all_keys(self):
+    def keys(self):
         """ Return all currently active config keys """
         all_keys = set()
         for set_of_vals in self.cfg_cascade:
@@ -454,9 +454,7 @@ class ConfigManager(object):
         Return a short help string for a given key.
         Will return an empty string if the key is not available.
         """
-        if key in self.defaults.keys():
-            return self.defaults[key][1]
-        return ""
+        return self.defaults.get(key, ("", ""))[1]
 
     def get_active_prefix(self):
         """
