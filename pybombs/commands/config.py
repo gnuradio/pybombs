@@ -21,7 +21,6 @@
 """ PyBOMBS command: config """
 
 from __future__ import print_function
-import argparse
 from pybombs.commands import CommandBase
 from pybombs.config_manager import extract_cfg_items
 
@@ -71,33 +70,21 @@ class Config(CommandBase):
 
     def run(self):
         """ Go, go, go! """
-        print_key = lambda k: print(
-            "{key}: {value}".format(
-                key=k, value=self.cfg.get(k, "")
-            )
-        )
-        cfg_data = extract_cfg_items(self.cfg_file, 'config', False)
+        if self.args.config_only:
+            cfg_data = extract_cfg_items(self.cfg_file, 'config', False)
+        else:
+            cfg_data = self.cfg
+        keys = [self.args.key]
         if self.args.key is None:
-            if self.args.config_only:
-                for key in cfg_data.keys():
-                    print("{0}: {1}".format(key, cfg_data.get(key)))
-            else:
-                for key in self.cfg.get_all_keys():
-                    print_key(key)
-            return
-        # Show one config item:
-        if self.args.value is None:
-            if self.args.config_only:
-                print("{0}: {1}".format(self.args.key, cfg_data.get(self.args.key)))
-            else:
-                print_key(self.args.key)
-            key_help = self.cfg.get_help(self.args.key)
-            if key_help:
-                print("  - {help}".format(help=key_help))
-            return
-        # If both are given, update the config file
-        self.cfg.update_cfg_file(
-            new_data={'config': {self.args.key: self.args.value}},
-            cfg_file=self.cfg_file,
-        )
+            keys = cfg_data.keys()
+        elif self.args.value is not None:
+            self.cfg.set(self.args.key, self.args.value)
+            self.cfg.update_cfg_file(
+                new_data={'config': {self.args.key: self.args.value}},
+                cfg_file=self.cfg_file,
+            )
+        for key in keys:
+            print("{key}: {value}\n  - {help}".format(
+                key=key, value=cfg_data.get(key, ""), help=self.cfg.get_help(key),
+            ))
 
