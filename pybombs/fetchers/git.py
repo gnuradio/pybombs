@@ -24,6 +24,7 @@ git fetcher functions
 
 import os
 from pybombs.fetchers.base import FetcherBase
+from pybombs.utils import output_proc
 from pybombs.utils import subproc
 
 class Git(FetcherBase):
@@ -36,10 +37,11 @@ class Git(FetcherBase):
     def __init__(self):
         FetcherBase.__init__(self)
 
-    def fetch_url(self, url, dest, dirname, args={}):
+    def fetch_url(self, url, dest, dirname, args=None):
         """
         git clone
         """
+        args = args or {}
         self.log.debug("Using url - {}".format(url))
         git_cmd = ['git', 'clone', url, dirname]
         if args.get('gitargs'):
@@ -51,9 +53,12 @@ class Git(FetcherBase):
         if args.get('gitbranch'):
             git_cmd.append('-b')
             git_cmd.append(args.get('gitbranch'))
+        o_proc = None
+        if self.log.getEffectiveLevel() >= pb_logging.DEBUG:
+            o_proc = output_proc.OutputProcessorMake(preamble="Cloning: "),
         subproc.monitor_process(
             args=git_cmd,
-            #o_proc=foo, # FIXME
+            o_proc=o_proc,
             throw_ex=True,
         )
         # If we have a specific revision, checkout that
@@ -65,17 +70,18 @@ class Git(FetcherBase):
             git_co_cmd = ["git", "checkout", "--force", args.get('gitrev')]
             subproc.monitor_process(
                 args=git_co_cmd,
-                #o_proc=foo, # FIXME
+                o_proc=o_proc,
                 throw_ex=True,
             )
             self.log.obnoxious("Switching cwd to: {}".format(cwd))
             os.chdir(cwd)
         return True
 
-    def update_src(self, url, dest, dirname, args={}):
+    def update_src(self, url, dest, dirname, args=None):
         """
         git pull / git checkout
         """
+        args = args or {}
         self.log.debug("Using url {0}".format(url))
         cwd = os.getcwd()
         src_dir = os.path.join(dest, dirname)
@@ -100,9 +106,13 @@ class Git(FetcherBase):
             git_cmds = [
                 ['git', 'pull', '--rebase'],
             ]
+        o_proc = None
+        if self.log.getEffectiveLevel() >= pb_logging.DEBUG:
+            o_proc = output_proc.OutputProcessorMake(preamble="Updating: "),
         for cmd in git_cmds:
             subproc.monitor_process(
                 args=cmd,
+                o_proc=o_proc,
             )
         self.log.obnoxious("Switching cwd back to: {0}".format(cwd))
         os.chdir(cwd)
