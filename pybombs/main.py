@@ -27,10 +27,10 @@ from pybombs.commands import dispatch
 def main():
     " Go, go, go! "
     try:
-        dispatch()
+        return dispatch() or 0
     except KeyboardInterrupt:
         pass
 
 if __name__ == '__main__':
-    main()
+    exit(main())
 
