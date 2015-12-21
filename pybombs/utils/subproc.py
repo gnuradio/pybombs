@@ -61,7 +61,10 @@ def kill_process_tree(process, pid=None):
     for child_pid in children:
         kill_process_tree(child_pid)
     if process is not None:
-        process.terminate()
+        try:
+            process.terminate()
+        except OSError:
+            return
     else:
         try:
             os.kill(pid, signal.SIGTERM)
@@ -69,7 +72,7 @@ def kill_process_tree(process, pid=None):
             try:
                 os.kill(pid, signal.SIGKILL)
             except OSError:
-                pass
+                return
 
 def run_with_output_processing(p, o_proc, event, cleanup=None):
     """
