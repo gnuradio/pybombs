@@ -23,8 +23,8 @@
 Subprocess utils
 """
 
+from __future__ import print_function
 import os
-import time
 import signal
 import subprocess
 import threading
@@ -65,7 +65,7 @@ def kill_process_tree(process, pid=None):
         except OSError:
             pass
 
-def run_with_output_processing(p, o_proc, event):
+def run_with_output_processing(p, o_proc, event, cleanup=None):
     """
     Run a previously created process p through
     an output processor o_proc.
@@ -103,6 +103,8 @@ def run_with_output_processing(p, o_proc, event):
         event.wait(0.05)
         if event.is_set():
             kill_process_tree(p)
+            if cleanup is not None:
+                cleanup()
             return 1
     o_proc.process_final()
     return p.returncode
@@ -112,7 +114,6 @@ def _process_thread(event, args, kwargs):
     This actually runs the process.
     """
     _process_thread.result = 0
-    log = logger.getChild("monitor_process()")
     extra_popen_args = {}
     use_oproc = False
     o_proc = kwargs.get('o_proc')
@@ -126,7 +127,7 @@ def _process_thread(event, args, kwargs):
         **extra_popen_args
     )
     if use_oproc:
-        ret_code = run_with_output_processing(proc, o_proc, event)
+        ret_code = run_with_output_processing(proc, o_proc, event, kwargs.get('cleanup'))
     else:
         # Wait until the process is done, or monitor_process() sends us the quit event
         ret_code = None
@@ -135,57 +136,52 @@ def _process_thread(event, args, kwargs):
             event.wait(1)
             if event.is_set():
                 kill_process_tree(proc)
+                if kwargs.get('cleanup') is not None:
+                    kwargs.get('cleanup')()
                 break
     _process_thread.result = ret_code
-    log = logger.getChild("monitor_process()")
-    log.debug("monitor_process(): return value = {}".format(ret_code))
     event.set()
     return ret_code
 
-def monitor_process(
-        args,
-        **kwargs
-    ):
+# args is not *args!
+def monitor_process(args, **kwargs):
     """
-    Run a process and monitor it. If it is cancelled, perform
-    cleanup. FIXME this feature doesn't actually exist yet.
+    Run a process and monitor it. If it is cancelled, perform cleanup.
 
     Params:
     - args: Must be a list (e.g. ['ls', '-l'])
     - shell: If True, run in shell environment
-    - throw_ex: If True, propagate subprocess exceptions
-                FIXME currently doesn't do anything
+    - throw_ex: If True, propagate subprocess exceptions. If False, return -1
+                on exceptions.
     - env: A dictionary with environment variables.
            Note: If None is provided, it will actually load the environment
            from the config manager.
-    - oproc: An output processor
-    - cleanup: A callback to clean up artifacts
+    - o_proc: An output processor
+    - cleanup: A callback to clean up artifacts if the process is killed
     """
     log = logger.getChild("monitor_process()")
     log.debug("Executing command `{cmd}'".format(cmd=str(args).strip()))
     try:
-        quitEvent = threading.Event()
-        monitorThread = threading.Thread(
+        quit_event = threading.Event()
+        monitor_thread = threading.Thread(
             target=_process_thread,
-            args=(quitEvent, args, kwargs)
+            args=(quit_event, args, kwargs)
         )
-        monitorThread.start()
-        while monitorThread.isAlive:
+        monitor_thread.start()
+        while monitor_thread.isAlive:
             # Try if it's finished:
-            monitorThread.join(1)
-            if quitEvent.isSet():
-                # TODO clean up this line
-                log.debug("monitor_process(): Caught the quit Event")
+            monitor_thread.join(1)
+            if quit_event.is_set() or not monitor_thread.is_alive():
+                log.debug("Thread signaled termination or returned")
                 break
+        log.debug("Return value: {0}".format(_process_thread.result))
         return _process_thread.result
     except KeyboardInterrupt:
         print("")
         log.info("Caught Ctrl+C. Killing all sub-processes.")
-        quitEvent.set()
-        monitorThread.join()
-        print('sleep')
-        time.sleep(2)
-        exit(0)
+        quit_event.set()
+        monitor_thread.join(15)
+        exit(1)
     except Exception as ex:
         if kwargs.get('throw_ex'):
             raise ex
