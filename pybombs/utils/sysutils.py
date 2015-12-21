@@ -23,62 +23,31 @@ System Utils
 """
 
 import os
-import subprocess
-from threading import Thread,Event
-from pybombs.pb_logging import logger
 
-log = logger.getChild("SysUtils")
-
-def which(program):
+def which(program, env=None):
     """
     Equivalent to Unix' `which` command.
     Returns None if the executable `program` can't be found.
+
+    If a full path is given (e.g. /usr/bin/foo), it will return
+    the path if the executable can be found, or None otherwise.
+
+    If no path is given, it will search PATH.
     """
     def is_exe(fpath):
+        " Check fpath is an executable "
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-    fpath, fname = os.path.split(program)
-    if fpath:
-        if is_exe(program):
-            return program
+    if env is None:
+        env = os.environ
+    if os.path.split(program)[0] and is_exe(program):
+        return program
     else:
-        for path in os.environ["PATH"].split(os.pathsep):
+        for path in os.environ.get("PATH", "").split(os.pathsep):
             exe_file = os.path.join(path, program)
             if is_exe(exe_file):
                 return exe_file
     return None
 
-
-#def monitor_process_timeout(proc, timeout, shell=False, throw_ex=False):
-
-def monitor_process(
-            args,
-            shell=False,
-            throw_ex=False,
-            env=None,
-            oproc=None,
-    ):
-    """
-    Run a process and monitor it.
-
-    Params:
-    - args: Must be a list (e.g. ['ls', '-l']
-    - shell: If True, run in shell environment
-    - throw_ex: If True, propagate subprocess exceptions
-    - env: A dictionary with environment variables
-    - oproc: An output processor
-    """
-    # FIXME write this
-    log.debug("monitor_process(): Executing command {}".format(" ".join(args)))
-    try:
-        subprocess.check_call(args, shell=shell, env=env)
-    except subprocess.CalledProcessError as e:
-        if throw_ex:
-            raise e
-        return -1
-
 if __name__ == "__main__":
-    monitor_process(["ls", "-l", "-h"])
-    monitor_process(["ls", "-l", "-h"], shell=True)
-    env = {'FOO': 'BAR'}
-    monitor_process(["env",], env=env)
+    print(which("vim"))
 
