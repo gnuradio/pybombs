@@ -42,6 +42,7 @@ def require_hostsys_dependencies(deps):
         static=False,
         no_deps=False,
         print_tree=False,
+        quiet_install=True,
     )
     Install('install', args).run()
     # Restore previous settings

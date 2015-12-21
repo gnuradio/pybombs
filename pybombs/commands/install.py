@@ -123,7 +123,7 @@ class Install(CommandBase):
             self.args.packages,
             self._check_if_pkg_goes_into_tree if not self.args.no_deps else lambda x: bool(x in self.args.packages)
         )
-        if install_tree.empty():
+        if install_tree.empty() and not hasattr(self.args, 'quiet_install'):
             self.log.info("No packages to install.")
             return 0
         self.log.debug("Install tree:")
