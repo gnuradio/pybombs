@@ -38,6 +38,17 @@ from pybombs.utils import output_proc
 
 READ_TIMEOUT = 0.1 # s
 
+def get_child_pids(pid):
+    """
+    Returns a list of all child pids associated with this pid.
+    """
+    get_child_pids_cmd = ["ps", "-o", "pid", "--ppid", str(pid), "--no-headers"]
+    try:
+        children = subprocess.check_output(get_child_pids_cmd).strip().split("\n")
+    except (OSError, subprocess.CalledProcessError):
+        return []
+    return [int(child) for child in children]
+
 def kill_process_tree(process, pid=None):
     """
     Kill the process and, if possible, all associated child processes.
@@ -46,24 +57,19 @@ def kill_process_tree(process, pid=None):
     """
     if pid is None:
         pid = process.pid
-    try:
-        children = subprocess.check_output(
-            "ps -o pid --ppid {pid} --noheaders".format(pid=pid),
-            shell=True,
-        )
-    except (OSError, subprocess.CalledProcessError):
-        children = ""
-    if len(children) > 0:
-        children = children.strip().split("\n")
-        for child in children:
-            kill_process_tree(None, int(child))
+    children = get_child_pids(pid)
+    for child_pid in children:
+        kill_process_tree(child_pid)
     if process is not None:
         process.terminate()
     else:
         try:
             os.kill(pid, signal.SIGTERM)
         except OSError:
-            pass
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except OSError:
+                pass
 
 def run_with_output_processing(p, o_proc, event, cleanup=None):
     """
