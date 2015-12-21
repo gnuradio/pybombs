@@ -132,5 +132,5 @@ def dispatch():
     """
     args = init_arg_parser().parse_args()
     cmd_list = get_cmd_list()
-    get_cmd_dict(cmd_list)[args.command](cmd=args.command, args=args).run()
+    return get_cmd_dict(cmd_list)[args.command](cmd=args.command, args=args).run()
 
