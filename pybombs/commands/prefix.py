@@ -27,6 +27,7 @@ import yaml
 from pybombs.commands import CommandBase
 from pybombs.utils import dict_merge
 from pybombs.utils import subproc
+from pybombs.utils import confirm
 from pybombs import fetcher
 
 ### Parser Helpers
@@ -155,6 +156,10 @@ class Prefix(CommandBase):
         )
         # Register alias
         if self.args.alias is not None:
+            if self.prefix.prefix_aliases.get(self.args.alias) is not None \
+                and not confirm("Alias `{0}' already exists, overwrite?".format(self.args.alias)):
+                    self.log.warn('Aborting.')
+                    return 1
             self.cfg.update_cfg_file({'prefix_aliases': {self.args.alias: path}})
         # Install SDK if so desired
         if self.args.sdkname is not None:
