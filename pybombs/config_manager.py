@@ -136,7 +136,7 @@ class PrefixInfo(object):
         # 6) Prefix-specific recipes. There's two places for these:
         # - A 'recipes/' subdirectory
         # - Anything declared in the config.yml file inside the prefix
-        self.recipe_dir = npath(config_section.get('recipes', os.path.join(self.prefix_dir, 'recipes')))
+        self.recipe_dir = npath(config_section.get('recipes', os.path.join(self.prefix_cfg_dir, 'recipes')))
         if os.path.isdir(self.recipe_dir):
             self.log.debug("Prefix-local recipe dir is: {}".format(self.recipe_dir))
         else:
