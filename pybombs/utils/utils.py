@@ -23,6 +23,7 @@
 Utilities
 """
 
+import sys
 from copy import deepcopy
 
 def dict_merge(a, b):
@@ -38,6 +39,47 @@ def dict_merge(a, b):
         else:
             result[k] = deepcopy(v)
     return result
+
+def confirm(question, default="N", timeout=0):
+    """
+    Ask the question, return True if answered positive, or False if
+    answered with 'no'.
+    """
+    from pybombs.config_manager import config_manager
+    if config_manager.yes:
+        return True
+    question = question.strip()
+    # Remove the question mark
+    if question[-1] == "?":
+        question = question[:-1]
+    if default.upper() == "Y":
+        question = question + " [Y]/N?"
+    elif default.upper() == "N":
+        question = question + " Y/[N]?"
+    else:
+        raise ValueError("default must be either 'Y' or 'N'")
+    question = question + ' '
+    while True:
+        inp = None
+        if timeout == 0:
+            inp = raw_input(question)
+        else:
+            import select
+            print question
+            inp, o, e = select.select([sys.stdin], [], [], 10)
+            if inp:
+                inp = sys.stdin.readline()
+            else:
+                inp = ""
+        ans = inp.strip().upper()[0:1] # use 0:1 to avoid index error even on empty response
+        if ans == "":
+            ans = default
+        if ans == "Y":
+            return True
+        elif ans == "N":
+            return False
+        else:
+            print("`{0}' is not a valid response.".format(inp))
 
 if __name__ == "__main__":
     print dict_merge(
