@@ -54,8 +54,11 @@ class CommandBase(object):
         elif require_prefix:
             self.log.error("No prefix specified. Aborting.")
             exit(1)
-        if require_inventory and require_prefix:
+        if self.prefix is not None:
             self.inventory = self.prefix.inventory
+        if require_inventory and not getattr(self, 'inventory'):
+            self.log.error("No inventory found. Aborting.")
+            exit(1)
 
     @staticmethod
     def setup_subparser(parser, cmd=None):
