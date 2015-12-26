@@ -25,11 +25,12 @@ from config import Config
 from deploy import Deploy
 from digraph import Digraph
 from fetch import Fetch
-from prefix import Prefix
 from install import Install, Moo
-from show import Show
+from inv import Inv
+from prefix import Prefix
 from recipes import Recipes
 from rebuild import Rebuild
 from remove import Remove
+from show import Show
 # Leave this at the end
 from help import Help
