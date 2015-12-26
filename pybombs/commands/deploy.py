@@ -156,7 +156,7 @@ def choose_deployer(ttype, target):
         return TarfileDeployer
     if target.find('@') != -1:
         return SSHDeployer
-    raise KeyError("Cannot determine deployment type for target `{0}'".format(target))
+    raise PBException("Cannot determine deployment type for target `{0}'".format(target))
 
 class Deploy(CommandBase):
     """ Package and deploy the prefix """
@@ -219,7 +219,8 @@ class Deploy(CommandBase):
         )
 
     def __init__(self, cmd, args):
-        CommandBase.__init__(self,
+        CommandBase.__init__(
+            self,
             cmd, args,
             load_recipes=False,
             require_prefix=True,
@@ -250,7 +251,7 @@ class Deploy(CommandBase):
         try:
             self.log.info("Deploying prefix to {0}...".format(self.args.target))
             deployer(skip_names).deploy(self.args.target, prefix_path)
-        except Exception as ex:
+        except PBException as ex:
             self.log.error("Failed to deploy: {0}".format(str(ex)))
             exit(1)
 
