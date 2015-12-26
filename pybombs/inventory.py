@@ -111,6 +111,14 @@ class Inventory(object):
         Sets the state of pkg to state.
         If pkg does not exist, add that package to the list.
         """
+        if isinstance(state, str):
+            try:
+                state = self._states[state][0]
+            except KeyError:
+                try:
+                    state = int(state)
+                except ValueError:
+                    pass
         if not state in self.get_valid_states():
             raise ValueError("Invalid state: {}".format(state))
         if not self.has(pkg):
@@ -169,6 +177,12 @@ class Inventory(object):
         Returns a list of valid arguments for set_state()
         """
         return self._valid_states.keys()
+
+    def get_state_name(self, state):
+        """
+        Return name for a state
+        """
+        return self._state_names[state]
 
     def get_packages(self):
         """
