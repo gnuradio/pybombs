@@ -96,6 +96,7 @@ class PrefixInfo(object):
         self._find_prefix_dir(args)
         if self.prefix_dir is None:
             self.log.debug("Cannot establish a prefix directory. This may cause issues down the line.")
+            self._set_attrs()
             return
         assert self.prefix_dir is not None
         if self.alias is not None and self._cfg_info['prefix_config_dir'].has_key(self.alias):
@@ -152,6 +153,10 @@ class PrefixInfo(object):
         for k, v in self._cfg_info['env'].iteritems():
             self.env[k.upper()] = os.path.expandvars(v.strip())
         # 8) Keep relevant config sections as attributes
+        self._set_attrs()
+
+    def _set_attrs(self):
+        """ Map the _cfg_info dict onto attributes. """
         for k, v in self._cfg_info.iteritems():
             if k == 'env' or not k in self.default_config_info.keys():
                 continue
@@ -313,6 +318,7 @@ class ConfigManager(object):
         if verb_level < pb_logging.OBNOXIOUS:
             verb_level = pb_logging.OBNOXIOUS
         pb_logging.logger.setLevel(verb_level)
+        self.yes = args.yes
         ## Set up logger:
         self.log = pb_logging.logger.getChild("ConfigManager")
         ## Setup cfg_cascade:
@@ -599,6 +605,11 @@ class ConfigManager(object):
             help="More output (can be stacked)",
             action='count',
             default=0,
+        )
+        group.add_argument(
+            '-y', '--yes',
+            help="Answer all questions with 'yes'.",
+            action='store_true',
         )
         self.parser = parser
         return parser
