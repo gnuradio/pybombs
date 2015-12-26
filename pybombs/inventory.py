@@ -37,10 +37,12 @@ class Inventory(object):
     Except for save(), none of the methods actually writes to the
     inventory file.
     """
-    STATE_FETCHED    = 10
-    STATE_CONFIGURED = 20
-    STATE_BUILT      = 30
-    STATE_INSTALLED  = 40
+    _states = {
+        'fetched':    (10, 'Package source is in prefix, but not installed.',),
+        'configured': (20, 'Package is downloaded and configured.',),
+        'built':      (30, 'Package is compiled.',),
+        'installed':  (40, 'Package is installed into current prefix.'),
+    }
 
     def __init__(
             self,
@@ -50,12 +52,10 @@ class Inventory(object):
         self._contents = {}
         self.log = pb_logging.logger.getChild("Inventory")
         self.load()
-        self._valid_states = {
-            self.STATE_FETCHED:    'Package source is in prefix, but not installed.',
-            self.STATE_CONFIGURED: 'Package is downloaded and configured.',
-            self.STATE_BUILT:      'Package is compiled.',
-            self.STATE_INSTALLED:  'Package is installed into current prefix.'
-        }
+        self._state_names = {}
+        for state in self._states.keys():
+            setattr(self, "STATE_{0}".format(state.upper()), self._states[state][0])
+            self._state_names[self._states[state][0]] = state
 
     def load(self):
         """
@@ -123,7 +123,7 @@ class Inventory(object):
             raise ValueError("Invalid state: {}".format(state))
         if not self.has(pkg):
             self._contents[pkg] = {}
-        self.log.debug("Setting state to {}".format(state))
+        self.log.debug("Setting state to `{}'".format(self._state_names[state]))
         self._contents[pkg]["state"] = state
 
     def get_version(self, pkg, default_version=None):
@@ -176,7 +176,7 @@ class Inventory(object):
         """
         Returns a list of valid arguments for set_state()
         """
-        return self._valid_states.keys()
+        return [x[0] for x in self._states.values()]
 
     def get_state_name(self, state):
         """
