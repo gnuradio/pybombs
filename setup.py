@@ -94,7 +94,8 @@ deps = [
     "requests",
 ]
 
-setup(name="PyBOMBS",
+setup(
+    name="PyBOMBS",
     version=pybombs.__version__,
     description="A meta-package manager to install software from source, or whatever "
                   "the local package manager is. Designed for easy install of source "
