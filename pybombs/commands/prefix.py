@@ -54,6 +54,10 @@ def setup_subsubparser_init(parser):
         '-a', '--alias',
         help="If specified, store an alias to this new prefix in the local config file.",
     )
+    parser.add_argument(
+        '--virtualenv', action='store_true',
+        help="Use this to make the new prefix also a virtualenv. Args for virtualenv may be passed in here",
+    )
 
 ### Class definition
 class Prefix(CommandBase):
@@ -161,6 +165,12 @@ class Prefix(CommandBase):
                     self.log.warn('Aborting.')
                     return 1
             self.cfg.update_cfg_file({'prefix_aliases': {self.args.alias: path}})
+        # Create virtualenv if so desired
+        if self.args.virtualenv:
+            self.log.info("Creating Python virtualenv in prefix...")
+            venv_args = ['virtualenv']
+            venv_args.append(path)
+            subproc.monitor_process(args=venv_args)
         # Install SDK if so desired
         if self.args.sdkname is not None:
             self.log.info("Reloading configuration...")
