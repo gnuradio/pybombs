@@ -121,7 +121,6 @@ class Recipes(CommandBase):
                 cmd, args,
                 load_recipes=False,
                 require_prefix=False,
-                require_inventory=False
         )
 
     def run(self):

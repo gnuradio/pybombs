@@ -91,7 +91,6 @@ class Prefix(CommandBase):
                 cmd, args,
                 load_recipes=True,
                 require_prefix=(args.prefix_command != 'init'),
-                require_inventory=True
         )
 
     def run(self):

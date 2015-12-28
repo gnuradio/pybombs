@@ -57,7 +57,6 @@ class Config(CommandBase):
             cmd, args,
             load_recipes=False,
             require_prefix=False,
-            require_inventory=False,
         )
         # Figure out which config file to write to
         self.cfg_file = self.cfg.local_cfg
