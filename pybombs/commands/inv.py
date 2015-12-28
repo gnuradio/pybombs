@@ -51,7 +51,6 @@ class Inv(CommandBase):
         CommandBase.__init__(self,
             cmd, args,
             require_prefix=True,
-            require_inventory=True,
         )
         verb = "Showing" if self.args.value is None else "Setting"
         if self.args.key is None:

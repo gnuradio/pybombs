@@ -84,7 +84,6 @@ class Install(CommandBase):
                 cmd, args,
                 load_recipes=True,
                 require_prefix=False, # Not required for non-source builds
-                require_inventory=True,
         )
         self.args.packages = args.packages[0]
         get_all_pkgs = False
@@ -158,7 +157,6 @@ class Moo(CommandBase):
                 cmd, args,
                 load_recipes=False,
                 require_prefix=False,
-                require_inventory=False,
         )
 
     def run(self):

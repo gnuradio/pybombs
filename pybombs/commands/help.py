@@ -35,7 +35,6 @@ class Help(CommandBase):
                 cmd, args,
                 load_recipes=False,
                 require_prefix=False,
-                require_inventory=False,
         )
 
     @staticmethod

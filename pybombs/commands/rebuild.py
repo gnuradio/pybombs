@@ -69,7 +69,6 @@ class Rebuild(CommandBase):
                 cmd, args,
                 load_recipes=True,
                 require_prefix=True,
-                require_inventory=True,
         )
         self.pm = packagers.source.Source()
         self.args.packages = args.packages[0]

@@ -55,7 +55,6 @@ class Digraph(CommandBase, Requirer):
             cmd, args,
             load_recipes=True,
             require_prefix=True,
-            require_inventory=True,
         )
         Requirer.__init__(self)
         self.packages = []

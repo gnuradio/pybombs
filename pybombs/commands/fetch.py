@@ -58,7 +58,6 @@ class Fetch(CommandBase):
                 cmd, args,
                 load_recipes=True,
                 require_prefix=True,
-                require_inventory=True
         )
         self.args.packages = args.packages[0] # wat?
         if len(self.args.packages) == 0 and not args.all:

@@ -55,7 +55,6 @@ class Remove(CommandBase):
                 cmd, args,
                 load_recipes=False,
                 require_prefix=True,
-                require_inventory=True,
         )
         self.args.packages = args.packages[0]
         if len(self.args.packages) == 0:

@@ -36,7 +36,6 @@ class CommandBase(object):
             cmd, args,
             load_recipes=False,
             require_prefix=True,
-            require_inventory=True
         ):
         self.cmd = cmd
         self.args = args
@@ -56,9 +55,6 @@ class CommandBase(object):
             exit(1)
         if self.prefix is not None:
             self.inventory = self.prefix.inventory
-        if require_inventory and not getattr(self, 'inventory'):
-            self.log.error("No inventory found. Aborting.")
-            exit(1)
 
     @staticmethod
     def setup_subparser(parser, cmd=None):
