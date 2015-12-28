@@ -159,7 +159,8 @@ class Prefix(CommandBase):
         )
         # Register alias
         if self.args.alias is not None:
-            if self.prefix.prefix_aliases.get(self.args.alias) is not None \
+            if self.prefix is not None and \
+                self.prefix.prefix_aliases.get(self.args.alias) is not None \
                 and not confirm("Alias `{0}' already exists, overwrite?".format(self.args.alias)):
                     self.log.warn('Aborting.')
                     return 1
