@@ -25,6 +25,7 @@ Packager: apt-get
 import re
 import subprocess
 from pybombs.packagers.base import PackagerBase
+from pybombs.utils import subproc
 from pybombs.utils import sysutils
 from pybombs.utils.vcompare import vcompare
 
@@ -43,11 +44,9 @@ class AptGet(PackagerBase):
         Check if we can even run apt-get.
         Return True if so.
         """
-        if sysutils.which('dpkg') is None \
-            or sysutils.which('apt-cache') is None \
-            or sysutils.which('apt-get') is None:
-            return False
-        return True
+        return sysutils.which('dpkg') is not None \
+            and sysutils.which('apt-cache') is not None \
+            and sysutils.which('apt-get') is not None
 
     def _package_exists(self, pkg_name, comparator=">=", required_version=None):
         """
@@ -77,7 +76,7 @@ class AptGet(PackagerBase):
         if required_version is not None and not vcompare(comparator, available_version, required_version):
             return False
         try:
-            sysutils.monitor_process(["sudo", "apt-get", "-y", "install", pkg_name])
+            subproc.monitor_process(["sudo", "apt-get", "-y", "install", pkg_name])
             return True
         except:
             self.log.error("Running apt-get install failed.")
@@ -95,21 +94,25 @@ class AptGet(PackagerBase):
         Check which version is available in apt-cache.
         """
         try:
+            self.log.obnoxious("Checking apt-cache for `{0}'".format(pkgname))
             out = subprocess.check_output(["apt-cache", "showpkg", pkgname])
             # apt-cache returns nothing on stdout if a package is not found
             if len(out) >= 0:
                 # Get the versions
                 ver = re.search(
-                        r'Versions: \n(?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n',
-                        out
-                ).group('ver')
+                    r'Versions: \n(?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n',
+                    out
+                )
+                if ver is None:
+                    return False
+                ver = ver.group('ver')
                 self.log.debug("Package {} has version {} in apt-cache".format(pkgname, ver))
                 return ver
             else:
                 return False
-        except Exception as e:
-            # Non-zero return.
-            self.log.error("Error running apt-get showpkg")
+        except subprocess.CalledProcessError:
+            # Non-zero return. Shouldn't happen, even if package is not found.
+            self.log.error("Error running apt-cache showpkg")
         return False
 
     def get_version_from_dpkg(self, pkgname):
@@ -133,7 +136,7 @@ class AptGet(PackagerBase):
             self.log.debug("Package {} has version {} in dpkg".format(pkgname, ver))
             return ver
         except subprocess.CalledProcessError:
-            # This usually means the packet is not installed
+            # This usually means the packet is not installed -- not a problem.
             return False
         except Exception as e:
             self.log.error("Running dpkg -s failed.")
