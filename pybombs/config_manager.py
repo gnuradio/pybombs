@@ -225,8 +225,8 @@ class PrefixInfo(object):
         self.log.debug('Loading environment from shell script: {}'.format(setup_env_file))
         # It would be nice if we could do os.path.expandvars() with a custom
         # env, wouldn't it
-        setup_env_file = setup_env_file.replace('$PYBOMBS_PREFIX', self.prefix_dir)
-        setup_env_file = setup_env_file.replace('${PYBOMBS_PREFIX}', self.prefix_dir)
+        setup_env_file = setup_env_file.replace('${0}'.format(self.env_prefix_var), self.prefix_dir)
+        setup_env_file = setup_env_file.replace('${{{0}}}'.format(self.env_prefix_var), self.prefix_dir)
         # TODO add some checks this is a legit script
         # Damn, I hate just running stuff :/
         # TODO unportable command:

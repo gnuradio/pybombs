@@ -151,7 +151,7 @@ class Prefix(CommandBase):
                 shutil.copy(p_full, path)
         open(os.path.join(path, 'setup_env.sh'), 'w').write(
             open(os.path.join(skel_dir, 'setup_env.sh')).read().format(
-                PYBOMBS_PREFIX=path,
+                prefix_dir=path,
             )
         )
         # Register alias
