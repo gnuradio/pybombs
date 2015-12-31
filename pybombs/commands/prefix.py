@@ -126,7 +126,6 @@ class Prefix(CommandBase):
         """
         # Make sure the directory is writable
         path = os.path.abspath(os.path.normpath(self.args.path))
-        self.log.info("Initializing PyBOMBS prefix in `{0}'...".format(path))
         if not os.path.isdir(path):
             self.log.info("Creating directory `{0}'".format(path))
             os.mkdir(path)
@@ -134,10 +133,18 @@ class Prefix(CommandBase):
         if not os.access(path, os.W_OK|os.X_OK):
             self.log.error("Cannot write to prefix path `{0}'.".format(path))
             exit(1)
+
+        # Make sure that a pybombs directory doesn't already exist
+        test_path = os.path.join(path, ".pybombs")
+        if os.path.exists(test_path):
+            self.log.error("Ignoring. A prefix already exists in `{0}'".format(path))
+            return
+
         # Copy template
         # TODO: I'm not too happy about this, all the hard coded stuff. Needs
         # cleaning up, for sure. Especially that setup_env.sh stuff at the end.
         # Ideally, we could switch prefix templates.
+        self.log.info("Initializing PyBOMBS prefix in `{0}'...".format(path))
         skel_dir = os.path.join(self.cfg.module_dir, 'skel')
         for p in os.listdir(skel_dir):
             if os.path.exists(os.path.join(path, p)):
