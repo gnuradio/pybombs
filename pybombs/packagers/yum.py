@@ -25,6 +25,7 @@ Packager: yum or dnf
 import re
 import subprocess
 from pybombs.packagers.base import PackagerBase
+from pybombs.utils import subproc
 from pybombs.utils import sysutils
 from pybombs.utils.vcompare import vcompare
 
@@ -78,7 +79,7 @@ class YumDnf(PackagerBase):
         if required_version is not None and not vcompare(comparator, available_version, required_version):
             return False
         try:
-            sysutils.monitor_process(["sudo", self.command, "-y", cmd, pkgname])
+            subproc.monitor_process([self.command, "-y", cmd, pkgname], elevate=True)
             return True
         except Exception as ex:
             self.log.error("Running `{0} install' failed.".format(self.command))

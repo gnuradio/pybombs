@@ -118,6 +118,7 @@ def run_with_output_processing(p, o_proc, event, cleanup=None):
     o_proc.process_final()
     return p.returncode
 
+ELEVATE_PRE_ARGS = ['sudo', '-H']
 def _process_thread(event, args, kwargs):
     """
     This actually runs the process.
@@ -129,6 +130,11 @@ def _process_thread(event, args, kwargs):
     if isinstance(o_proc, output_proc.OutputProcessor):
         use_oproc = True
         extra_popen_args = o_proc.extra_popen_args
+    if kwargs.get('elevate'):
+        if kwargs.get('shell', False) and isinstance(args, str):
+            args = ' '.join(ELEVATE_PRE_ARGS) + args
+        else:
+            args = ELEVATE_PRE_ARGS + args
     proc = subprocess.Popen(
         args,
         shell=kwargs.get('shell', False),
@@ -167,9 +173,12 @@ def monitor_process(args, **kwargs):
            from the config manager.
     - o_proc: An output processor
     - cleanup: A callback to clean up artifacts if the process is killed
+    - elevate: Run with elevated privileges (e.g., 'sudo <command>')
     """
     log = logger.getChild("monitor_process()")
     log.debug("Executing command `{cmd}'".format(cmd=str(args).strip()))
+    if kwargs.get('elevate'):
+        log.debug("Running with elevated privileges.")
     try:
         quit_event = threading.Event()
         monitor_thread = threading.Thread(

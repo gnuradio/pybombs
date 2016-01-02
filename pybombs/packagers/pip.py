@@ -26,6 +26,7 @@ import re
 import subprocess
 from pybombs.packagers.base import PackagerBase
 from pybombs.utils import sysutils
+from pybombs.utils import subproc
 from pybombs.utils.vcompare import vcompare
 
 PIP_INSTALLED_CACHE = None
@@ -68,8 +69,8 @@ class Pip(PackagerBase):
         if not installed_version:
             return False
         if required_version is None or vcompare(comparator, installed_version, required_version):
-            return True
             self.log.debug("Package {pkg} already installed by pip.".format(pkg=pkgname))
+            return True
         return False
 
     def _package_install(self, pkgname, comparator=">=", required_version=None, update=False):
@@ -78,11 +79,11 @@ class Pip(PackagerBase):
         """
         try:
             self.log.debug("Calling `pip install {pkg}'".format(pkg=pkgname))
-            command = ["sudo", "--set-home", sysutils.which('pip'), "install"]
+            command = [sysutils.which('pip'), "install"]
             if update:
                 command.append('--upgrade')
             command.append(pkgname)
-            subprocess.check_call(command)
+            subproc.monitor_process(command, elevate=True)
             self.load_install_cache()
             installed_version = PIP_INSTALLED_CACHE.get(pkgname)
             self.log.debug("Installed version for {pkg} is: {ver}.".format(pkg=pkgname, ver=installed_version))

@@ -76,7 +76,7 @@ class AptGet(PackagerBase):
         if required_version is not None and not vcompare(comparator, available_version, required_version):
             return False
         try:
-            subproc.monitor_process(["sudo", "apt-get", "-y", "install", pkg_name])
+            subproc.monitor_process(["apt-get", "-y", "install", pkg_name], elevate=True)
             return True
         except:
             self.log.error("Running apt-get install failed.")
