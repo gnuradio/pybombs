@@ -68,6 +68,11 @@ class Install(CommandBase):
                     action='store_true',
             )
             group.add_argument(
+                    '--deps-only',
+                    help="Only install the dependencies, not the requested packages",
+                    action='store_true',
+            )
+            group.add_argument(
                     '-u', '--update',
                     help="If packages are already installed, update them instead.",
                     action='store_true',
@@ -131,6 +136,9 @@ class Install(CommandBase):
         ### Recursively install/update, starting at the leaf nodes
         while not install_tree.empty():
             pkg = install_tree.pop_leaf_node()
+            if self.args.deps_only and pkg in self.args.packages:
+                self.log.debug("Skipping `{0}' because only deps are requested.")
+                continue
             if self.pm.installed(pkg):
                 self.log.info("Updating package: {0}".format(pkg))
                 if not self.pm.update(pkg, verify=self.args.verify):
