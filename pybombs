@@ -212,6 +212,7 @@ elif(cmd == "config"):
         print args[0]+' = '+pybombs_ops.config_get(args[0])
     elif(len(args) == 2):
         pybombs_ops.config_set(args[0], args[1])
+        pybombs_ops.config_write(config)
     else:
         parser.error("Command 'config' accepts at most 2 arguments")
 
