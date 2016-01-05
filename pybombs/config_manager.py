@@ -83,6 +83,7 @@ class PrefixInfo(object):
         self.src_dir = None
         self.cfg_file = None
         self.inv_file = None
+        self.inventory = None
         self.recipe_dir = None
         self.target_dir = None
         self.env = os.environ
@@ -109,8 +110,7 @@ class PrefixInfo(object):
             self.prefix_cfg_dir = npath(os.path.join(self.prefix_dir, self.prefix_conf_dir))
             self.log.debug("Choosing default prefix config dir: {}".format(self.prefix_cfg_dir))
         if not os.path.isdir(self.prefix_cfg_dir):
-            self.log.debug("Config dir does not yet exist, creating it.")
-            os.mkdir(self.prefix_cfg_dir)
+            self.log.debug("Config dir does not yet exist.")
         # 3) Find the config file
         self.cfg_file = npath(os.path.join(self.prefix_cfg_dir, ConfigManager.cfg_file_name))
         config_section = {}
@@ -123,11 +123,7 @@ class PrefixInfo(object):
         self.src_dir = npath(config_section.get('srcdir', os.path.join(self.prefix_dir, self.src_dir_name)))
         self.log.debug("Prefix source dir is: {}".format(self.src_dir))
         if not os.path.isdir(self.src_dir):
-            self.log.debug("Creating source dir.")
-            try:
-                os.mkdir(self.src_dir)
-            except:
-                self.log.warn("No source directory, and failed to create it.")
+            self.log.debug("Source dir does not exist.")
         # 5) Find the inventory file
         self.inv_file = npath(os.path.join(self.prefix_cfg_dir, self.inv_file_name))
         if not os.path.isfile(self.inv_file):
@@ -545,6 +541,9 @@ class ConfigManager(object):
         if not os.path.isfile(cfg_file):
             self.log.info("Creating new config file {0}".format(cfg_file))
             cfg_data = new_data
+            path = os.path.split(cfg_file)[0]
+            if not os.path.isdir(path):
+                os.path.mkdir(path)
         else:
             self.log.obnoxious(
                 "Updating file {0} with new data: {1}".format(cfg_file, new_data)

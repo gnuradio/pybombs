@@ -77,6 +77,8 @@ class Source(PackagerBase):
         May raise an exception if things go terribly wrong.
         Otherwise, return True on success and False if installing failed.
         """
+        if not os.path.isdir(self.prefix.src_dir):
+            os.path.mkdir(self.prefix.src_dir)
         self.static = static
         recipe.set_static(static)
         cwd = os.getcwd()

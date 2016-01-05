@@ -110,6 +110,8 @@ class Fetcher(object):
         """
         (fetcher, url) = self.get_fetcher(src)
         cwd = os.getcwd()
+        if not os.path.isdir(dest):
+            os.mkdir(dest)
         os.chdir(dest)
         fetcher.assert_requirements()
         result = fetcher.fetch_url(url, dest, dirname, args)
@@ -146,6 +148,8 @@ class Fetcher(object):
         # Jump to the src directory
         cwd = os.getcwd()
         self.log.debug("Switching to src directory: {0}".format(self.src_dir))
+        if not os.path.isdir(self.src_dir):
+            os.mkdir(self.src_dir)
         os.chdir(self.src_dir)
         if os.path.exists(os.path.join(self.src_dir, recipe.id)):
             raise PBException("Directory {d} already exists!".format(d=os.path.join(self.src_dir, recipe.id)))
