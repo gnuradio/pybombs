@@ -31,6 +31,7 @@ class FetcherBase(Requirer):
     Base class for fetchers.
     """
     url_type = None
+    regexes = []
 
     def __init__(self):
         Requirer.__init__(self)

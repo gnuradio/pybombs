@@ -31,44 +31,6 @@ from pybombs import pb_logging
 from pybombs.pb_exception import PBException
 from pybombs.config_manager import config_manager
 
-# TODO: Move these into the fetcher modules!
-URI_TYPES = ('file', 'wget', 'git', 'svn')
-# For every URI type, list regexes which identify it.
-URI_REGEXES = {
-        'git': (
-            r'.*\.git$',
-            r'git@',
-        ),
-        'wget': (
-            r'https?://.*\.gz$',
-        ),
-}
-
-def parse_uri(uri):
-    """
-    Return a tuple (url_type, url).
-    """
-    url = None
-    # If we're lucky, it starts with git+... or whatever
-    url_type = uri.split('+', 1)[0]
-    if url_type in URI_TYPES:
-        url = uri[len(url_type)+1:]
-        return (url_type, url)
-    # OK, let's try and identify it.
-    try: # Is it a file?
-        os.stat(uri)
-        return ('file', uri)
-    except OSError:
-        pass
-    # No, OK, let's try regexing this guy
-    for utype in URI_REGEXES.iterkeys():
-        for regex in URI_REGEXES[utype]:
-            if re.match(regex, uri):
-                return (utype, uri)
-    # Yeah, whatever, I give up.
-    raise PBException("Unrecognized URI: {uri}".format(uri=uri))
-
-
 class Fetcher(object):
     """
     This will attempt to download source from all the recipe's urls using the available fetchers.
@@ -93,7 +55,7 @@ class Fetcher(object):
         """
         Return scrubbed URL and fetcher for src.
         """
-        (url_type, url) = parse_uri(src)
+        (url_type, url) = self.parse_uri(src)
         self.log.debug("Getting fetcher for {url}, type {t}".format(url=url, t=url_type))
         fetcher = self.available.get(url_type)
         if not fetcher:
@@ -152,7 +114,9 @@ class Fetcher(object):
             os.mkdir(self.src_dir)
         os.chdir(self.src_dir)
         if os.path.exists(os.path.join(self.src_dir, recipe.id)):
-            raise PBException("Directory {d} already exists!".format(d=os.path.join(self.src_dir, recipe.id)))
+            raise PBException(
+                "Directory {d} already exists!".format(d=os.path.join(self.src_dir, recipe.id))
+            )
         # Do the fetch
         for src in recipe.source:
             self.log.obnoxious("Trying to fetch {0}".format(src))
@@ -208,8 +172,8 @@ class Fetcher(object):
         os.chdir(self.src_dir)
         if not os.path.isdir(os.path.join(self.src_dir, recipe.id)):
             raise PBException("Source directory {d} does not exist!!".format(
-                d=os.path.join(self.src_dir, recipe.id))
-            )
+                d=os.path.join(self.src_dir, recipe.id)
+            ))
         # Figure out which source was used before
         src = self.inventory.get_key(recipe.id, 'source')
         if not src:
@@ -255,4 +219,29 @@ class Fetcher(object):
         if not self.check_fetched(recipe):
             self.log.error("Can't return version for {}, not fetched!".format(recipe.id))
         return None
+
+    def parse_uri(self, uri):
+        """
+        Return a tuple (url_type, url).
+        """
+        url = None
+        # If we're lucky, it starts with git+... or whatever
+        url_type = uri.split('+', 1)[0]
+        uri_types = self.available.keys()
+        if url_type in uri_types:
+            url = uri[len(url_type)+1:]
+            return (url_type, url)
+        # OK, let's try and identify it.
+        try: # Is it a file?
+            os.stat(uri)
+            return ('file', uri)
+        except OSError:
+            pass
+        # No, OK, let's try regexing this guy
+        for utype in uri_types:
+            for regex in self.available[utype]:
+                if re.match(regex, uri):
+                    return (utype, uri)
+        # Yeah, whatever, I give up.
+        raise PBException("Unrecognized URI: {uri}".format(uri=uri))
 
