@@ -365,6 +365,10 @@ class ConfigManager(object):
         self.log.debug("Template directory: {}".format(self._template_dir))
         ## Init prefix:
         self._prefix_info = PrefixInfo(args, cfg_files, select_prefix)
+        # Add the prefix config file (if it exists)
+        prefix_config = self._prefix_info.cfg_file
+        if os.path.exists(prefix_config):
+            cfg_files.insert(0, prefix_config)
         ## Init recipe-lists:
         # Go through cfg files, then env variable, then command line args
         self._recipe_locations = []
@@ -396,6 +400,7 @@ class ConfigManager(object):
                 self._named_recipe_dirs[name] = local_recipe_dir
                 self._named_recipe_sources[name] = uri
                 self._named_recipe_cfg_files[name] = cfg_file
+
         # Internal recipe list:
         self._recipe_locations.append(os.path.join(self.module_dir, 'recipes'))
         self.log.debug("Full list of recipe locations: {}".format(self._recipe_locations))
