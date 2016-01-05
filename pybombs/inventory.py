@@ -80,6 +80,8 @@ class Inventory(object):
         created.
         """
         self.log.debug("Saving inventory to file {}...".format(self._filename))
+        if not os.path.isdir(os.path.split(self._filename)[0]):
+            os.mkdir(os.path.split(self._filename)[0])
         open(self._filename, 'wb').write(yaml.dump(self._contents, default_flow_style=False))
 
     def has(self, pkg):
