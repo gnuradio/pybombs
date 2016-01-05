@@ -27,6 +27,7 @@ from digraph import Digraph
 from fetch import Fetch
 from install import Install, Moo
 from inv import Inv
+from lint import Lint
 from prefix import Prefix
 from recipes import Recipes
 from rebuild import Rebuild
