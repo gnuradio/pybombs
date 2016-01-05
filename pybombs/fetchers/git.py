@@ -34,6 +34,7 @@ class Git(FetcherBase):
     """
     url_type = 'git'
     host_sys_deps = ['git',]
+    regexes = [r'.*\.git$', r'git@',]
 
     def __init__(self):
         FetcherBase.__init__(self)

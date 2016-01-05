@@ -62,6 +62,7 @@ class Wget(FetcherBase):
     """
     url_type = 'wget'
     host_sys_deps = ['python-requests',]
+    regexes = [r'https?://.*\.gz$',]
 
     def __init__(self):
         FetcherBase.__init__(self)
