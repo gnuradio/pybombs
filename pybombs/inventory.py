@@ -23,9 +23,10 @@
 Inventory Manager
 """
 
+import os
 import yaml
-import pprint
 from pybombs import pb_logging
+from pybombs.pb_exception import PBException
 
 class Inventory(object):
     """
@@ -67,7 +68,8 @@ class Inventory(object):
         try:
             self.log.debug("Trying to load inventory file {}...".format(self._filename))
             self._contents = yaml.safe_load(open(self._filename, 'r').read()) or {}
-        except:
+            assert isinstance(self._contents, dict)
+        except (OSError, IOError, AssertionError):
             self.log.debug("No success. Creating empty inventory.")
             self._contents = {}
         return
