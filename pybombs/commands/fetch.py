@@ -36,28 +36,29 @@ class Fetch(CommandBase):
         Set up a subparser for a specific command
         """
         parser.add_argument(
-                'packages',
-                help="List of packages to fetch",
-                action='append',
-                default=[],
-                nargs='*'
+            'packages',
+            help="List of packages to fetch",
+            action='append',
+            default=[],
+            nargs='*'
         )
         parser.add_argument(
-                '-a', '--all',
-                help="Fetch all packages. Warning: May take a while, and consume some considerable disk space",
-                action='store_true',
+            '-a', '--all',
+            help="Fetch all packages. Warning: May take a while, and consume some considerable disk space",
+            action='store_true',
         )
         parser.add_argument(
-                '--deps',
-                help="Also fetch dependencies of packages",
-                action='store_true',
+            '--deps',
+            help="Also fetch dependencies of packages",
+            action='store_true',
         )
 
     def __init__(self, cmd, args):
-        CommandBase.__init__(self,
-                cmd, args,
-                load_recipes=True,
-                require_prefix=True,
+        CommandBase.__init__(
+            self,
+            cmd, args,
+            load_recipes=True,
+            require_prefix=True,
         )
         self.args.packages = args.packages[0] # wat?
         if len(self.args.packages) == 0 and not args.all:
@@ -70,25 +71,26 @@ class Fetch(CommandBase):
         """ Go, go, go! """
         from pybombs.fetcher import Fetcher
         from pybombs import recipe
-        recipe_list = []
         if self.args.all:
             self.log.debug("Loading all recipes!")
             self.args.packages = self.recipe_manager.list_all()
         try:
             self.log.debug("Getting recipes for: {}".format(self.args.packages))
-            recipe_list = [recipe.Recipe(self.recipe_manager.get_recipe_filename(x)) for x in self.args.packages if len(x)]
+            recipe_list = [ \
+                recipe.Recipe(self.recipe_manager.get_recipe_filename(x)) \
+                for x in self.args.packages if len(x) \
+            ]
         except KeyError as e:
-            self.log.error("Unknown recipe: {}".format(e))
+            self.log.error("Package has no recipe: {}".format(e))
             exit(1)
         for r in recipe_list:
-            if not len(r.srcs):
-                self.log.debug("Package {} has no sources listed.".format(r.id))
+            if not len(r.source):
+                self.log.warn("Package {0} has no sources listed.".format(r.id))
                 continue
-            self.log.debug("Downloading {}".format(r.srcs[0]))
+            self.log.info("Downloading source for package {0}".format(r.id))
             try:
-                f = Fetcher()
-                f.fetch(r)
+                Fetcher().fetch(r)
             except PBException as ex:
-                self.log.error("Unable to fetch package {}".format(r.id))
+                self.log.error("Unable to fetch package {0}. Skipping.".format(r.id))
                 self.log.error(ex)
 
