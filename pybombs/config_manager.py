@@ -363,7 +363,7 @@ class ConfigManager(object):
         self._prefix_info = PrefixInfo(args, cfg_files, select_prefix)
         # Add the prefix config file (if it exists)
         prefix_config = self._prefix_info.cfg_file
-        if os.path.exists(prefix_config):
+        if prefix_config is not None and os.path.exists(prefix_config):
             cfg_files.insert(0, prefix_config)
         ## Init recipe-lists:
         # Go through cfg files, then env variable, then command line args
