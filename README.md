@@ -45,7 +45,30 @@ for additional settings.
 
 For development purposes, it's possible to run PyBOMBS without
 installation. Simply run `pybombs/main.py` and make sure `pybombs/`
-is in reach.
+is in reach. pip also provides a `-e` switch for installing PyBOMBS
+in 'editable' mode.
+
+## Quickstart
+
+For the impatient:
+
+1. Install PyBOMBS as per the previous section
+2. Add a list of recipes, e.g. by running
+
+    $ pybombs recipes add gnuradio https://github.com/gnuradio/recipes2.git
+    $ # Note: This URL will likely change soon.
+
+3. Create a prefix (a place to store your local installation):
+
+    $ pybombs prefix init /path/to/prefix -a myprefix
+
+4. Start installing:
+
+    $ pybombs -p myprefix install gnuradio gr-osmosdr
+
+5. Optional: Make your prefix the default (this will save you having to type `-p myprefix`):
+
+    $ pybombs config default_prefix myprefix
 
 ## Prefixes
 
@@ -62,7 +85,7 @@ Prefixes require a configuration directory to function properly.
 Typically, it is called .pybombs/ and is a subdirectory of the prefix.
 So, if your prefix is `~/src/prefix`, there will be a directory called
 `~/src/prefix/.pybombs/` containing special files. The two most important
-files are the inventory file (inventory.dat) and the prefix-local
+files are the inventory file (inventory.yml) and the prefix-local
 configuration file (config.yml), but it can also contain recipe files
 that are specific to this prefix.
 
@@ -87,7 +110,8 @@ prefix with the alias instead of the full path.
 In order to make prefix selection more easy, it is possible to assign names
 to prefixes by adding a `[prefix_aliases]` section to a configuration file.
 The format is `alias=/path/to/prefix`. Instead of providing the entire path
-every time, the alias can be used instead.
+every time, the alias can be used instead. When running `pybombs prefix init`,
+you can use the `--alias` argument to set this automatically.
 
 ### Prefix Selection
 
@@ -100,7 +124,7 @@ Prefixes are selected by the following rules, in this order:
 If no prefix can be found, most PyBOMBS operations will not be possible,
 but some will still work.
 
-### Configuring a prefixes environment (cross-compiling)
+### Configuring a prefix' environment (e.g. for cross-compiling)
 
 #### Setting environment variables directly:
 
@@ -117,13 +141,16 @@ env:
     LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:/path/to/more/libs
 ```
 
+Note: Because this is a YAML file, remember to separate key/value pairs with
+colon (:), not an equals sign, as you would in a shell script.
+
 In all cases, the environment variable `PYBOMBS_PREFIX` is set to the
 current prefix, and `PYBOMBS_PREFIX_SRC` is set to the source directory.
 
 #### Using an external script to set the environment
 
 Inside the config section, a shell script can be defined that sets up an
-environment, which will then be used to set up an environment.
+environment, which will then be used for commands running inside this prefix.
 
 Example:
 
@@ -161,7 +188,9 @@ chosen from the most specific. The precise order is:
 
 This mechanism can be used to override recipes for certain prefixes. For
 example, the `gnuradio.lwr` file could be copied and adapted to use a
-different branch than the default recipe does.
+different branch than the default recipe does. (Note that specific parts
+of recipes can also be overridden in the config.yml file, in the [packages]
+section).
 
 Recipe management can be mostly done through the command line using
 the `pybombs recipes` command -- editing configuration files is possible,
@@ -174,16 +203,18 @@ for further information on the `pybombs recipes` command.
 #### Remote and Local Recipe Locations
 
 Recipe locations can be either local directories (in this case, PyBOMBS will
-simply read any .lwr file from this directory, without traversing into
+simply read any .lwr file from this directory, *without* traversing into
 subdirectories), or a remote location.
 Remote locations can be:
 - git repositories
 - Remotely stored .tar.gz archives
 
 Remote locations are copied into a local directory, so PyBOMBS can read the .lwr
-files locally. This local cache of recipes are stored in the same directory
-as the location of the corresponding config file (e.g., if `~/.pybombs/config.yml`
-declare a recipe called 'myrecipes', the local cache will be in
+files locally. During normal operations, PyBOMBS will not try to read the remote
+location, so offline usage is still possible.
+This local cache of recipes is stored in the same directory as the location of
+the corresponding config file (e.g., if `~/.pybombs/config.yml` declares a
+recipe called 'myrecipes', the local cache will be in
 `~/.pybombs/recipes/myrecipes`).
 
 ## Configuration Files
@@ -191,8 +222,8 @@ declare a recipe called 'myrecipes', the local cache will be in
 Typically, there are four ways to configure PyBOMBS:
 
 1. The global configuration file (e.g. `/etc/pybombs/config.yml`)
-2. The local configuration file (e.g. `~/.pybombs/config.yml`)
-3. The recipe configuration file (e.g. `~/src/prefix/.pybombs/config.yml`)
+2. The user-local configuration file (e.g. `~/.pybombs/config.yml`)
+3. The prefix-local configuration file (e.g. `~/src/prefix/.pybombs/config.yml`)
 4. By using the `--config` switch on the command line
 
 Higher numbers mean higher priority. Conflicting options are resolved by
@@ -232,10 +263,10 @@ packages:
 	gnuradio:
 		forcebuild: True # This will skip any packagers for this package
                                  # and use a source build
-                forceinstalled: False # This will always assume this package is
+                forceinstalled: False # 'True' will always assume this package is
                                       # installed and skip installing it
                 # Any other option here will override whatever's in the
-                # recipe corresponding
+                # corresponding recipe (in this case, gnuradio.lwr)
 
 # Like package flags, but applies flags to all packages
 # in a certain category. 'common' is all OOTs.
