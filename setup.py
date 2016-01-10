@@ -102,6 +102,7 @@ setup(
                   "trees for the GNU Radio project.",
     long_description=__doc__,
     url="http://gnuradio.org/pybombs/",
+    download_url="https://github.com/gnuradio/pybombs2/tarball/{version}".format(version=pybombs.__version__),
     author="Martin Braun",
     author_email="martin.braun@ettus.com",
     maintainer="Martin Braun",
