@@ -22,6 +22,7 @@
 
 import ConfigParser;
 import os, sys;
+from subprocess import Popen, PIPE
 
 
 def config_init(cfg, reconfig=False):
@@ -67,6 +68,8 @@ def config_init(cfg, reconfig=False):
                 vals[kn] = os.environ.get("USER");
         if kn == "prefix":
             pwd = os.environ.get("PWD");
+            if pwd is None:
+                pwd = Popen('pwd', stdout=PIPE).communicate()[0].strip()
             if os.path.basename(pwd)=="pybombs":
                 vals[kn] = os.path.join(os.path.dirname(pwd), "target")
 
