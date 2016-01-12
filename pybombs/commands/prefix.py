@@ -22,6 +22,7 @@
 """ PyBOMBS command: prefix """
 
 import os
+import os.path as op
 import shutil
 import yaml
 from pybombs.commands import CommandBase
@@ -125,18 +126,18 @@ class Prefix(CommandBase):
         pybombs prefix init
         """
         # Make sure the directory is writable
-        path = os.path.abspath(os.path.normpath(self.args.path))
-        if not os.path.isdir(path):
+        path = op.abspath(op.normpath(self.args.path))
+        if not op.isdir(path):
             self.log.info("Creating directory `{0}'".format(path))
             os.mkdir(path)
-        assert os.path.isdir(path)
+        assert op.isdir(path)
         if not os.access(path, os.W_OK|os.X_OK):
             self.log.error("Cannot write to prefix path `{0}'.".format(path))
             exit(1)
 
         # Make sure that a pybombs directory doesn't already exist
-        test_path = os.path.join(path, ".pybombs")
-        if os.path.exists(test_path):
+        test_path = op.join(path, ".pybombs")
+        if op.exists(test_path):
             self.log.error("Ignoring. A prefix already exists in `{0}'".format(path))
             return
 
@@ -145,22 +146,22 @@ class Prefix(CommandBase):
         # cleaning up, for sure. Especially that setup_env.sh stuff at the end.
         # Ideally, we could switch prefix templates.
         self.log.info("Initializing PyBOMBS prefix in `{0}'...".format(path))
-        skel_dir = os.path.join(self.cfg.module_dir, 'skel')
+        skel_dir = op.join(self.cfg.module_dir, 'skel')
         for p in os.listdir(skel_dir):
-            if os.path.exists(os.path.join(path, p)):
+            if op.exists(op.join(path, p)):
                 self.log.obnoxious("Skipping {0}".format(p))
                 continue
             self.log.obnoxious("Copying {0}".format(p))
-            p_full = os.path.join(skel_dir, p)
-            if os.path.isdir(p_full):
+            p_full = op.join(skel_dir, p)
+            if op.isdir(p_full):
                 shutil.copytree(
-                    p_full, os.path.join(path, p),
+                    p_full, op.join(path, p),
                     ignore=shutil.ignore_patterns('.ignore')
                 )
             else:
                 shutil.copy(p_full, path)
-        open(os.path.join(path, 'setup_env.sh'), 'w').write(
-            open(os.path.join(skel_dir, 'setup_env.sh')).read().format(
+        open(op.join(path, 'setup_env.sh'), 'w').write(
+            open(op.join(skel_dir, 'setup_env.sh')).read().format(
                 prefix_dir=path,
             )
         )
@@ -197,10 +198,12 @@ class Prefix(CommandBase):
         r = recipe.get_recipe(sdkname, target='sdk')
         try:
             self.log.obnoxious("Switching CWD to {0}".format(src_dir))
+            if not op.isdir(src_dir):
+                os.mkdir(src_dir)
             os.chdir(src_dir)
         except:
             self.log.error("Source dir required to install SDK.")
-            exit(1)
+            return -1
         ### Install the actual SDK file
         self.log.debug("Fetching SDK `{sdk}'".format(sdk=sdkname))
         fetcher.Fetcher().fetch(r)
@@ -211,24 +214,23 @@ class Prefix(CommandBase):
             self.log.debug("Installation successful")
         else:
             self.log.error("Error installing SDK. Aborting.")
-            exit(1)
+            return -1
         # Clean up
-        files_to_delete = [r.var_replace_all(x) for x in r.clean]
+        files_to_delete = [op.normpath(op.join(src_dir, r.var_replace_all(x))) for x in r.clean]
         if len(files_to_delete):
             self.log.info("Cleaning up files...")
         for ftd in files_to_delete:
-            ftd = os.path.normpath(os.path.join(src_dir, ftd))
-            if os.path.commonprefix((src_dir, ftd)) != src_dir:
+            if op.commonprefix((src_dir, ftd)) != src_dir:
                 self.log.warn("Not removing {ftd} -- outside source dir!".format(ftd=ftd))
                 continue
             self.log.debug("Removing {ftd}...".format(ftd=ftd))
-            if os.path.isdir(ftd):
+            if op.isdir(ftd):
                 shutil.rmtree(ftd)
-            elif os.path.isfile(ftd):
+            elif op.isfile(ftd):
                 os.remove(ftd)
             else:
                 self.log.error("Not sure what this is: {ftd}".format(ftd=ftd))
-                exit(1)
+                return -1
         ### Update the prefix-local config file
         self.log.debug("Updating config file with SDK recipe info.")
         try:

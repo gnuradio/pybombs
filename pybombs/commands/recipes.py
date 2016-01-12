@@ -27,6 +27,7 @@ import os
 import shutil
 import yaml
 import sys
+from pybombs.utils import confirm
 from pybombs.commands import CommandBase
 from pybombs.fetcher import Fetcher
 from pybombs.package_manager import PackageManager
@@ -127,16 +128,15 @@ class Recipes(CommandBase):
         """ Go, go, go! """
         if hasattr(self.args, 'alias'):
             self.args.alias = self.args.alias[0]
-        if self.args.recipe_command == 'add':
-            self._add_recipes()
-        elif self.args.recipe_command == 'remove':
-            self._remove_recipes()
-        elif self.args.recipe_command == 'update':
-            self._update_recipes()
-        elif self.args.recipe_command == 'list':
-            self._list_recipes()
-        else:
+        try:
+            return {'add': self._add_recipes,
+                    'remove': self._remove_recipes,
+                    'update': self._update_recipes,
+                    'list': self._list_recipes,
+                   }[self.args.recipe_command]()
+        except KeyError:
             self.log.error("Illegal recipes command: {}".format(self.args.recipe_command))
+            return -1
 
     def _add_recipes(self):
         """
@@ -155,13 +155,12 @@ class Recipes(CommandBase):
             self.log.error("Invalid recipe alias: {alias}".format(alias=alias))
             exit(1)
         if self.cfg.get_named_recipe_dirs().has_key(alias):
-            if not self.args.force:
-                self.log.error("Recipe name {alias} is already taken!".format(alias=alias))
-                exit(1)
-        # Determine where to store this new recipe location:
-        store_to_prefix = False
-        if self.prefix is not None and self.prefix.prefix_src in ("cli", "cwd"):
-            store_to_prefix = True
+            if self.args.force:
+                self.log.info("Overwriting existing recipe alias `{0}'".format(alias))
+            elif not confirm("Alias `{0}' already exists, overwrite?".format(alias)):
+                self.log.warn('Aborting.')
+                return -1
+        store_to_prefix = self.prefix is not None and self.prefix.prefix_src in ("cli", "cwd")
         cfg_file = None
         recipe_cache = None
         if store_to_prefix:
@@ -197,7 +196,7 @@ class Recipes(CommandBase):
         """
         if not self.cfg.get_named_recipe_dirs().has_key(self.args.alias):
             self.log.error("Unknown recipe alias: {alias}".format(alias=self.args.alias))
-            exit(1)
+            return -1
         # Remove from config file
         cfg_file = self.cfg.get_named_recipe_cfg_file(self.args.alias)
         cfg_data = yaml.safe_load(open(cfg_file).read())
@@ -224,10 +223,10 @@ class Recipes(CommandBase):
             recipes_dir = self.cfg.get_named_recipe_dirs()[self.args.alias]
         except KeyError:
             self.log.error("Error looking up recipe alias '{alias}'".format(alias=self.args.alias))
-            exit(1)
+            return -1
         if not os.path.isdir(recipes_dir):
             self.log.error("Recipe location does not exist. Run `recipes add --force' to add recipes.")
-            exit(1)
+            return -1
         cache_dir_top_level, cache_dir = os.path.split(os.path.normpath(recipes_dir))
         # Do actual update
         self.log.info("Updating recipe location `{alias}'...".format(alias=self.args.alias))
@@ -252,10 +251,9 @@ class Recipes(CommandBase):
             'installed_by': "Installed By",
         }
         self.args.format = [x for x in self.args.format.split(",") if len(x)]
-        for col_id in self.args.format:
-            if not col_id in row_titles.keys():
-                self.log.error("Invalid column ID: {0}".format(col_id))
-                exit(1)
+        if any(map(lambda x: x not in row_titles, self.args.format)):
+            self.log.error("Invalid column formatting: {0}".format(self.args.format))
+            return -1
         widths = {k: len(row_titles[k]) for k in row_titles.keys()}
         print("Loading package information...", end="")
         sys.stdout.flush()
@@ -275,8 +273,7 @@ class Recipes(CommandBase):
             if row['installed_by'] == [not_installed_string] and (self.args.installed or self.args.in_prefix):
                 continue
             row['installed_by'] = ",".join(row['installed_by'])
-            for key in row.iterkeys():
-                widths[key] = max(widths[key], len(row[key]))
+            widths = {k: max(widths[k], len(row[k])) for k in row.iterkeys()}
             rows.append(row)
         print("\n")
         # Sort rows
