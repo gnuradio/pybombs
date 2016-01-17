@@ -55,7 +55,7 @@ For the impatient:
 1. Install PyBOMBS as per the previous section
 2. Add a list of recipes, e.g. by running
 
-    $ pybombs recipes add gnuradio https://github.com/gnuradio/recipes2.git
+    $ pybombs recipes add gnuradio git+https://github.com/gnuradio/recipes2.git
     $ # Note: This URL will likely change soon.
 
 3. Create a prefix (a place to store your local installation):
