@@ -65,12 +65,12 @@ class DepManager(object):
         deps = recipe.get_recipe(pkg).get_local_package_data()['depends'] or []
         # Filter for illegal stuff:
         for dep in deps:
-            if not self.pm.exists(pkg):
+            if not self.pm.exists(pkg) and dep is not None:
                 self.log.error("Package does not exist: {0} (declared as dependency for package {1})".format(dep, pkg))
                 exit(1)
         # Filter all packages either already in the tree, or not wanted:
         deps_to_install = filter(
-            lambda pkg: pkg is not None and filter_callback(pkg) and pkg not in install_tree.get_nodes(),
+            lambda pkg: filter_callback(pkg) and pkg not in install_tree.get_nodes(),
             deps
         )
         if len(deps_to_install) == 0:
