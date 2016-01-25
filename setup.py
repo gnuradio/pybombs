@@ -63,18 +63,21 @@ For more informations see the `documentation`_.
 .. _documentation: http://gnuradio.org/pybombs/
 """
 
-import ez_setup
-ez_setup.use_setuptools()
+try:
+    import setuptools
+except ImportError:
+    import ez_setup
+    ez_setup.use_setuptools()
 
 from setuptools import setup
 import pybombs
 
 packages = [
+    "setuptools",
     "pybombs",
     "pybombs.commands",
     "pybombs.fetchers",
     "pybombs.packagers",
-    "pybombs.plex", # ?
     "pybombs.utils",
 ]
 
