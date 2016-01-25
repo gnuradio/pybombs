@@ -73,7 +73,6 @@ from setuptools import setup
 import pybombs
 
 packages = [
-    "setuptools",
     "pybombs",
     "pybombs.commands",
     "pybombs.fetchers",
@@ -92,6 +91,7 @@ package_data = {
 }
 
 deps = [
+    "setuptools",
     "plex",
     "PyYAML",
     "requests",
