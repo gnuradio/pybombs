@@ -64,8 +64,6 @@ input_data = re.sub("^([a-z_]+)\\s+{([^}]+)[\\s\n]+}", r"\1: |\2", input_data, f
 # Tabs don't work with YAML:
 input_data = input_data.replace('\t', '    ')
 
-print input_data
-
 # 2) Parse the rest as yaml
 data = yaml.safe_load(input_data)
 if data.get('depends'):
