@@ -219,7 +219,7 @@ def config_print():
         print p[0] + " = " +  p[1];
 
 def config_get(k):
-    config.get("config",k);
+    return config.get("config",k);
 
 def config_set(k,v):
     config.set("config",k,v);
