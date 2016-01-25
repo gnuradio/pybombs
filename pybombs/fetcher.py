@@ -239,7 +239,7 @@ class Fetcher(object):
             pass
         # No, OK, let's try regexing this guy
         for utype in uri_types:
-            for regex in self.available[utype]:
+            for regex in self.available[utype].regexes:
                 if re.match(regex, uri):
                     return (utype, uri)
         # Yeah, whatever, I give up.
