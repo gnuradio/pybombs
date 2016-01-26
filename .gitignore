@@ -3,3 +3,4 @@
 *.pyc
 PyBOMBS.egg-info/
 dist/
+build/
