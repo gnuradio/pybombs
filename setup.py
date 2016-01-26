@@ -78,6 +78,12 @@ packages = [
     "pybombs.fetchers",
     "pybombs.packagers",
     "pybombs.utils",
+    # The problem is plex is currently a pre-release, so if we just make
+    # it a dependency of this package, pip will barf unless you know
+    # the magic pip incantations. Sure, I know them, but it confuses the
+    # hell out of our users so I'll just copy plex into the package until
+    # we sort that out.
+    "pybombs.plex",
 ]
 
 package_data = {
@@ -92,7 +98,7 @@ package_data = {
 
 deps = [
     "setuptools",
-    "plex",
+    #"plex", # See above. Yes, it is a requirement.
     "PyYAML",
     "requests",
 ]
@@ -118,7 +124,7 @@ setup(
     },
     install_requires=deps,
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Environment :: Console",
         "Intended Audience :: System Administrators",
         "Intended Audience :: Telecommunications Industry",
