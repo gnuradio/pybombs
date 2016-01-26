@@ -27,6 +27,17 @@ Boston, MA 02110-1301, USA.
 
 ## Installation
 
+### Through pip
+
+You don't have to clone this repository if you don't want to contribute to PyBOMBS itself.
+In that case, simply run
+
+    $ [sudo] pip install PyBOMBS
+
+and it will download and install PyBOMBS for you. Note that this usually doesn't install the latest HEAD, but only the latest version that was submitted to PyPI, so not every bugfix is automatically always immediately propagated that way.
+
+### From source using Python's setuptools
+
 PyBOMBS can be installed using Python's setuptools. From the top
 level of the source code repository, run
 
@@ -43,10 +54,11 @@ This will install PyBOMBS and all required dependencies. See
 
 for additional settings.
 
-For development purposes, it's possible to run PyBOMBS without
-installation. Simply run `pybombs/main.py` and make sure `pybombs/`
-is in reach. pip also provides a `-e` switch for installing PyBOMBS
-in 'editable' mode.
+pip also provides a `-e` switch for installing PyBOMBS in 'editable' mode.
+
+### Install it all manually
+
+If you want to install yourself, you need to make sure the `pybombs` module is in the PYTHONPATH. To run PyBOMBS in this case, execute `main.py`. You can symlink or alias that to `pybombs` (e.g. `ln -s /path/to/pybombs/main.py ~/bin/pybombs`). If you don't know what any of this means, please use one of the methods explained further up.
 
 ## Quickstart
 
@@ -56,14 +68,15 @@ For the impatient:
 2. Add a list of recipes, e.g. by running
 
     $ pybombs recipes add gr-recipes git+https://github.com/gnuradio/gr-recipes.git
+    $ pybombs recipes add gr-etcetera git+https://github.com/gnuradio/gr-etcetera.git
 
 3. Create a prefix (a place to store your local installation):
 
     $ pybombs prefix init /path/to/prefix -a myprefix
 
-4. Start installing:
+4. Start installing (the `-p` switch will tell PyBOMBS to install into the prefix you just created):
 
-    $ pybombs -p myprefix install gnuradio gr-osmosdr
+    $ pybombs -p myprefix install gnuradio gr-osmosdr # Installs GNU Radio and gr-osmosdr and all depdendencies
 
 5. Optional: Make your prefix the default (this will save you having to type `-p myprefix`):
 
