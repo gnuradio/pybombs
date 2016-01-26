@@ -1,0 +1,3 @@
+packages:
+        gnuradio:
+                forcebuild: True
