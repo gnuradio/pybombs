@@ -1,3 +1,5 @@
 packages:
         gnuradio:
                 forcebuild: True
+        uhd:
+                forcebuild: True
