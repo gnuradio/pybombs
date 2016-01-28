@@ -236,6 +236,9 @@ class Recipe(object):
         for k, v in self._data.iteritems():
             if not hasattr(self, k):
                 setattr(self, k, v)
+        self.log.obnoxious("Loaded recipe - {}".format(self))
+
+
 
     def __str__(self):
         out = "Recipe: {id}\n".format(id=str(self.id))
@@ -247,12 +250,12 @@ class Recipe(object):
         Turn a YAML file into a valid recipe datastructure.
         """
         data = yaml.safe_load(open(filename).read())
-        # Make sure dependencies is always a list:
-        if data.has_key('depends'):
+        # Make sure dependencies is always a valid list:
+        if data.has_key('depends') and data['depends'] is not None:
             if not isinstance(data['depends'], list):
-                data['depends'] = [data['depends'],]
+                data['depends'] = [data['depends'], ]
         else:
-                data['depends'] = []
+            data['depends'] = []
         return data
 
     def get_dict(self):
