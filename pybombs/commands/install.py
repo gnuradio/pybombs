@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of GNU Radio
 #
@@ -127,15 +127,19 @@ class Install(CommandBase):
             self.args.packages,
             self._check_if_pkg_goes_into_tree if not self.args.no_deps else lambda x: bool(x in self.args.packages)
         )
-        if install_tree.empty() and not hasattr(self.args, 'quiet_install'):
+        if len(install_tree) == 0 and not hasattr(self.args, 'quiet_install'):
             self.log.info("No packages to install.")
             return 0
         self.log.debug("Install tree:")
         if self.log.getEffectiveLevel() <= 20 or self.args.print_tree:
             install_tree.pretty_print()
         ### Recursively install/update, starting at the leaf nodes
-        while not install_tree.empty():
+        install_cache = []
+        while len(install_tree):
             pkg = install_tree.pop_leaf_node()
+            if pkg in install_cache:
+                continue
+            install_cache.append(pkg)
             if self.args.deps_only and pkg in self.args.packages:
                 self.log.debug("Skipping `{0}' because only deps are requested.")
                 continue

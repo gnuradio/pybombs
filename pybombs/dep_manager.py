@@ -20,7 +20,7 @@
 #
 """ PyBOMBS dependency manager """
 
-from pybombs.simple_tree import SimpleTree
+from pybombs.tree_node import TreeNode
 from pybombs import package_manager
 from pybombs import config_manager
 from pybombs import pb_logging
@@ -41,47 +41,52 @@ class DepManager(object):
         - filter_callback: Function that takes a package name
           and returns True if the package should go into the tree.
         """
-        install_tree = SimpleTree()
-        for pkg in pkg_list:
-            # Check is a valid package:
-            if not self.pm.exists(pkg):
-                self.log.error("Package does not exist: {}".format(pkg))
-                exit(1)
-            # Check if this package should even go into the tree
-            if not filter_callback(pkg):
-                continue
-            # Check if we already covered this package
-            if pkg in install_tree.get_nodes():
-                continue
-            install_tree.insert_at(pkg)
-            self._add_deps_recursive(install_tree, pkg, filter_callback)
+        # - all of pkg_list goes into a set P
+        # - init an empty dict D
+        # - for every element p of P:
+        #   - create a full dep tree T
+        #   - D[p] -> T
+        #   - for every element q of P\p:
+        #     - if q is in T, then P <- P\q and del(D[q]) if exists
+        # - merge all elements of D into T' and return that
+        pkg_set = set(filter(filter_callback, pkg_list))
+        new_pkg_set = set(filter(filter_callback, pkg_list))
+        dep_trees = {}
+        for pkg in pkg_set:
+            dep_trees[pkg] = self.make_tree_recursive(pkg, filter_callback)
+            assert dep_trees[pkg] is not None
+            dep_trees[pkg].pretty_print()
+            for other_pkg in new_pkg_set.difference([pkg]):
+                if other_pkg in dep_trees[pkg]:
+                    new_pkg_set.remove(other_pkg)
+        install_tree = TreeNode()
+        for pkg in new_pkg_set:
+            install_tree.add_child(dep_trees[pkg])
         return install_tree
 
-    def _add_deps_recursive(self, install_tree, pkg, filter_callback):
+    def make_tree_recursive(self, pkg, filter_callback):
         """
-        Recursively add dependencies to the install tree.
+        Make a dependency tree for one package
         """
-        # Load deps:
+        if not filter_callback(pkg):
+            return None
+        tree = TreeNode(pkg)
         deps = recipe.get_recipe(pkg).get_local_package_data()['depends'] or []
-        # Filter for illegal stuff:
         for dep in deps:
-            if not self.pm.exists(pkg):
-                self.log.error("Package does not exist: {0} (declared as dependency for package {1})".format(dep, pkg))
+            if dep is not None and not self.pm.exists(pkg):
+                self.log.error(
+                    "Package does not exist: {0} (declared as dependency for package {1})".format(
+                        dep, pkg
+                    )
+                )
                 exit(1)
-        # Filter all packages either already in the tree, or not wanted:
-        deps_to_install = filter(
-            lambda pkg: pkg is not None and filter_callback(pkg) and pkg not in install_tree.get_nodes(),
-            deps
-        )
-        if len(deps_to_install) == 0:
-            return
-        # First, add all dependencies into the install tree:
-        install_tree.insert_at(deps_to_install, pkg)
-        # Then, extend the tree if the dependencies have dependencies themselves:
+        deps_to_install = set([
+            dep for dep in deps \
+            if dep is not None and filter_callback(dep) and not isinstance(dep, list) \
+        ])
         for dep in deps_to_install:
-            if isinstance(dep, list):
-                # I honestly have no clue why this happens, yet sometimes
-                # it does.
-                continue
-            self._add_deps_recursive(install_tree, dep, filter_callback)
+            subtree = self.make_tree_recursive(dep, filter_callback)
+            if subtree is not None:
+                tree.add_child(subtree)
+        return tree
 

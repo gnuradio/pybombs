@@ -21,8 +21,6 @@
 """ PyBOMBS command: show """
 
 from pybombs.commands import CommandBase
-from pybombs import simple_tree
-from pybombs import recipe
 from pybombs import package_manager
 
 RECIPE_INFO_TPL = """
