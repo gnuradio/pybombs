@@ -53,7 +53,7 @@ class AptGet(PackagerBase):
         See if an installable version of pkgname matches the version requirements.
         """
         available_version = self.get_version_from_apt_cache(pkg_name)
-        if required_version is not None and not vcompare(comparator, available_version, required_version):
+        if available_version is False or (required_version is not None and not vcompare(comparator, available_version, required_version)):
             return False
         return available_version
 
@@ -73,7 +73,8 @@ class AptGet(PackagerBase):
         Call 'apt-get install pkgname' if we can satisfy the version requirements.
         """
         available_version = self.get_version_from_apt_cache(pkg_name)
-        if required_version is not None and not vcompare(comparator, available_version, required_version):
+        if available_version is False or (required_version is not None and not vcompare(comparator, available_version, required_version)):
+
             return False
         try:
             subproc.monitor_process(["apt-get", "-y", "install", pkg_name], elevate=True)
@@ -142,4 +143,3 @@ class AptGet(PackagerBase):
             self.log.error("Running dpkg -s failed.")
             self.log.obnoxious(str(e))
         return False
-
