@@ -140,7 +140,7 @@ class Install(CommandBase):
             if pkg in install_cache:
                 continue
             install_cache.append(pkg)
-            if self.args.deps_only and pkg in self.args.packages:
+            if self.cmd == 'install' and self.args.deps_only and pkg in self.args.packages:
                 self.log.debug("Skipping `{0}' because only deps are requested.")
                 continue
             if self.pm.installed(pkg):
