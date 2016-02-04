@@ -131,7 +131,7 @@ class YumDnf(PackagerBase):
             # 1) Check that pkgname is correct
             # 2) return version
             for line in out:
-                mobj = re.match(r"^(?P<pkg>[^\.]+)\.(?P<arch>\S+)\s+(?P<ver>[0-9]+(\.[0-9]+){0,2})", line)
+                mobj = re.match(r"^(?P<pkg>[^\.]+)\.(?P<arch>\S+)\s+(\d+:)?(?P<ver>[0-9]+(\.[0-9]+){0,2})", line)
                 if mobj and mobj.group('pkg') == pkgname:
                     ver = mobj.group('ver')
                     self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.command))
@@ -144,4 +144,3 @@ class YumDnf(PackagerBase):
             self.log.error("Parsing `{0} list installed` failed.".format(self.command))
             self.log.obnoxious(str(ex))
         return False
-
