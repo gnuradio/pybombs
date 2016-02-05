@@ -145,7 +145,7 @@ def choose_deployer(ttype, target):
             'bzip2': BZip2Deployer,
             'xz': XZDeployer,
             #'ssh': SSHDeployer
-        }[self.args.ttype]
+        }[ttype]
     if re.match(r'.*\.tar\.gz$', target):
         return GZipDeployer
     if re.match(r'.*\.tar\.bz2$', target):
@@ -253,4 +253,3 @@ class Deploy(CommandBase):
         except PBException as ex:
             self.log.error("Failed to deploy: {0}".format(str(ex)))
             exit(1)
-
