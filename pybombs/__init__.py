@@ -18,7 +18,11 @@
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
 #
+"""
+This is PyBOMBS -- gnuradio.org/pybombs
+"""
+
 
 __version__ = "2.0.0"
 
-from utils import dict_merge
+from pybombs.utils import dict_merge
