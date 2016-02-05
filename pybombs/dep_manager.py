@@ -73,17 +73,14 @@ class DepManager(object):
         tree = TreeNode(pkg)
         deps = recipe.get_recipe(pkg).get_local_package_data()['depends'] or []
         for dep in deps:
-            if dep is not None and not self.pm.exists(pkg):
+            if not self.pm.exists(pkg):
                 self.log.error(
                     "Package does not exist: {0} (declared as dependency for package {1})".format(
                         dep, pkg
                     )
                 )
                 exit(1)
-        deps_to_install = set([
-            dep for dep in deps \
-            if dep is not None and filter_callback(dep) and not isinstance(dep, list) \
-        ])
+        deps_to_install = set([dep for dep in deps if filter_callback(dep)])
         for dep in deps_to_install:
             subtree = self.make_tree_recursive(dep, filter_callback)
             if subtree is not None:
