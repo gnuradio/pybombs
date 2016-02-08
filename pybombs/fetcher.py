@@ -42,12 +42,6 @@ class Fetcher(object):
         if self.prefix.prefix_dir is not None:
             self.inventory = self.prefix.inventory
             self.src_dir = self.prefix.src_dir
-            if not os.path.isdir(self.src_dir):
-                self.log.warning("Source dir does not exist! [{}]".format(self.src_dir))
-                try:
-                    os.mkdir(self.src_dir)
-                except:
-                    raise PBException("Unable to create the source directory!")
         from pybombs import fetchers
         self.available = fetchers.get_all()
 
