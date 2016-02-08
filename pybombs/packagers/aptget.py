@@ -74,14 +74,16 @@ class AptGet(PackagerBase):
         """
         available_version = self.get_version_from_apt_cache(pkg_name)
         if available_version is False or (required_version is not None and not vcompare(comparator, available_version, required_version)):
-
             return False
         try:
             subproc.monitor_process(["apt-get", "-y", "install", pkg_name], elevate=True)
-            return True
         except:
             self.log.error("Running apt-get install failed.")
-        return False
+            return False
+        available_version = self.get_version_from_apt_cache(pkg_name)
+        if available_version is False or (required_version is not None and not vcompare(comparator, available_version, required_version)):
+            return False
+        return True
 
     def _package_update(self, pkg_name, comparator=">=", required_version=None):
         """
