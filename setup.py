@@ -92,6 +92,7 @@ package_data = {
         'recipes/*.lwr',
         'skel/src/.ignore',
         'skel/.pybombs/recipes/.ignore',
+        'skel/.pybombs/config.yml',
         'skel/setup_env.sh',
     ],
 }
