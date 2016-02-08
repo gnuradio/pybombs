@@ -189,12 +189,12 @@ class PrefixInfo(object):
                 args.prefix = self._cfg_info['prefix_aliases'][args.prefix]
             if not os.path.isdir(args.prefix):
                 raise PBException("Can't open prefix: {}".format(args.prefix))
-            self.prefix_dir = args.prefix
+            self.prefix_dir = npath(args.prefix)
             self.prefix_src = 'cli'
             self.log.debug("Choosing prefix dir from command line: {}".format(self.prefix_dir))
             return
         if os.environ.has_key(self.env_prefix_var) and os.path.isdir(os.environ[self.env_prefix_var]):
-            self.prefix_dir = os.environ[self.env_prefix_var]
+            self.prefix_dir = npath(os.environ[self.env_prefix_var])
             self.prefix_src = 'env'
             self.log.debug('Using environment variable {} as prefix ({})'.format(self.env_prefix_var, self.prefix_dir))
         if os.getcwd() != os.path.expanduser('~') and os.path.isdir(os.path.join('.', self.prefix_conf_dir)):
@@ -203,10 +203,10 @@ class PrefixInfo(object):
             self.log.debug('Using CWD as prefix ({})'.format(self.prefix_dir))
             return
         if self._cfg_info.get('config', {}).get('default_prefix'):
-            self.prefix_dir = self._cfg_info['config']['default_prefix']
+            self.prefix_dir = npath(self._cfg_info['config']['default_prefix'])
             if self._cfg_info['prefix_aliases'].has_key(self.prefix_dir):
                 self.log.debug("Resolving prefix alias {}.".format(self.prefix_dir))
-                self.prefix_dir = self._cfg_info['prefix_aliases'][self.prefix_dir]
+                self.prefix_dir = npath(self._cfg_info['prefix_aliases'][self.prefix_dir])
             self.log.debug('Using default_prefix as prefix ({})'.format(self.prefix_dir))
             self.prefix_src = 'default'
             return
