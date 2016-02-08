@@ -80,8 +80,8 @@ class AptGet(PackagerBase):
         except:
             self.log.error("Running apt-get install failed.")
             return False
-        available_version = self.get_version_from_apt_cache(pkg_name)
-        if available_version is False or (required_version is not None and not vcompare(comparator, available_version, required_version)):
+        installed_version = self.get_version_from_dpkg(pkg_name)
+        if installed_version is False or (required_version is not None and not vcompare(comparator, installed_version, required_version)):
             return False
         return True
 
