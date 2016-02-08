@@ -1,5 +1,8 @@
+categories:
+        hardware:
+                forcebuild: True
+        common:
+                forcebuild: True
 packages:
         gnuradio:
-                forcebuild: True
-        uhd:
                 forcebuild: True
