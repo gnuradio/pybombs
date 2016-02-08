@@ -304,7 +304,7 @@ class Source(PackagerBase):
         self.log.debug("In cwd - {}".format(os.getcwd()))
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
-            o_proc = output_proc.OutputProcessorMake(preamble="Building: ")
+            o_proc = output_proc.OutputProcessorMake(preamble="Building:    ")
         cmd = recipe.var_replace_all(self.get_command('make', recipe))
         cmd = self.filter_cmd(cmd, recipe, 'make_filter')
         if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
@@ -351,7 +351,7 @@ class Source(PackagerBase):
         cmd = self.filter_cmd(pre_cmd, recipe, 'install_filter')
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG:
-            o_proc = output_proc.OutputProcessorMake(preamble="Installing: ")
+            o_proc = output_proc.OutputProcessorMake(preamble="Installing:  ")
         if subproc.monitor_process(cmd, shell=True, o_proc=o_proc) == 0:
             self.log.debug("Installation successful")
             return True
