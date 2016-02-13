@@ -197,6 +197,7 @@ class PrefixInfo(object):
             self.prefix_dir = npath(os.environ[self.env_prefix_var])
             self.prefix_src = 'env'
             self.log.debug('Using environment variable {} as prefix ({})'.format(self.env_prefix_var, self.prefix_dir))
+            return
         if os.getcwd() != os.path.expanduser('~') and os.path.isdir(os.path.join('.', self.prefix_conf_dir)):
             self.prefix_dir = os.getcwd()
             self.prefix_src = 'cwd'
