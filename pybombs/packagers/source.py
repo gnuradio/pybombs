@@ -110,7 +110,7 @@ class Source(PackagerBase):
             )
         except PBException as err:
             os.chdir(cwd)
-            self.log.error("Problem occured while building package {}:\n{}".format(recipe.id, str(err).strip()))
+            self.log.error("Problem occurred while building package {}:\n{}".format(recipe.id, str(err).strip()))
             return False
         ### Housekeeping
         os.chdir(cwd)
@@ -178,7 +178,7 @@ class Source(PackagerBase):
             os.chdir(cwd)
             return True
         except PBException as err:
-            self.log.error("Problem occured while building package {0}:".format(recipe.id))
+            self.log.error("Problem occurred while building package {0}:".format(recipe.id))
             self.log.error(str(err).strip())
         os.chdir(cwd)
         return False
