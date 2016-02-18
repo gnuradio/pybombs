@@ -27,6 +27,7 @@ from pybombs.fetchers.base import FetcherBase
 from pybombs.utils import output_proc
 from pybombs.utils import subproc
 from pybombs import pb_logging
+from pybombs.pb_exception import PBException
 
 class Git(FetcherBase):
     """
@@ -112,10 +113,13 @@ class Git(FetcherBase):
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG:
             o_proc = output_proc.OutputProcessorMake(preamble="Updating: ")
         for cmd in git_cmds:
-            subproc.monitor_process(
-                args=cmd,
-                o_proc=o_proc,
-            )
+            try:
+                if subproc.monitor_process(args=cmd, o_proc=o_proc, throw_ex=True) != 0:
+                    self.log.error("Could not run command `{0}`".format(" ".join(cmd)))
+                    return False
+            except Exception as ex:
+                self.log.error("Could not run command `{0}`".format(" ".join(cmd)))
+                raise PBException("git commands failed.")
         self.log.obnoxious("Switching cwd back to: {0}".format(cwd))
         os.chdir(cwd)
         return True

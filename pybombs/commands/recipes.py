@@ -230,7 +230,9 @@ class Recipes(CommandBase):
         cache_dir_top_level, cache_dir = os.path.split(os.path.normpath(recipes_dir))
         # Do actual update
         self.log.info("Updating recipe location `{alias}'...".format(alias=self.args.alias))
-        Fetcher().update_src(uri, cache_dir_top_level, cache_dir, {})
+        if not Fetcher().update_src(uri, cache_dir_top_level, cache_dir, {}):
+            self.log.error("Failed to update recipe location `{alias}'...".format(alias=self.args.alias))
+            return -1
 
     def _list_recipes(self):
         """
