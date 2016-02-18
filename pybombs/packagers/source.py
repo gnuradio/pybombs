@@ -132,27 +132,33 @@ class Source(PackagerBase):
 
     def uninstall(self, recipe):
         """
+        Remove a source-installed installation.
         """
         cwd = os.getcwd()
         pkg_src_dir = os.path.normpath(os.path.join(self.prefix.src_dir, recipe.id))
         builddir = os.path.normpath(os.path.join(pkg_src_dir, recipe.installdir))
-        os.chdir(builddir)
-        self.log.debug("Using build directory: {0}".format(builddir))
-        if not os.path.isdir(pkg_src_dir):
-            os.chdir(cwd)
-            raise PBException("There should be a source dir in {0}, but there isn't.".format(pkg_src_dir))
         get_state = lambda: (self.inventory.get_state(recipe.id) or 0)
         set_state = lambda state: self.inventory.set_state(recipe.id, state) or self.inventory.save()
+        if not os.path.isdir(pkg_src_dir):
+            raise PBException("There should be a source dir in {0}, but there isn't.".format(pkg_src_dir))
         if get_state() >= self.inventory.STATE_INSTALLED:
-            try:
-                self.make_clean(recipe)
-            except PBException as ex:
-                self.log.warn("Uninstall failed: {0}.".format(str(ex)))
-                return False
+            self.log.debug("Using build directory: {0}".format(builddir))
+            if not os.path.isdir(builddir):
+                self.log.warn("Package claims to be installed, but no build dir. Cannot do a proper uninstall.")
+            else:
+                try:
+                    os.chdir(builddir)
+                    self.make_clean(recipe)
+                    os.chdir(cwd)
+                except PBException as ex:
+                    self.log.warn("Uninstall failed: {0}.".format(str(ex)))
+                    return False
             set_state(self.inventory.STATE_CONFIGURED)
-        else:
-            self.log.debug("Package {0} is not yet installed.".format(recipe.id))
-        os.chdir(cwd)
+        if get_state() >= self.inventory.STATE_FETCHED:
+            self.log.debug("Removing directory {0}.".format(pkg_src_dir))
+            shutil.rmtree(pkg_src_dir)
+            self.inventory.remove(recipe.id)
+            self.inventory.save()
         self.log.obnoxious("Uninstall complete.")
         return True
 

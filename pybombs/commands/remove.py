@@ -66,13 +66,24 @@ class Remove(CommandBase):
         if not self.args.no_deps:
             self.args.packages = self.get_dependees(self.args.packages)
 
+    def is_installed(self, pkg):
+        """
+        """
+        if self.pm.installed(pkg):
+            return True
+        if hasattr(self, 'inventory') \
+                and self.inventory.get_state(pkg) is not None \
+                and self.inventory.get_state(pkg) >= self.inventory.STATE_FETCHED:
+            return True
+        return False
+
     def run(self):
         """ Go, go, go! """
         ### Sanity checks
         for pkg in self.args.packages:
-            if not self.pm.installed(pkg):
+            if not self.is_installed(pkg):
                 self.log.error("Package {0} is not installed. Aborting.".format(pkg))
-                exit(1)
+                return 1
         ### Remove packages
         for pkg in self.args.packages:
             self.log.info("Removing package {0}.".format(pkg))
@@ -80,10 +91,6 @@ class Remove(CommandBase):
             self.log.debug("Uninstalling.")
             if not self.pm.uninstall(pkg):
                 self.log.warn("Could not uninstall {0} from prefix.".format(pkg))
-            # Remove source dir:
-            pkg_src_dir = os.path.join(self.prefix.src_dir, pkg)
-            self.log.debug("Removing directory {0}.".format(pkg_src_dir))
-            shutil.rmtree(pkg_src_dir)
             # Remove entry from inventory:
             self.log.debug("Removing package from inventory.")
             self.inventory.remove(pkg)
