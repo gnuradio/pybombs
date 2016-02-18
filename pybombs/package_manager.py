@@ -50,7 +50,7 @@ class PackageManager(object):
             self.log.debug("No prefix specified. Skipping source package manager.")
             self.src = None
         # Create sorted list of binary package managers
-        requested_packagers = [x.strip() for x in self.cfg.get('packagers').split(',')]
+        requested_packagers = [x.strip() for x in self.cfg.get('packagers').split(',') if x]
         binary_pkgrs = []
         for pkgr in requested_packagers:
             self.log.debug("Attempting to add binary package manager {}".format(pkgr))
