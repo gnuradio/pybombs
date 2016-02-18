@@ -75,19 +75,27 @@ class Rebuild(CommandBase):
         if len(self.args.packages) == 0:
             self.args.packages = self.inventory.get_packages()
 
+    def is_installed(self, pkg):
+        """
+        Returns True if pkg is either declared as installed by the package
+        manager, or the the source package state is at least 'configured'.
+        """
+        return self.inventory.get_state(pkg) is not None \
+            and self.inventory.get_state(pkg) >= self.inventory.STATE_CONFIGURED
+
     def run(self):
         """ Go, go, go! """
         ### Sanity checks
         for pkg in self.args.packages:
-            if not self.pm.installed(recipe.get_recipe(pkg)):
+            if not self.is_installed(pkg):
                 self.log.error("Package {0} is not installed into current prefix. Aborting.".format(pkg))
-                exit(1)
+                return -1
         ### Make install tree
         rb_tree = dep_manager.DepManager().make_dep_tree(
             self.args.packages,
             lambda x: bool(
                 (x in self.args.packages) or \
-                (self.args.deps and self.pm.installed(recipe.get_recipe(x)))
+                (self.args.deps and self.is_installed(x))
             )
         )
         self.log.debug("Install tree:")

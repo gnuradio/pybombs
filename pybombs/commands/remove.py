@@ -68,6 +68,8 @@ class Remove(CommandBase):
 
     def is_installed(self, pkg):
         """
+        Returns True if pkg is either declared as installed by the package
+        manager, or the the source package state is at least 'fetched'.
         """
         if self.pm.installed(pkg):
             return True
