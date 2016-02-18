@@ -94,8 +94,11 @@ class Rebuild(CommandBase):
         if self.log.getEffectiveLevel() <= 20 or self.args.print_tree:
             rb_tree.pretty_print()
         ### Recursively rebuild, starting at the leaf nodes
+        node_cache = []
         while not rb_tree.empty():
             pkg = rb_tree.pop_leaf_node()
+            if pkg in node_cache:
+                continue
             rec = recipe.get_recipe(pkg)
             self.log.info("Rebuilding package: {0}".format(pkg))
             if not self.pm.rebuild(

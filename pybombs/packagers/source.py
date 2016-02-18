@@ -106,7 +106,7 @@ class Source(PackagerBase):
                 recipe,
                 nuke_builddir=False,
                 warn_if_builddir_exists=not bool(update),
-                fail_if_builddir_exists=update,
+                fail_if_builddir_missing=update,
             )
         except PBException as err:
             os.chdir(cwd)
@@ -182,7 +182,7 @@ class Source(PackagerBase):
             make_clean=False,
             nuke_builddir=False,
             warn_if_builddir_exists=False,
-            fail_if_builddir_exists=False,
+            fail_if_builddir_missing=False,
         ):
         """
         Goes through the actual steps of configuring, building and installing
@@ -215,10 +215,11 @@ class Source(PackagerBase):
                 if nuke_builddir:
                     self.log.info("Removing old build directory.")
                     shutil.rmtree(builddir)
+                    os.mkdir(builddir)
                 elif warn_if_builddir_exists:
                     self.log.warn("Build dir already exists: {}".format(builddir))
             else:
-                if fail_if_builddir_exists:
+                if fail_if_builddir_missing:
                     self.log.error("Can't update package {0}, build directory seems to be missing.".format(recipe.id))
                     exit(1)
                 os.mkdir(builddir)
