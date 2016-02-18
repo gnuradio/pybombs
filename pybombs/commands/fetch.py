@@ -60,7 +60,7 @@ class Fetch(CommandBase):
             load_recipes=True,
             require_prefix=True,
         )
-        self.args.packages = args.packages[0] # wat?
+        self.args.packages = args.packages[0]
         if len(self.args.packages) == 0 and not args.all:
             self.log.error("No packages specified.")
             exit(1)
@@ -89,7 +89,10 @@ class Fetch(CommandBase):
                 continue
             self.log.info("Downloading source for package {0}".format(r.id))
             try:
-                Fetcher().fetch(r)
+                if self.cmd == 'refetch':
+                    Fetcher().update(r)
+                else:
+                    Fetcher().fetch(r)
             except PBException as ex:
                 self.log.error("Unable to fetch package {0}. Skipping.".format(r.id))
                 self.log.error(ex)
