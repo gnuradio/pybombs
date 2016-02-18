@@ -58,7 +58,7 @@ print "Converting `{0}' => `{1}'".format(input_file, output_file)
 # 1) Do some regexing on the raw file
 input_data = open(input_file).read()
 # Vars:
-input_data = re.sub('^var\s+([a-z_]+)\s+=\s+(.*)$', 'var:\n  \\1: \\2', input_data, flags=re.MULTILINE)
+input_data = re.sub('^var\s+([a-z_]+)\s+=\s+(.*)$', 'vars:\n  \\1: \\2', input_data, flags=re.MULTILINE)
 # Multiline crap:
 input_data = re.sub("^([a-z_]+)\\s+{([^}]+)[\\s\n]+}", r"\1: |\2", input_data, flags=re.MULTILINE|re.DOTALL)
 # Tabs don't work with YAML:
