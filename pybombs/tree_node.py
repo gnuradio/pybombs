@@ -30,6 +30,10 @@ class TreeNode(object):
     def __str__(self):
         return "<node: {0}>".format(self.value())
 
+    def empty(self):
+        " Returns True if this node has no data and no sub-nodes "
+        return self.__len__() == 0
+
     def add_child(self, child_node):
         " Add child to this node "
         if all([x != child_node.value() for x in self._children]):
