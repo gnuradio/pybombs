@@ -55,8 +55,9 @@ class YumDnf(PackagerBase):
         """
         See if an installable version of pkgname matches the version requirements.
         """
-        available_version = self.get_available_version_from_pkgr(pkgname)
-        if required_version is not None and not vcompare(comparator, available_version, required_version):
+        available_version = self.get_available_version(pkgname)
+        if available_version is False \
+                or (required_version is not None and not vcompare(comparator, available_version, required_version)):
             return False
         return available_version
 
@@ -64,7 +65,7 @@ class YumDnf(PackagerBase):
         """
         See if the installed version of pkgname matches the version requirements.
         """
-        installed_version = self.get_installed_version_from_pkgr(pkgname)
+        installed_version = self.get_installed_version(pkgname)
         if not installed_version:
             return False
         if required_version is None:
@@ -75,16 +76,19 @@ class YumDnf(PackagerBase):
         """
         Call 'COMMAND install pkgname' if we can satisfy the version requirements.
         """
-        available_version = self.get_available_version_from_pkgr(pkgname)
-        if required_version is not None and not vcompare(comparator, available_version, required_version):
+        if not self._package_exists(pkgname, comparator, required_version):
             return False
         try:
             subproc.monitor_process([self.command, "-y", cmd, pkgname], elevate=True)
-            return True
         except Exception as ex:
             self.log.error("Running `{0} install' failed.".format(self.command))
             self.log.obnoxious(str(ex))
-        return False
+            return False
+        installed_version = self.get_installed_version(pkgname)
+        if installed_version is False \
+                or (required_version is not None and not vcompare(comparator, installed_version, required_version)):
+            return False
+        return True
 
     def _package_update(self, pkgname, comparator=">=", required_version=None):
         """
@@ -93,7 +97,7 @@ class YumDnf(PackagerBase):
         return self._package_install(pkgname, comparator, required_version, cmd='update')
 
     ### packager-specific functions:
-    def get_available_version_from_pkgr(self, pkgname):
+    def get_available_version(self, pkgname):
         """
         Check which version is available in the packager.
         """
@@ -115,7 +119,7 @@ class YumDnf(PackagerBase):
             self.log.error(str(ex))
         return False
 
-    def get_installed_version_from_pkgr(self, pkgname):
+    def get_installed_version(self, pkgname):
         """
         Check which version is currently installed.
         """

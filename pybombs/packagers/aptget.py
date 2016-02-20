@@ -53,7 +53,8 @@ class AptGet(PackagerBase):
         See if an installable version of pkgname matches the version requirements.
         """
         available_version = self.get_version_from_apt_cache(pkg_name)
-        if available_version is False or (required_version is not None and not vcompare(comparator, available_version, required_version)):
+        if available_version is False \
+                or (required_version is not None and not vcompare(comparator, available_version, required_version)):
             return False
         return available_version
 
@@ -72,16 +73,17 @@ class AptGet(PackagerBase):
         """
         Call 'apt-get install pkgname' if we can satisfy the version requirements.
         """
-        available_version = self.get_version_from_apt_cache(pkg_name)
-        if available_version is False or (required_version is not None and not vcompare(comparator, available_version, required_version)):
+        if not self._package_exists(pkg_name, comparator, required_version):
             return False
         try:
             subproc.monitor_process(["apt-get", "-y", "install", pkg_name], elevate=True)
-        except:
+        except Exception as ex:
             self.log.error("Running apt-get install failed.")
+            self.log.obnoxious(str(ex))
             return False
         installed_version = self.get_version_from_dpkg(pkg_name)
-        if installed_version is False or (required_version is not None and not vcompare(comparator, installed_version, required_version)):
+        if installed_version is False \
+                or (required_version is not None and not vcompare(comparator, installed_version, required_version)):
             return False
         return True
 
