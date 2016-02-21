@@ -70,11 +70,11 @@ class CommandBase(object):
 ##############################################################################
 # Argument Parser
 ##############################################################################
-def init_arg_parser(show_help_for=None):
+def init_arg_parser(show_help_for=None, hide_hidden=True):
     """
     Create a base argument parser
     """
-    cmd_list = get_cmd_list(hide_hidden=True)
+    cmd_list = get_cmd_list(hide_hidden=hide_hidden)
     # Set up global options:
     parser = argparse.ArgumentParser(
         description='PyBOMBS: A meta-package manager integrated with CGRAN.',
@@ -129,7 +129,10 @@ def dispatch():
     """
     Dispatch the actual command class
     """
-    args = init_arg_parser().parse_args()
+    try:
+        args = init_arg_parser().parse_args()
+    except SystemExit:
+        args = init_arg_parser(hide_hidden=False).parse_args()
     cmd_list = get_cmd_list()
     return get_cmd_dict(cmd_list)[args.command](cmd=args.command, args=args).run()
 

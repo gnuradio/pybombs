@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright 2015-2016 Free Software Foundation, Inc.
 #
@@ -157,10 +158,10 @@ class Install(CommandBase):
                 self.log.info("Installation successful.")
 
 ### Damn, you found it :)
-class Moo(CommandBase):
-    """ Secret dairy component of PyBOMBS """
+class Doge(CommandBase):
+    """ Secret woofy component of PyBOMBS """
     cmds = {
-        'moo': 'MOoO',
+        'doge': 'Doge',
     }
     hidden = True
 
@@ -172,12 +173,25 @@ class Moo(CommandBase):
         )
 
     def run(self):
-        """ Moo, Moo, Moo! """
-        print(r"         (__)    ")
-        print(r"         (oo)    ")
-        print(r"   /------\/     ")
-        print(r"  / |    ||      ")
-        print(r" *  /\---/\      ")
-        print(r"    ~~   ~~      ")
-        print(r"....\"Have you mooed today?\"...")
-
+        """ Woof, woof, woof! """
+        print(r"         ▄              ▄     ")
+        print(r"        ▌▒█           ▄▀▒▌    ")
+        print(r"        ▌▒▒▀▄       ▄▀▒▒▒▐    ")
+        print(r"       ▐▄▀▒▒▀▀▀▀▄▄▄▀▒▒▒▒▒▐    ")
+        print(r"     ▄▄▀▒▒▒▒▒▒▒▒▒▒▒█▒▒▄█▒▐    ")
+        print(r"   ▄▀▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▀██▀▒▌    ")
+        print(r"  ▐▒▒▒▄▄▄▒▒▒▒▒▒▒▒▒▒▒▒▒▀▄▒▒▌   ")
+        print(r"  ▌▒▒▐▄█▀▒▒▒▒▄▀█▄▒▒▒▒▒▒▒█▒▐   ")
+        print(r" ▐▒▒▒▒▒▒▒▒▒▒▒▌██▀▒▒▒▒▒▒▒▒▀▄▌  ")
+        print(r" ▌▒▀▄██▄▒▒▒▒▒▒▒▒▒▒▒░░░░▒▒▒▒▌  ")
+        print(r" ▌▀▐▄█▄█▌▄▒▀▒▒▒▒▒▒░░░░░░▒▒▒▐  ")
+        print(r"▐▒▀▐▀▐▀▒▒▄▄▒▄▒▒▒▒▒░░░░░░▒▒▒▒▌ ")
+        print(r"▐▒▒▒▀▀▄▄▒▒▒▄▒▒▒▒▒▒░░░░░░▒▒▒▐  ")
+        print(r" ▌▒▒▒▒▒▒▀▀▀▒▒▒▒▒▒▒▒░░░░▒▒▒▒▌  ")
+        print(r" ▐▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▐   ")
+        print(r"  ▀▄▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▄▒▒▒▒▌   ")
+        print(r"    ▀▄▒▒▒▒▒▒▒▒▒▒▄▄▄▀▒▒▒▒▄▀    ")
+        print(r"   ▐▀▒▀▄▄▄▄▄▄▀▀▀▒▒▒▒▒▄▄▀      ")
+        print(r"  ▐▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▀▀         ")
+        print(r"                              ")
+        print(r" Such code. Many packages. Wow")
