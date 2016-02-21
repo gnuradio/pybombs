@@ -230,6 +230,7 @@ class Source(PackagerBase):
                     exit(1)
                 os.mkdir(builddir)
         os.chdir(builddir)
+        recipe.vars['builddir'] = builddir
         ### Run the build process
         if get_state() < self.inventory.STATE_CONFIGURED:
             self.configure(recipe)
