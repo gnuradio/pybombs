@@ -67,7 +67,15 @@ try:
     import setuptools
 except ImportError:
     import ez_setup
-    ez_setup.use_setuptools()
+    try:
+        ez_setup.use_setuptools()
+    except AttributeError:
+        print("=========================================================")
+        print("Detected incompatibility between ez_setup and setuptools.")
+        print("Re-running this script might fix things.")
+        print("If not, install setuptools separately and try again.")
+        print("=========================================================")
+        exit(1)
 
 from setuptools import setup
 import pybombs
