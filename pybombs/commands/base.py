@@ -74,6 +74,8 @@ def init_arg_parser(show_help_for=None, hide_hidden=True):
     """
     Create a base argument parser
     """
+    def dummy_error(msg):
+        raise PBException('parse error')
     cmd_list = get_cmd_list(hide_hidden=hide_hidden)
     # Set up global options:
     parser = argparse.ArgumentParser(
@@ -88,6 +90,8 @@ def init_arg_parser(show_help_for=None, hide_hidden=True):
         dest='command',
         metavar='<command>',
     )
+    if hide_hidden:
+        parser.error = dummy_error
     # Set up options for each command:
     for cmd in cmd_list:
         for cmd_name, cmd_help in cmd.cmds.iteritems():
@@ -131,7 +135,7 @@ def dispatch():
     """
     try:
         args = init_arg_parser().parse_args()
-    except SystemExit:
+    except PBException:
         args = init_arg_parser(hide_hidden=False).parse_args()
     cmd_list = get_cmd_list()
     return get_cmd_dict(cmd_list)[args.command](cmd=args.command, args=args).run()
