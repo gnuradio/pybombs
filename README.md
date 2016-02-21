@@ -36,6 +36,11 @@ In that case, simply run
 
 and it will download and install PyBOMBS for you. Note that this usually doesn't install the latest HEAD, but only the latest version that was submitted to PyPI, so not every bugfix is automatically always immediately propagated that way.
 
+If you do want to install the latest version from git, but still use pip, you
+run the following command:
+
+    $ [sudo] pip install [--upgrade] git+https://github.com/gnuradio/pybombs.git
+
 ### From source using Python's setuptools
 
 PyBOMBS can be installed using Python's setuptools. From the top
