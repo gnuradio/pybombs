@@ -22,7 +22,4 @@
 This is PyBOMBS -- gnuradio.org/pybombs
 """
 
-
 __version__ = "2.0.0"
-
-from pybombs.utils import dict_merge
