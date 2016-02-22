@@ -184,9 +184,10 @@ class Recipes(CommandBase):
                 cdir=recipe_cache, alias=alias
             ))
             shutil.rmtree(recipe_cache)
-        # Let the fetcher download the location
-        self.log.debug("Fetching into directory: {0}/{1}".format(recipe_cache_top_level, alias))
-        Fetcher().fetch_url(uri, recipe_cache_top_level, alias, {}) # No args
+        if not os.path.isdir(os.path.normpath(os.path.expanduser(uri))):
+            # Let the fetcher download the location
+            self.log.debug("Fetching into directory: {0}/{1}".format(recipe_cache_top_level, alias))
+            Fetcher().fetch_url(uri, recipe_cache_top_level, alias, {}) # No args
         # Write this to config file
         self.cfg.update_cfg_file({'recipes': {alias: uri}}, cfg_file=cfg_file)
 
