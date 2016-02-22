@@ -509,7 +509,7 @@ class ConfigManager(object):
         is already a directory, then return that. Or it's a remote
         URI; in that case, return the cache directory.
         """
-        if os.path.isdir(uri):
+        if os.path.isdir(npath(uri)):
             return npath(uri)
         return npath(os.path.join(cache_dir, name))
 
