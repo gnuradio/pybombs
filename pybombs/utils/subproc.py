@@ -135,6 +135,7 @@ def _process_thread(event, args, kwargs):
             args = ' '.join(ELEVATE_PRE_ARGS) + args
         else:
             args = ELEVATE_PRE_ARGS + args
+    log.debug("Executing command `{cmd}'".format(cmd=str(args).strip()))
     proc = subprocess.Popen(
         args,
         shell=kwargs.get('shell', False),
@@ -176,7 +177,6 @@ def monitor_process(args, **kwargs):
     - elevate: Run with elevated privileges (e.g., 'sudo <command>')
     """
     log = logger.getChild("monitor_process()")
-    log.debug("Executing command `{cmd}'".format(cmd=str(args).strip()))
     if kwargs.get('elevate'):
         log.debug("Running with elevated privileges.")
     try:
