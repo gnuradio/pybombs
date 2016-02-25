@@ -265,16 +265,10 @@ class ConfigManager(object):
 
     # Default values + Help text:
     defaults = {
-        'gituser': ('', 'Username for GIT access'),
-        'gitcache': ('', 'Directory of git cache repository'),
-        'prefix': ('/usr/local/', 'Install Prefix'),
+        'default_prefix': ('', 'Default Prefix'),
         'satisfy_order': (
             'native, src',
             'Order in which to attempt installations when available, options are: src, native'
-        ),
-        'timeout': (
-            '30',
-            'Time the monitor thread waits (in seconds) before retrying downloads'
         ),
         'cmakebuildtype': (
             'RelWithDebInfo',
