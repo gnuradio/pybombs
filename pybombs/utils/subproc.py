@@ -130,6 +130,8 @@ def _process_thread(event, args, kwargs):
     if isinstance(o_proc, output_proc.OutputProcessor):
         use_oproc = True
         extra_popen_args = o_proc.extra_popen_args
+    if kwargs.get('shell', False) and isinstance(args, list):
+        args = ' '.join(args)
     if kwargs.get('elevate'):
         if kwargs.get('shell', False) and isinstance(args, str):
             args = ' '.join(ELEVATE_PRE_ARGS) + args
