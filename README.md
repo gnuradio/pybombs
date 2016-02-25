@@ -114,6 +114,13 @@ to have multiple prefixes, e.g. one for system-wide installation, one for
 a user-specific installation, and one for cross-compiling to a different
 platform.
 
+When running PyBOMBS, you select the desired prefix using the `-p` switch.
+You can set a default prefix with the following command:
+
+    $ pybombs config default_prefix PREFIXNAME
+
+The first time you run `pybombs prefix init`, it will set this value for you.
+
 ### Initializing Prefixes
 
 Any directory can function as a prefix, and PyBOMBS will make sure all the
