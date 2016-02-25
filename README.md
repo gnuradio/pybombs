@@ -79,14 +79,16 @@ For the impatient:
 
         $ pybombs prefix init /path/to/prefix -a myprefix
 
-4. Start installing (the `-p` switch will tell PyBOMBS to install into the prefix you just created):
+   All commands after this will use `myprefix` as the default prefix. You can change the
+   default prefix later by running `pybombs config default_prefix NEWPREFIX`
 
-        $ pybombs -p myprefix install gnuradio gr-osmosdr
-    This installs GNU Radio and gr-osmosdr and all depdendencies
+4. Start installing:
 
-5. Optional: Make your prefix the default (this will save you having to type `-p myprefix`):
+        $ pybombs [-p myprefix] install gnuradio gr-osmosdr
 
-        $ pybombs config default_prefix myprefix
+    This installs GNU Radio and gr-osmosdr and all dependencies.
+    The `-p` switch is not necessary in this case, because it is already the default
+    prefix.
 
 ## Prefixes
 

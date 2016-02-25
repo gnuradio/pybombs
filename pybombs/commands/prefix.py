@@ -168,11 +168,19 @@ class Prefix(CommandBase):
         # Register alias
         if self.args.alias is not None:
             if self.prefix is not None and \
-                self.prefix.prefix_aliases.get(self.args.alias) is not None \
-                and not confirm("Alias `{0}' already exists, overwrite?".format(self.args.alias)):
-                    self.log.warn('Aborting.')
-                    return 1
+                    self.prefix.prefix_aliases.get(self.args.alias) is not None \
+                    and not confirm("Alias `{0}' already exists, overwrite?".format(self.args.alias)):
+                self.log.warn('Aborting.')
+                return 1
             self.cfg.update_cfg_file({'prefix_aliases': {self.args.alias: path}})
+        # If there is no default prefix, make this the default
+        curr_default_prefix = self.cfg.get('default_prefix')
+        if len(curr_default_prefix) == 0:
+            if self.args.alias is not None:
+                new_default_prefix = self.args.alias
+            else:
+                new_default_prefix = path
+            self.cfg.update_cfg_file({'config': {'default_prefix': new_default_prefix}})
         # Create virtualenv if so desired
         if self.args.virtualenv:
             self.log.info("Creating Python virtualenv in prefix...")
