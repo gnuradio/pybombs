@@ -39,6 +39,7 @@ class Inventory(object):
     inventory file.
     """
     _states = {
+        'none':       (0,  'Package is not installed or fetched',),
         'fetched':    (10, 'Package source is in prefix, but not installed.',),
         'configured': (20, 'Package is downloaded and configured.',),
         'built':      (30, 'Package is compiled.',),
