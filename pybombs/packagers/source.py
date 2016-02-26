@@ -25,6 +25,7 @@ Packager: Source packages
 import os
 import shutil
 from pybombs import pb_logging
+from pybombs.requirer import Requirer
 from pybombs.utils import subproc
 from pybombs.utils import output_proc
 from pybombs.pb_exception import PBException
@@ -35,6 +36,7 @@ class Source(PackagerBase):
     Source package manager.
     """
     name = "source"
+    host_sys_deps = ['build-essential',]
 
     def __init__(self):
         PackagerBase.__init__(self)
@@ -199,6 +201,7 @@ class Source(PackagerBase):
         Does not return a value, only raises PBException if something goes
         wrong ("net g'meckert isch lob genug").
         """
+        Requirer().assert_requirements(['build-essential'])
         if nuke_builddir:
             make_clean = False
         get_state = lambda: (self.inventory.get_state(recipe.id) or 0)
