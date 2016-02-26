@@ -170,6 +170,7 @@ def monitor_process(args, **kwargs):
     Params:
     - args: Must be a list (e.g. ['ls', '-l'])
     - shell: If True, run in shell environment
+    - throw: Throw a PBException if the process returns a non-zero return value
     - throw_ex: If True, propagate subprocess exceptions. If False, return -1
                 on exceptions.
     - env: A dictionary with environment variables.
@@ -196,6 +197,8 @@ def monitor_process(args, **kwargs):
                 log.debug("Thread signaled termination or returned")
                 break
         log.debug("Return value: {0}".format(_process_thread.result))
+        if _process_thread.result != 0:
+            raise PBException("Process returned value: " + str(_process_thread.result))
         return _process_thread.result
     except KeyboardInterrupt:
         print("")
