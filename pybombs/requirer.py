@@ -58,11 +58,13 @@ class Requirer(object):
     def __init__(self):
         pass
 
-    def assert_requirements(self):
+    def assert_requirements(self, requirements=None):
         """
         Make sure this class' requirements are met, whatever necessary,
         and fail if not.
         """
+        if requirements is None:
+            requirements = self.host_sys_deps
         if getattr(self, 'log', None) is not None:
             logger = self.log
         else:
@@ -70,6 +72,6 @@ class Requirer(object):
             logger = pb_logging.logger.getChild("Requirer")
         if self.host_sys_deps:
             logger.debug("Requiring packages on host system: {deps}".format(deps=self.host_sys_deps))
-            require_hostsys_dependencies(self.host_sys_deps)
+            require_hostsys_dependencies(requirements)
             logger.debug("Requirements met.")
 
