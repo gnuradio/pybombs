@@ -63,6 +63,7 @@ class Git(FetcherBase):
             args=git_cmd,
             o_proc=o_proc,
             throw_ex=True,
+            throw=True,
         )
         # If we have a specific revision, checkout that
         if args.get('gitrev'):
