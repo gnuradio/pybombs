@@ -58,7 +58,7 @@ class RecipeListManager(object):
         for package called 'name'.
         """
         try:
-            return self._recipe_list[name][0]
+            return self._recipe_list[name]
         except KeyError:
             self.log.error("Package {} has no recipe file!".format(name))
             exit(1)
@@ -66,7 +66,7 @@ class RecipeListManager(object):
     def get_template_filename(self, template):
         """ Returns the filename for the requested template """
         try:
-            return self._template_list[template][0]
+            return self._template_list[template]
         except KeyError:
             raise PBException("Unable to find template {0}!".format(template))
 
@@ -97,11 +97,8 @@ class RecipeListManager(object):
         for f in lwr_files:
             pkgname = os.path.splitext(f)[0]
             abs_filename = os.path.join(dirname, f)
-            if pkgname in self._recipe_list.keys():
-                self._recipe_list[pkgname].insert(0, abs_filename)
-            else:
-                self._recipe_list[pkgname] = [abs_filename, ]
-
+            if pkgname not in self._recipe_list.keys():
+                self._recipe_list[pkgname] = abs_filename
         self.log.debug("Loading templates.")
         # Load any templates from this directory.
         template_dir = self.cfg.get_template_dir()
@@ -112,12 +109,9 @@ class RecipeListManager(object):
         for f in template_files:
             template = os.path.splitext(f)[0]
             abs_filename = os.path.join(template_dir, f)
-            if template in self._template_list.keys():
-                self._template_list[template].insert(0, abs_filename)
-            else:
-                self._template_list[template] = [abs_filename, ]
-            self.log.obnoxious("Adding template {}".format(abs_filename))
-
+            if template not in self._template_list.keys():
+                self._template_list[template] = abs_filename
+                self.log.obnoxious("Adding template {}".format(abs_filename))
 
 recipe_manager = RecipeListManager()
 
