@@ -22,6 +22,7 @@ vars:
         config_opt: ""
 configure: ""
 make: ""
+make_interactive: False
 install: ""
 uninstall: ""
 verify: ""

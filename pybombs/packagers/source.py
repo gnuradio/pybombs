@@ -314,7 +314,7 @@ class Source(PackagerBase):
         self.log.debug("Building recipe {}".format(recipe.id))
         self.log.debug("In cwd - {}".format(os.getcwd()))
         o_proc = None
-        if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
+        if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again and not recipe.make_interactive:
             o_proc = output_proc.OutputProcessorMake(preamble="Building:    ")
         cmd = recipe.var_replace_all(self.get_command('make', recipe))
         cmd = self.filter_cmd(cmd, recipe, 'make_filter')
