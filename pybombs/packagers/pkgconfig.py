@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -22,63 +22,21 @@
 Packager: pkg-config
 """
 
-import re
 import subprocess
-from pybombs.packagers.base import PackagerBase
+from pybombs.packagers.extern import ExternCmdPackagerBase, ExternReadOnlyPackager
 from pybombs.utils import sysutils
-from pybombs.utils.vcompare import vcompare
 
-class PkgConfig(PackagerBase):
+class ExternalPkgConfig(ExternReadOnlyPackager):
     """
-    Uses pkg-config. Can't really install stuff, but is useful for
-    finding out if something is already installed.
+    Wrapper around pkg-config
     """
-    name = 'pkgconfig'
-    pkgtype = 'pkgconfig'
+    def __init__(self, logger):
+        ExternReadOnlyPackager.__init__(self, logger)
 
-    def __init__(self):
-        PackagerBase.__init__(self)
-
-    def supported(self):
+    def get_installed_version(self, pkgname):
         """
-        Check if we can even run 'pkg-config'. Return True if yes.
-        """
-        return sysutils.which('pkg-config') is not None
-
-    def _package_exists(self, pkgname, comparator=">=", required_version=None):
-        """
-        Existence and install-state of package is the same, so forward this.
-        """
-        return self._package_installed(pkgname, comparator, required_version)
-
-    def _package_installed(self, pkgname, comparator=">=", required_version=None):
-        """
-        See if the installed version of pkgname matches the version requirements.
-        """
-        installed_version = self.get_version_from_pkgconfig(pkgname)
-        if not installed_version:
-            return False
-        if required_version is None or vcompare(comparator, installed_version, required_version):
-            return True
-            self.log.debug("Package {pkg} found by pkg-config.".format(pkg=pkgname))
-        return False
-
-    def _package_install(self, pkgname, comparator=">=", required_version=None):
-        """
-        pkg-config can't install stuff, so this must always fail
-        """
-        return False
-
-    def _package_update(self, pkgname, comparator=">=", required_version=None):
-        """
-        pkg-config can't update stuff, so this must always fail
-        """
-        return False
-
-    ### pkg-config specific functions:
-    def get_version_from_pkgconfig(self, pkgname):
-        """
-        Check which version is currently installed.
+        Use pkg-config to determine and return the currently installed version.
+        If pkgname is not installed, return None.
         """
         try:
             # pkg-config will return non-zero if package does not exist, thus will throw
@@ -92,4 +50,23 @@ class PkgConfig(PackagerBase):
             self.log.error("Running `pkg-config --modversion` failed.")
             self.log.obnoxious(str(e))
         return False
+
+
+class PkgConfig(ExternCmdPackagerBase):
+    """
+    Uses pkg-config. Can't really install stuff, but is useful for
+    finding out if something is already installed.
+    """
+    name = 'pkgconfig'
+    pkgtype = 'pkgconfig'
+
+    def __init__(self):
+        ExternCmdPackagerBase.__init__(self)
+        self.packager = ExternalPkgConfig(self.log)
+
+    def supported(self):
+        """
+        Check if we can even run 'pkg-config'. Return True if yes.
+        """
+        return sysutils.which('pkg-config') is not None
 

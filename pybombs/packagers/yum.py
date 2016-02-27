@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -24,82 +24,25 @@ Packager: yum or dnf
 
 import re
 import subprocess
-from pybombs.packagers.base import PackagerBase
+from pybombs.packagers.extern import ExternCmdPackagerBase, ExternPackager
 from pybombs.utils import subproc
 from pybombs.utils import sysutils
-from pybombs.utils.vcompare import vcompare
 
-class YumDnf(PackagerBase):
+class ExternalYumDnf(ExternPackager):
     """
-    yum/dnf install xyz
+    Wrapper for yum or dnf
     """
-    name = 'yumdnf'
-    pkgtype = 'rpm'
-
-    def __init__(self):
-        PackagerBase.__init__(self)
+    def __init__(self, logger):
+        ExternPackager.__init__(self, logger)
         self.command = None
         if sysutils.which('dnf') is not None:
             self.command = 'dnf'
         elif sysutils.which('yum') is not None:
             self.command = 'yum'
 
-    def supported(self):
-        """
-        Check if we can even run apt-get.
-        Return True if so.
-        """
-        return self.command is not None
-
-    def _package_exists(self, pkgname, comparator=">=", required_version=None):
-        """
-        See if an installable version of pkgname matches the version requirements.
-        """
-        available_version = self.get_available_version(pkgname)
-        if available_version is False \
-                or (required_version is not None and not vcompare(comparator, available_version, required_version)):
-            return False
-        return available_version
-
-    def _package_installed(self, pkgname, comparator=">=", required_version=None):
-        """
-        See if the installed version of pkgname matches the version requirements.
-        """
-        installed_version = self.get_installed_version(pkgname)
-        if not installed_version:
-            return False
-        if required_version is None:
-            return True
-        return vcompare(comparator, installed_version, required_version)
-
-    def _package_install(self, pkgname, comparator=">=", required_version=None, cmd='install'):
-        """
-        Call 'COMMAND install pkgname' if we can satisfy the version requirements.
-        """
-        if not self._package_exists(pkgname, comparator, required_version):
-            return False
-        try:
-            subproc.monitor_process([self.command, "-y", cmd, pkgname], elevate=True)
-        except Exception as ex:
-            self.log.error("Running `{0} install' failed.".format(self.command))
-            self.log.obnoxious(str(ex))
-            return False
-        installed_version = self.get_installed_version(pkgname)
-        if installed_version is False \
-                or (required_version is not None and not vcompare(comparator, installed_version, required_version)):
-            return False
-        return True
-
-    def _package_update(self, pkgname, comparator=">=", required_version=None):
-        """
-        Call 'COMMAND update pkgname' if we can satisfy the version requirements.
-        """
-        return self._package_install(pkgname, comparator, required_version, cmd='update')
-
-    ### packager-specific functions:
     def get_available_version(self, pkgname):
         """
-        Check which version is available in the packager.
+        Return a version that we can install through this package manager.
         """
         try:
             out = subprocess.check_output([self.command, "info", pkgname]).strip()
@@ -121,7 +64,8 @@ class YumDnf(PackagerBase):
 
     def get_installed_version(self, pkgname):
         """
-        Check which version is currently installed.
+        Return the currently installed version. If pkgname is not installed,
+        return None.
         """
         try:
             # 'list installed' will return non-zero if package does not exist, thus will throw
@@ -148,3 +92,46 @@ class YumDnf(PackagerBase):
             self.log.error("Parsing `{0} list installed` failed.".format(self.command))
             self.log.obnoxious(str(ex))
         return False
+
+    def install(self, pkgname):
+        """
+        yum/dnf install pkgname
+        """
+        return self._run_cmd(pkgname, 'install')
+
+    def update(self, pkgname):
+        """
+        yum/dnf update pkgname
+        """
+        return self._run_cmd(pkgname, 'update')
+
+    def _run_cmd(self, pkgname, cmd):
+        """
+        Call yum or dnf with cmd.
+        """
+        try:
+            subproc.monitor_process([self.command, "-y", cmd, pkgname], elevate=True)
+            return True
+        except Exception as ex:
+            self.log.error("Running `{0} install' failed.".format(self.command))
+            self.log.obnoxious(str(ex))
+            return False
+
+class YumDnf(ExternCmdPackagerBase):
+    """
+    yum/dnf install xyz
+    """
+    name = 'yumdnf'
+    pkgtype = 'rpm'
+
+    def __init__(self):
+        ExternCmdPackagerBase.__init__(self)
+        self.packager = ExternalYumDnf(self.log)
+
+    def supported(self):
+        """
+        Check if we can even run yum or dnf.
+        Return True if so.
+        """
+        return self.packager.command is not None
+

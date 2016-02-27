@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -24,77 +24,18 @@ Packager: apt-get
 
 import re
 import subprocess
-from pybombs.packagers.base import PackagerBase
+from pybombs.packagers.extern import ExternCmdPackagerBase, ExternPackager
 from pybombs.utils import subproc
 from pybombs.utils import sysutils
-from pybombs.utils.vcompare import vcompare
 
-class AptGet(PackagerBase):
+class ExternalAptGet(ExternPackager):
     """
-    apt-get install xyz
+    Wrapper around apt-get and dpkg
     """
-    name = 'apt-get'
-    pkgtype = 'deb'
+    def __init__(self, logger):
+        ExternPackager.__init__(self, logger)
 
-    def __init__(self):
-        PackagerBase.__init__(self)
-
-    def supported(self):
-        """
-        Check if we can even run apt-get.
-        Return True if so.
-        """
-        return sysutils.which('dpkg') is not None \
-            and sysutils.which('apt-cache') is not None \
-            and sysutils.which('apt-get') is not None
-
-    def _package_exists(self, pkg_name, comparator=">=", required_version=None):
-        """
-        See if an installable version of pkgname matches the version requirements.
-        """
-        available_version = self.get_version_from_apt_cache(pkg_name)
-        if available_version is False \
-                or (required_version is not None and not vcompare(comparator, available_version, required_version)):
-            return False
-        return available_version
-
-    def _package_installed(self, pkg_name, comparator=">=", required_version=None):
-        """
-        See if the installed version of pkgname matches the version requirements.
-        """
-        installed_version = self.get_version_from_dpkg(pkg_name)
-        if not installed_version:
-            return False
-        if required_version is None:
-            return True
-        return vcompare(comparator, installed_version, required_version)
-
-    def _package_install(self, pkg_name, comparator=">=", required_version=None):
-        """
-        Call 'apt-get install pkgname' if we can satisfy the version requirements.
-        """
-        if not self._package_exists(pkg_name, comparator, required_version):
-            return False
-        try:
-            subproc.monitor_process(["apt-get", "-y", "install", pkg_name], elevate=True)
-        except Exception as ex:
-            self.log.error("Running apt-get install failed.")
-            self.log.obnoxious(str(ex))
-            return False
-        installed_version = self.get_version_from_dpkg(pkg_name)
-        if installed_version is False \
-                or (required_version is not None and not vcompare(comparator, installed_version, required_version)):
-            return False
-        return True
-
-    def _package_update(self, pkg_name, comparator=">=", required_version=None):
-        """
-        Call 'apt-get install pkgname' if we can satisfy the version requirements.
-        """
-        return self._package_install(pkg_name, comparator, required_version)
-
-    ### apt-get specific functions:
-    def get_version_from_apt_cache(self, pkgname):
+    def get_available_version(self, pkgname):
         """
         Check which version is available in apt-cache.
         """
@@ -120,9 +61,10 @@ class AptGet(PackagerBase):
             self.log.error("Error running apt-cache showpkg")
         return False
 
-    def get_version_from_dpkg(self, pkgname):
+    def get_installed_version(self, pkgname):
         """
-        Check which version is currently installed.
+        Use dpkg to determine and return the currently installed version.
+        If pkgname is not installed, return None.
         """
         try:
             # dpkg -s will return non-zero if package does not exist, thus will throw
@@ -147,3 +89,37 @@ class AptGet(PackagerBase):
             self.log.error("Running dpkg -s failed.")
             self.log.obnoxious(str(e))
         return False
+
+    def install(self, pkgname):
+        """
+        apt-get -y install pkgname
+        """
+        try:
+            subproc.monitor_process(["apt-get", "-y", "install", pkgname], elevate=True, throw=True)
+            return True
+        except Exception as ex:
+            self.log.error("Running apt-get install failed.")
+            self.log.obnoxious(str(ex))
+            return False
+
+
+class AptGet(ExternCmdPackagerBase):
+    """
+    apt-get install xyz
+    """
+    name = 'apt-get'
+    pkgtype = 'deb'
+
+    def __init__(self):
+        ExternCmdPackagerBase.__init__(self)
+        self.packager = ExternalAptGet(self.log)
+
+    def supported(self):
+        """
+        Check if we can even run apt-get.
+        Return True if so.
+        """
+        return sysutils.which('dpkg') is not None \
+            and sysutils.which('apt-cache') is not None \
+            and sysutils.which('apt-get') is not None
+
