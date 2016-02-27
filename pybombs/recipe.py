@@ -222,23 +222,12 @@ class Recipe(object):
             self._data['depends'] = self._data['depends'] + parent_data['depends']
             self._data = dict_merge(parent_data, self._data)
             self._data['inherit'] = parent_data.get('inherit')
-        # Post-process some fields:
-        if self._data.has_key('source') and not isinstance(self._data['source'], list):
-            self._data['source'] = [self._data['source'],]
-        # Package flags override vars:
-        self._data['vars'] = dict_merge(
-            self._data.get('vars', {}),
-            config_manager.config_manager.get_package_flags(
-                self.id, self._data.get('category')
-            ).get('vars', {})
-        )
+        self._data = self.get_local_package_data()
         # Map all recipe info onto self:
         for k, v in self._data.iteritems():
             if not hasattr(self, k):
                 setattr(self, k, v)
         self.log.obnoxious("Loaded recipe - {}".format(self))
-
-
 
     def __str__(self):
         out = "Recipe: {id}\n".format(id=str(self.id))
@@ -258,12 +247,20 @@ class Recipe(object):
             data['depends'] = []
         return data
 
+    def _normalize_package_data(self, package_data_dict):
+        """
+        Make sure the package data follows certain rules.
+        """
+        if package_data_dict.has_key('source') and not isinstance(package_data_dict['source'], list):
+            package_data_dict['source'] = [package_data_dict['source'],]
+        return package_data_dict
+
     def get_dict(self):
         """
         Return recipe data as dictionary.
         r.get_dict()['foo'] is the same as r.foo.
         """
-        return self._data
+        return self._normalize_package_data(self._data)
 
     def get_package_reqs(self, pkg_type):
         """
@@ -339,12 +336,12 @@ class Recipe(object):
         This allows users to override anything in a recipe with whatever's stored
         in the `package:` and `category:` sections of their local config files.
         """
-        return dict_merge(
+        return self._normalize_package_data(dict_merge(
             self.get_dict(),
             config_manager.config_manager.get_package_flags(
                 self.id, self.get_dict().get('category')
             )
-        )
+        ))
 
 
 recipe_cache = {}

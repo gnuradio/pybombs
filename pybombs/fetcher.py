@@ -115,7 +115,7 @@ class Fetcher(object):
         for src in recipe.source:
             self.log.obnoxious("Trying to fetch {0}".format(src))
             try:
-                if self.fetch_url(src, self.src_dir, recipe.id, recipe.get_local_package_data()):
+                if self.fetch_url(src, self.src_dir, recipe.id, recipe.get_dict()):
                     self.log.obnoxious("Success.")
                     self.inventory.set_key(recipe.id, 'source', src)
                     if self.inventory.get_state(recipe.id) < self.inventory.STATE_FETCHED:
@@ -175,7 +175,7 @@ class Fetcher(object):
         # Do the update
         self.log.obnoxious("Trying to update from {0}".format(src))
         try:
-            if self.update_src(src, self.src_dir, recipe.id, recipe.get_local_package_data()):
+            if self.update_src(src, self.src_dir, recipe.id, recipe.get_dict()):
                 self.log.obnoxious("Update successful.")
                 if self.inventory.get_state(recipe.id) >= self.inventory.STATE_CONFIGURED:
                     self.log.obnoxious("Setting package state to 'configured'.")

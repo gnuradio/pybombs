@@ -71,7 +71,7 @@ class DepManager(object):
         if not filter_callback(pkg):
             return None
         tree = TreeNode(pkg)
-        deps = recipe.get_recipe(pkg).get_local_package_data()['depends'] or []
+        deps = recipe.get_recipe(pkg).depends or []
         for dep in deps:
             if not self.pm.exists(pkg):
                 self.log.error(
