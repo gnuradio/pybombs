@@ -24,6 +24,8 @@ A requirer is a class that has requirements.
 
 import argparse
 
+REQUIRER_CHECKED_CACHE = []
+
 def require_hostsys_dependencies(deps):
     """
     Require a dependency 'dep' to be installed. Try to install if not.
@@ -31,19 +33,24 @@ def require_hostsys_dependencies(deps):
     """
     if not deps:
         return
+    global REQUIRER_CHECKED_CACHE
+    deps_to_check = [d for d in deps if d not in REQUIRER_CHECKED_CACHE]
+    if not deps_to_check:
+        return
     from pybombs.commands import Install
     from pybombs.config_manager import config_manager
     s_order = config_manager.get('satisfy_order')
     # These are host system dependencies, so disallow source package manager
     config_manager.set('satisfy_order', 'native')
     args = argparse.Namespace(
-        packages=[deps],
+        packages=[deps_to_check],
         update=False,
         static=False,
         no_deps=False,
         print_tree=False,
         quiet_install=True,
     )
+    REQUIRER_CHECKED_CACHE += deps_to_check
     Install('install', args).run()
     # Restore previous settings
     config_manager.set('satisfy_order', s_order)
