@@ -24,88 +24,20 @@ Packager: pip
 
 import re
 import subprocess
-from pybombs.packagers.base import PackagerBase
+from pybombs.packagers.extern import ExternCmdPackagerBase, ExternPackager
 from pybombs.utils import sysutils
 from pybombs.utils import subproc
-from pybombs.utils.vcompare import vcompare
 
 PIP_INSTALLED_CACHE = None
 
-class Pip(PackagerBase):
+class ExternalPip(ExternPackager):
     """
-    pip install xyz
+    Wrapper for pip
     """
-    name = 'pip'
-    pkgtype = 'pip'
+    def __init__(self, logger):
+        ExternPackager.__init__(self, logger)
 
-    def __init__(self):
-        PackagerBase.__init__(self)
-
-    def supported(self):
-        """
-        Check if we can even run 'pip'.
-        Return True if so.
-        """
-        return sysutils.which('pip') is not None
-
-    def _package_exists(self, pkgname, comparator=">=", required_version=None):
-        """
-        See if an installable version of pkgname matches the version requirements.
-        """
-        if self._package_installed(pkgname, comparator, required_version):
-            self.log.debug("Package {pkg} available through pip.".format(pkg=pkgname))
-            return True
-        # We'll assume if it's in pip we have the latest version, so no more checks.
-        return self.check_package_in_pip(pkgname)
-
-    def _package_installed(self, pkgname, comparator=">=", required_version=None):
-        """
-        See if the installed version of pkgname matches the version requirements.
-        """
-        global PIP_INSTALLED_CACHE
-        if PIP_INSTALLED_CACHE is None:
-            self.load_install_cache()
-        installed_version = PIP_INSTALLED_CACHE.get(pkgname)
-        if not installed_version:
-            return False
-        if required_version is None or vcompare(comparator, installed_version, required_version):
-            self.log.debug("Package {pkg} already installed by pip.".format(pkg=pkgname))
-            return True
-        return False
-
-    def _package_install(self, pkgname, comparator=">=", required_version=None, update=False):
-        """
-        Call 'pip install pkgname' if we can satisfy the version requirements.
-        """
-        try:
-            self.log.debug("Calling `pip install {pkg}'".format(pkg=pkgname))
-            command = [sysutils.which('pip'), "install"]
-            if update:
-                command.append('--upgrade')
-            command.append(pkgname)
-            subproc.monitor_process(command, elevate=True)
-            self.load_install_cache()
-            installed_version = PIP_INSTALLED_CACHE.get(pkgname)
-            self.log.debug("Installed version for {pkg} is: {ver}.".format(pkg=pkgname, ver=installed_version))
-            if installed_version is None:
-                return False
-            if required_version is None:
-                return True
-            print required_version, comparator, installed_version
-            return vcompare(comparator, installed_version, required_version)
-        except Exception as e:
-            self.log.error("Running pip install failed.")
-            self.log.error(str(e))
-        return False
-
-    def _package_update(self, pkgname, comparator=">=", required_version=None):
-        """
-        Call 'pip install --upgrade pkgname' if we can satisfy the version requirements.
-        """
-        return self._package_install(pkgname, comparator, required_version, update=True)
-
-    ### pip specific functions:
-    def check_package_in_pip(self, pkgname):
+    def get_available_version(self, pkgname):
         """
         See if 'pip search' finds our package.
         """
@@ -125,7 +57,8 @@ class Pip(PackagerBase):
 
     def get_installed_version(self, pkgname):
         """
-        Check which version is currently installed.
+        Return the currently installed version. If pkgname is not installed,
+        return None.
         """
         global PIP_INSTALLED_CACHE
         if PIP_INSTALLED_CACHE is None:
@@ -154,4 +87,52 @@ class Pip(PackagerBase):
             self.log.error("Some error while running pip list.")
             self.log.error(str(e))
         exit(1)
+
+    def install(self, pkgname):
+        """
+        yum/dnf install pkgname
+        """
+        return self._run_pip_install(pkgname)
+
+    def update(self, pkgname):
+        """
+        yum/dnf update pkgname
+        """
+        return self._run_pip_install(pkgname, True)
+
+    def _run_pip_install(self, pkgname, update=False):
+        """
+        Run pip install [--upgrade]
+        """
+        try:
+            command = [sysutils.which('pip'), "install"]
+            if update:
+                command.append('--upgrade')
+            command.append(pkgname)
+            self.log.debug("Calling `{cmd}'".format(cmd=" ".join(command)))
+            subproc.monitor_process(command, elevate=True)
+            self.load_install_cache()
+            return True
+        except Exception as e:
+            self.log.error("Running pip install failed.")
+            self.log.debug(str(e))
+        return None
+
+class Pip(ExternCmdPackagerBase):
+    """
+    pip install xyz
+    """
+    name = 'pip'
+    pkgtype = 'pip'
+
+    def __init__(self):
+        ExternCmdPackagerBase.__init__(self)
+        self.packager = ExternalPip(self.log)
+
+    def supported(self):
+        """
+        Check if we can even run 'pip'.
+        Return True if so.
+        """
+        return sysutils.which('pip') is not None
 

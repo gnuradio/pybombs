@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -24,63 +24,14 @@ Pseudo-Packager: Test command
 
 import re
 import subprocess
-from pybombs.packagers.base import PackagerBase
-from pybombs.utils.vcompare import vcompare
+from pybombs.packagers.extern import ExternCmdPackagerBase, ExternReadOnlyPackager
 
-class TestCommand(PackagerBase):
-    """
-    Try querying a tool by runnning a command.
-    Can't really install stuff, but is useful for
-    finding out if something is already installed.
-    """
-    name = 'cmd'
-    pkgtype = 'cmd'
+class ExternalTestCmd(ExternReadOnlyPackager):
+    " Wrapper around running a command "
+    def __init__(self, logger):
+        ExternReadOnlyPackager.__init__(self, logger)
 
-    def __init__(self):
-        PackagerBase.__init__(self)
-
-    def supported(self):
-        """
-        Always works
-        """
-        return True
-
-    def _package_exists(self, pkgname, comparator=">=", required_version=None):
-        """
-        Existence and install-state of package is the same, so forward this.
-        """
-        return self._package_installed(pkgname, comparator, required_version)
-
-    def _package_installed(self, pkgname, comparator=">=", required_version=None):
-        """
-        See if the installed version of pkgname matches version requirements.
-        """
-        installed_version = self.get_version_from_command(pkgname)
-        if not installed_version:
-            return False
-        if required_version is None:
-            return True
-        if installed_version is True:
-            return False
-        if vcompare(comparator, installed_version, required_version):
-            self.log.debug("Package {pkg} found via command line.".format(pkg=pkgname))
-            return True
-        return False
-
-    def _package_install(self, pkgname, comparator=">=", required_version=None):
-        """
-        Can't install stuff, so this must always fail
-        """
-        return False
-
-    def _package_update(self, pkgname, comparator=">=", required_version=None):
-        """
-        Can't update stuff, so this must always fail
-        """
-        return False
-
-    ### pkg-config specific functions:
-    def get_version_from_command(self, command):
+    def get_installed_version(self, command):
         """
         Run command, see if it works. If the output has a version number in
         x.y.z format, return that. If it doesn't, but the command ran, return
@@ -91,10 +42,10 @@ class TestCommand(PackagerBase):
             # NOTE: the split is to handle multi-argument commands. There's
             # cases where this is not intended, e.g. it won't handle argument
             # with spaces! But currently this is preferable to running the
-            # command in a shell, which would allow arbitrary commands.
+            # command in a shell.
             output = subprocess.check_output(command.split(), stderr=subprocess.STDOUT).strip()
             ver = re.search(
-                r'(?P<ver>[0-9]+\.[0-9]+\.[0-9]+)',
+                r'(?P<ver>[0-9]+\.[0-9]+(\.[0-9]+)?)',
                 output,
                 re.MULTILINE
             )
@@ -108,7 +59,25 @@ class TestCommand(PackagerBase):
             # We'll assume it's not installed
             return False
         except Exception as e:
-            self.log.error("Running `pkg-config --modversion` failed.")
+            self.log.error("Running `{0}` failed.".format(command))
             self.log.obnoxious(str(e))
         return False
+
+
+class TestCommand(ExternCmdPackagerBase):
+    """
+    Checks if something is installed by running a command.
+    Can't really install stuff, but is useful for finding out if something is
+    already installed, e.g. from source.
+    """
+    name = 'cmd'
+    pkgtype = 'cmd'
+
+    def __init__(self):
+        ExternCmdPackagerBase.__init__(self)
+        self.packager = ExternalTestCmd(self.log)
+
+    def supported(self):
+        " We can always run commands. "
+        return True
 
