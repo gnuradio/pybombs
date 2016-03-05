@@ -35,6 +35,7 @@ except ImportError:
 from pybombs.pb_logging import logger
 from pybombs.config_manager import config_manager
 from pybombs.utils import output_proc
+from pybombs.pb_exception import PBException
 
 READ_TIMEOUT = 0.1 # s
 
