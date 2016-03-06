@@ -21,6 +21,7 @@
 """ Abstraction for config files """
 
 import yaml
+from pybombs.utils import dict_merge
 
 class PBConfigFile(object):
     """
