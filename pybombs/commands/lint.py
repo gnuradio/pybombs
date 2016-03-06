@@ -22,8 +22,8 @@
 
 from __future__ import print_function
 import os
-import yaml
 from pybombs.commands import CommandBase
+from pybombs.config_file import PBConfigFile
 from pybombs import recipe
 from pybombs.pb_exception import PBException
 
@@ -92,18 +92,16 @@ class Lint(CommandBase):
         print("Linting recipe `{0}'".format(recipe_file))
         # Basic file checks
         try:
-            recipe_source = open(recipe_file).read()
+            recipe_dict = PBConfigFile(recipe_file).get()
         except IOError:
             self.log.error("Can't open `{0}'".format(recipe_file))
-            exit(1)
-        try:
-            recipe_dict = yaml.safe_load(recipe_source)
+            return -1
         except AttributeError:
             self.log.error("Can't parse contents of file `{0}'".format(recipe_file))
-            exit(1)
+            return -1
         if not isinstance(recipe_dict, dict):
             self.log.error("Invalid recipe file. Not a dict.")
-            exit(1)
+            return -1
         # Try loading as recipe
         try:
             rec = recipe.Recipe(recipe_file)

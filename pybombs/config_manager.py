@@ -28,11 +28,11 @@ Used as a central cache for all kinds of settings.
 import os
 import argparse
 import subprocess
-import yaml
 
 from pybombs import pb_logging
 from pybombs.pb_exception import PBException
 from pybombs.utils import dict_merge
+from pybombs.config_file import PBConfigFile
 from pybombs import inventory
 from pybombs import __version__
 
@@ -41,7 +41,7 @@ def extract_cfg_items(filename, section, throw_ex=True):
     Read section from a config file and return it as a dict.
     Will throw KeyError if section does not exist.
     """
-    cfg_data = yaml.safe_load(open(filename).read()) or {}
+    cfg_data = PBConfigFile(filename).get() or {}
     try:
         return cfg_data[section]
     except KeyError as e:
@@ -165,7 +165,7 @@ class PrefixInfo(object):
         """
         try:
             self.log.debug('Inspecting config file: {}'.format(cfg_file))
-            cfg_data_new = yaml.safe_load(open(cfg_file, 'r').read()) or {}
+            cfg_data_new = PBConfigFile(cfg_file).get()
         except Exception as e:
             self.log.debug('Well, looks like that failed.')
             return cfg_data
@@ -406,7 +406,7 @@ class ConfigManager(object):
         """
         self.log.debug("Reading config info from file: {0}".format(cfg_filename))
         try:
-            cfg_data = yaml.safe_load(open(cfg_filename).read()) or {}
+            cfg_data = PBConfigFile(cfg_filename).get()
         except Exception as e:
             self.log.debug("Parsing config file failed ({cfgf}).".format(cfgf=cfg_filename))
             self.cfg_cascade.append({})
@@ -544,12 +544,10 @@ class ConfigManager(object):
                 "Updating file {0} with new data: {1}".format(cfg_file, new_data)
             )
             try:
-                old_cfg_data = yaml.safe_load(open(cfg_file).read()) or {}
+                return PBConfigFile(cfg_file).update(new_data)
             except IOError:
                 self.log.debug("Error opening config file {0}.".format(cfg_file))
-                old_cfg_data = {}
-            cfg_data = dict_merge(old_cfg_data, new_data)
-        open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
+                return {}
 
     def setup_parser(self, parser):
         """

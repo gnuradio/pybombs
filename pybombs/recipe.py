@@ -25,7 +25,6 @@ Recipe representation class.
 
 import re
 import os
-import yaml
 import StringIO
 from plex import *
 
@@ -33,6 +32,7 @@ from pybombs import pb_logging
 from pybombs import recipe_manager
 from pybombs import config_manager
 from pybombs.pb_exception import PBException
+from pybombs.config_file import PBConfigFile
 from pybombs.utils import dict_merge
 
 class PBPackageRequirement(object):
@@ -205,7 +205,7 @@ class Recipe(object):
         self._static = False
         # Load original recipe:
         self.log.obnoxious("Loading recipe file: {}".format(filename))
-        self._data = self._load_recipe_from_yaml(filename)
+        self._data = self._load_recipe_from_file(filename)
         # Recursively do the inheritance:
         while self._data.get('inherit', 'empty'):
             inherit_from = self._data.get('inherit', 'empty')
@@ -218,7 +218,7 @@ class Recipe(object):
                 ))
                 break
             self.log.obnoxious("Inheriting from file {}".format(filename))
-            parent_data = self._load_recipe_from_yaml(filename)
+            parent_data = self._load_recipe_from_file(filename)
             self._data['depends'] = self._data['depends'] + parent_data['depends']
             self._data = dict_merge(parent_data, self._data)
             self._data['inherit'] = parent_data.get('inherit')
@@ -230,15 +230,16 @@ class Recipe(object):
         self.log.obnoxious("Loaded recipe - {}".format(self))
 
     def __str__(self):
+        import yaml
         out = "Recipe: {id}\n".format(id=str(self.id))
-        out += yaml.dump(self._data)
+        out += yaml.dump(self._data, default_flow_style=False)
         return out
 
-    def _load_recipe_from_yaml(self, filename):
+    def _load_recipe_from_file(self, filename):
         """
-        Turn a YAML file into a valid recipe datastructure.
+        Turn a .lwr file into a valid recipe datastructure.
         """
-        data = yaml.safe_load(open(filename).read())
+        data = PBConfigFile(filename).get()
         # Make sure dependencies is always a valid list:
         if data.has_key('depends') and data['depends'] is not None:
             if not isinstance(data['depends'], list):

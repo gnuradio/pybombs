@@ -25,10 +25,10 @@ from __future__ import print_function
 import re
 import os
 import shutil
-import yaml
 import sys
 from pybombs.utils import confirm
 from pybombs.commands import CommandBase
+from pybombs.config_file import PBConfigFile
 from pybombs.fetcher import Fetcher
 from pybombs.package_manager import PackageManager
 from pybombs.recipe_manager import RecipeListManager
@@ -199,12 +199,13 @@ class Recipes(CommandBase):
             self.log.error("Unknown recipe alias: {alias}".format(alias=self.args.alias))
             return -1
         # Remove from config file
-        cfg_file = self.cfg.get_named_recipe_cfg_file(self.args.alias)
-        cfg_data = yaml.safe_load(open(cfg_file).read())
+        cfg_filename = self.cfg.get_named_recipe_cfg_file(self.args.alias)
+        cfg_file = PBConfigFile(cfg_filename)
+        cfg_data = cfg_file.get()
         cfg_data['recipes'].pop(self.args.alias, None)
-        open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
+        cfg_file.save(cfg_data)
         recipe_cache_dir = os.path.join(
-            os.path.split(cfg_file)[0],
+            os.path.split(cfg_filename)[0],
             self.cfg.recipe_cache_dir,
             self.args.alias,
         )

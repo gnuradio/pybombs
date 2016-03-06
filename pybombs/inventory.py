@@ -24,9 +24,9 @@ Inventory Manager
 """
 
 import os
-import yaml
 from pybombs import pb_logging
 from pybombs.pb_exception import PBException
+from pybombs.config_file import PBConfigFile
 
 class Inventory(object):
     """
@@ -51,13 +51,12 @@ class Inventory(object):
             inventory_file=None,
         ):
         self._filename = inventory_file
-        self._contents = {}
         self.log = pb_logging.logger.getChild("Inventory")
-        self.load()
         self._state_names = {}
         for state in self._states.keys():
             setattr(self, "STATE_{0}".format(state.upper()), self._states[state][0])
             self._state_names[self._states[state][0]] = state
+        self.load()
 
     def load(self):
         """
@@ -66,14 +65,8 @@ class Inventory(object):
         with an empty dictionary.
         This will override any internal state.
         """
-        try:
-            self.log.debug("Trying to load inventory file {}...".format(self._filename))
-            self._contents = yaml.safe_load(open(self._filename, 'r').read()) or {}
-            assert isinstance(self._contents, dict)
-        except (OSError, IOError, AssertionError):
-            self.log.debug("No success. Creating empty inventory.")
-            self._contents = {}
-        return
+        self.log.debug("Trying to load inventory file {}...".format(self._filename))
+        self._invfile = PBConfigFile(self._filename)
 
     def save(self):
         """
@@ -85,20 +78,21 @@ class Inventory(object):
         self.log.debug("Saving inventory to file {}...".format(self._filename))
         if not os.path.isdir(os.path.split(self._filename)[0]):
             os.mkdir(os.path.split(self._filename)[0])
-        open(self._filename, 'wb').write(yaml.dump(self._contents, default_flow_style=False))
+        self._invfile.save()
 
     def has(self, pkg):
         """
         Returns true if the package pkg is in the inventory.
         """
-        return self._contents.has_key(pkg)
+        return self._invfile.data.has_key(pkg)
 
     def remove(self, pkg):
         """
         Remove package pkg from the inventory.
         """
         if self.has(pkg):
-            del self._contents[pkg]
+            del self._invfile.data[pkg]
+            self._invfile.save()
 
     def get_state(self, pkg):
         """
@@ -107,7 +101,7 @@ class Inventory(object):
         If pkg does not exist, returns None.
         """
         try:
-            return self._contents[pkg]["state"]
+            return self._invfile.data[pkg]["state"]
         except KeyError:
             return None
 
@@ -127,9 +121,9 @@ class Inventory(object):
         if not state in self.get_valid_states():
             raise ValueError("Invalid state: {}".format(state))
         if not self.has(pkg):
-            self._contents[pkg] = {}
+            self._invfile.data[pkg] = {}
         self.log.debug("Setting state to `{}'".format(self._state_names[state]))
-        self._contents[pkg]["state"] = state
+        self._invfile.update({pkg: {'state': state}})
 
     def get_version(self, pkg, default_version=None):
         """
@@ -140,7 +134,7 @@ class Inventory(object):
         if not self.has(pkg):
             raise PBException("Cannot get version for package {} if it's not in the inventory!".format(pkg))
         try:
-            return self._contents[pkg]["version"]
+            return self._invfile.data[pkg]["version"]
         except KeyError:
             return default_version
 
@@ -152,7 +146,7 @@ class Inventory(object):
         if not self.has(pkg):
             raise PBException("Cannot set version for package {} if it's not in the inventory!".format(pkg))
         self.log.debug("Setting version to {}".format(version))
-        self._contents[pkg]["version"] = version
+        self._invfile.data[pkg]["version"] = version
 
     def set_key(self, pkg, key, value):
         """
@@ -163,9 +157,9 @@ class Inventory(object):
         if key == 'version':
             return self.set_version(pkg, value)
         if not self.has(pkg):
-            self._contents[pkg] = {}
+            self._invfile.data[pkg] = {}
         self.log.obnoxious("Setting key {k} on package {p} to {v}.".format(k=key, p=pkg, v=value))
-        self._contents[pkg][key] = value
+        self._invfile.data[pkg][key] = value
 
     def get_key(self, pkg, key):
         """
@@ -175,7 +169,7 @@ class Inventory(object):
             return self.get_state(pkg)
         if key == 'version':
             return self.get_version(pkg)
-        return self._contents[pkg].get(key)
+        return self._invfile.data[pkg].get(key)
 
     def get_valid_states(self):
         """
@@ -193,5 +187,5 @@ class Inventory(object):
         """
         Return a list of package names installed to this inventory.
         """
-        return self._contents.keys()
+        return self._invfile.data.keys()
 

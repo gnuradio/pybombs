@@ -24,8 +24,8 @@
 import os
 import os.path as op
 import shutil
-import yaml
 from pybombs.commands import CommandBase
+from pybombs.config_file import PBConfigFile
 from pybombs.utils import dict_merge
 from pybombs.utils import subproc
 from pybombs.utils import confirm
@@ -242,7 +242,7 @@ class Prefix(CommandBase):
         ### Update the prefix-local config file
         self.log.debug("Updating config file with SDK recipe info.")
         try:
-            old_cfg_data = yaml.safe_load(open(cfg_file).read()) or {}
+            old_cfg_data = PBConfigFile(cfg_file).get()
         except IOError:
             self.log.debug("There doesn't seem to be a config file yet for this prefix.")
             old_cfg_data = {}
@@ -252,7 +252,7 @@ class Prefix(CommandBase):
         self.log.obnoxious("New data: {new}".format(new=sdk_cfg_data))
         cfg_data = dict_merge(old_cfg_data, sdk_cfg_data)
         self.log.debug("Writing updated prefix config to `{0}'".format(cfg_file))
-        open(cfg_file, 'wb').write(yaml.dump(cfg_data, default_flow_style=False))
+        PBConfigFile(cfg_file).save(cfg_data)
 
     #########################################################################
     # Sub-commands:
