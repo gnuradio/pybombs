@@ -49,6 +49,8 @@ def require_hostsys_dependencies(deps):
         no_deps=False,
         print_tree=False,
         quiet_install=True,
+        deps_only=False,
+        verify=False,
     )
     REQUIRER_CHECKED_CACHE += deps_to_check
     Install('install', args).run()
