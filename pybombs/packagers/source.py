@@ -142,6 +142,7 @@ class Source(PackagerBase):
         get_state = lambda: (self.inventory.get_state(recipe.id) or 0)
         set_state = lambda state: self.inventory.set_state(recipe.id, state) or self.inventory.save()
         if not os.path.isdir(pkg_src_dir):
+            set_state(0)
             raise PBException("There should be a source dir in {0}, but there isn't.".format(pkg_src_dir))
         if get_state() >= self.inventory.STATE_INSTALLED:
             self.log.debug("Using build directory: {0}".format(builddir))
@@ -212,6 +213,7 @@ class Source(PackagerBase):
         self.log.debug("Using build directory: {0}".format(builddir))
         # The package source dir must exist, or something is wrong.
         if not os.path.isdir(pkg_src_dir):
+            set_state(0)
             raise PBException("There should be a source dir in {0}, but there isn't.".format(pkg_src_dir))
         if builddir == pkg_src_dir:
             if nuke_builddir:
