@@ -539,15 +539,14 @@ class ConfigManager(object):
             path = os.path.split(cfg_file)[0]
             if not os.path.isdir(path):
                 os.path.mkdir(path)
-        else:
-            self.log.obnoxious(
-                "Updating file {0} with new data: {1}".format(cfg_file, new_data)
-            )
-            try:
-                return PBConfigFile(cfg_file).update(new_data)
-            except IOError:
-                self.log.debug("Error opening config file {0}.".format(cfg_file))
-                return {}
+        self.log.obnoxious(
+            "Updating file {0} with new data: {1}".format(cfg_file, new_data)
+        )
+        try:
+            return PBConfigFile(cfg_file).update(new_data)
+        except IOError:
+            self.log.error("Error opening config file {0}.".format(cfg_file))
+            return {}
 
     def setup_parser(self, parser):
         """
