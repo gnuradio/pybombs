@@ -73,6 +73,15 @@ class PrefixInfo(object):
             'packages': {'gnuradio': {'forcebuild': True}},
             'categories': {'common': {'forcebuild': True}},
     }
+    default_env_unix = { # These envs are non-portable
+        'PATH': "{prefix_dir}/bin:$PATH",
+        'PYTHONPATH': "{prefix_dir}/python:{prefix_dir}/lib/python2.6/site-packages:{prefix_dir}/lib64/python2.6/site-packages:{prefix_dir}/lib/python2.6/dist-packages:{prefix_dir}/lib64/python2.6/dist-packages:{prefix_dir}/lib/python2.7/site-packages:{prefix_dir}/lib64/python2.7/site-packages:{prefix_dir}/lib/python2.7/dist-packages:{prefix_dir}/lib64/python2.7/dist-packages:{prefix_dir}/python/:{prefix_dir}/lib/python2.6/site-packages:{prefix_dir}/lib64/python2.6/site-packages:{prefix_dir}/lib/python2.6/dist-packages:{prefix_dir}/lib64/python2.6/dist-packages:{prefix_dir}/lib/python2.7/site-packages:{prefix_dir}/lib64/python2.7/site-packages:{prefix_dir}/lib/python2.7/dist-packages:{prefix_dir}/lib64/python2.7/dist-packages:$PYTHONPATH",
+        'LD_LIBRARY_PATH': "{prefix_dir}/lib:{prefix_dir}/lib64/:$LD_LIBRARY_PATH",
+        'PKG_CONFIG_PATH': "{prefix_dir}/lib/pkgconfig:{prefix_dir}/lib64/pkgconfig:$PKG_CONFIG_PATH",
+        'GRC_BLOCKS_PATH': "{prefix_dir}/share/gnuradio/grc/blocks:$GRC_BLOCKS_PATH",
+        'PYBOMBS_PREFIX': "{prefix_dir}",
+    }
+
 
     def __init__(self, args, cfg_list, select_prefix=None):
         self.log = pb_logging.logger.getChild("ConfigManager.PrefixInfo")
@@ -142,9 +151,13 @@ class PrefixInfo(object):
         if config_section.has_key(self.setup_env_key):
             self.log.debug('Loading environment from shell script: {}'.format(config_section[self.setup_env_key]))
             self.env = self._load_environ_from_script(config_section[self.setup_env_key])
-        # Set some defaults:
+        else:
+            self.env = self._load_default_env(self.env)
+        # Set env vars that we always need
         self.env[self.env_prefix_var] = self.prefix_dir
         self.env[self.env_srcdir_var] = self.src_dir
+        # Update os.environ so we can use os.path.expandvars
+        os.environ = self.env
         # env: sections are always respected:
         for k, v in self._cfg_info['env'].iteritems():
             self.env[k.upper()] = os.path.expandvars(v.strip())
@@ -244,6 +257,14 @@ class PrefixInfo(object):
                 continue
             k, v = env_line.split('=', 1)
             env[k] = v
+        return env
+
+    def _load_default_env(self, env):
+        """
+        TODO: Make this portable
+        """
+        for k, v in self.default_env_unix.iteritems():
+            env[k] = os.path.expandvars(v.strip().format(prefix_dir=self.prefix_dir))
         return env
 
 
