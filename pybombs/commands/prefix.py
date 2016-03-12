@@ -96,7 +96,7 @@ class Prefix(CommandBase):
 
     def run(self):
         """ Go, go, go! """
-        self.prefix_cmd_name_list[self.args.prefix_command]['run'](self)
+        return self.prefix_cmd_name_list[self.args.prefix_command]['run'](self)
 
     def _print_prefix_info(self):
         """
@@ -133,7 +133,7 @@ class Prefix(CommandBase):
         assert op.isdir(path)
         if not os.access(path, os.W_OK|os.X_OK):
             self.log.error("Cannot write to prefix path `{0}'.".format(path))
-            exit(1)
+            return -1
 
         # Make sure that a pybombs directory doesn't already exist
         test_path = op.join(path, ".pybombs")
@@ -270,7 +270,7 @@ class Prefix(CommandBase):
         'env': {
             'help': 'Print the environment variables used in this prefix.',
             'parser': lambda p: None,
-            'run': _print_prefix_info,
+            'run': _print_prefix_env,
         },
         'install-sdk': {
             'help': 'Install an SDK into the prefix.',
