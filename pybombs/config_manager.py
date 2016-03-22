@@ -595,7 +595,7 @@ class ConfigManager(object):
         )
         group.add_argument(
             '--config',
-            help="Set a config option via command line. May be used multiple times",
+            help="Set a config option via command line. May be used multiple times. Format is `--config key=value'",
             action='append',
             default=[],
         )
