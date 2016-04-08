@@ -25,5 +25,6 @@ from pkgconfig import PkgConfig
 from aptget import AptGet
 from yum import YumDnf
 from pip import Pip
+from pacman import Pacman
 from dummy import Dummy
 from source import Source
