@@ -31,12 +31,12 @@ class PBConfigFile(object):
         self._filename = filename
         self.data = None
         try:
-            self.data = yaml.safe_load(open(filename).read())
-        except (IOError, OSError) as e:
+            self.data = yaml.safe_load(open(filename).read()) or {}
+        except (IOError, OSError):
             self.data = {}
             pass
         except Exception as e:
-            print "Error loading %s: %s" % (filename, str(e))
+            print("Error loading {0}: {1}".format(filename, str(e)))
         assert isinstance(self.data, dict)
 
     def get(self):
