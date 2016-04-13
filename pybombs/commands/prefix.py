@@ -60,6 +60,13 @@ def setup_subsubparser_init(parser):
         help="Use this to make the new prefix also a virtualenv. Args for virtualenv may be passed in here",
     )
 
+def setup_subsubparser_write_env(parser):
+    parser.add_argument(
+        '-p', '--prefix',
+        help="Write the environment helper for the specified prefix (defaults to 'default_prefix')",
+        default='default_prefix',
+    )
+
 ### Class definition
 class Prefix(CommandBase):
     """
@@ -120,6 +127,23 @@ class Prefix(CommandBase):
         self._install_sdk_to_prefix(
             self.args.sdkname[0],
         )
+
+    def _run_write_env(self):
+        """
+        pybombs "setup_env.sh" generator
+        """
+        path = op.abspath(op.normpath(self.prefix.prefix_dir))
+        try:
+            skel_dir = op.join(self.cfg.module_dir, 'skel')
+            open(op.join(path, 'setup_env.sh'), 'w').write(
+                open(op.join(skel_dir, 'setup_env.sh')).read().format(
+                    prefix_dir=path,
+                )
+            )
+            self.log.info("Wrote `{0}/setup_env.sh'".format(path))
+        except Exception:
+            self.log.error("Cannot write to prefix path `{0}'.".format(path))
+            return -1
 
     def _run_init(self):
         """
@@ -271,6 +295,11 @@ class Prefix(CommandBase):
             'help': 'Print the environment variables used in this prefix.',
             'parser': lambda p: None,
             'run': _print_prefix_env,
+        },
+        'write-env': {
+            'help': 'Write "setup_env.sh" into the prefix.',
+            'parser': setup_subsubparser_write_env,
+            'run': _run_write_env,
         },
         'install-sdk': {
             'help': 'Install an SDK into the prefix.',
