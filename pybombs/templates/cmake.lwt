@@ -19,6 +19,8 @@
 
 configuredir: build
 makedir: build
+builddir: build
+# Deprecated
 installdir: build
 depends: cmake
 inherit: empty
