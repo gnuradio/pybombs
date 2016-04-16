@@ -22,4 +22,5 @@ inherit: autoconf
 satisfy:
   deb: graphviz
   rpm: graphviz-devel
+  port: graphviz-devel
   cmd: dot -V >= 1.0
