@@ -168,6 +168,8 @@ class ExternCmdPackagerBase(PackagerBase):
         Return type same as 'exists()'.
         """
         available_version = self.packager.get_available_version(pkg_name)
+        if available_version is True:
+            return True
         if available_version is False \
                 or (required_version is not None and not vcompare(comparator, available_version, required_version)):
             return False
