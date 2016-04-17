@@ -95,10 +95,10 @@ class PackageManager(object):
         # Check if the package flags aren't forcing a source build:
         if self.check_package_flag(pkgname, 'forcebuild'):
             self.log.debug("Package {pkg} is requesting a source build.".format(pkg=pkgname))
-            if not self.prefix_available:
-                self.log.error("Package {pkg} requires source-build, but no prefix is specified. Aborting.".format(pkg=pkgname))
-                exit(1)
-            return [self.src,]
+            if self.src is not None:
+                return [self.src,]
+            else:
+                return []
         return self._packagers
 
     def exists(self, name):
@@ -154,6 +154,9 @@ class PackageManager(object):
             # TODO maybe we can figure out a version string
             return True
         pkgrs = self.get_packagers(name)
+        if len(pkgrs) == 0:
+            self.log.error("Can't find any packagers to install {0}".format(name))
+            raise PBException("No packager available for package {0}".format(name))
         if static:
             self.log.debug('Package will be built statically.')
             if not self.prefix_available:
