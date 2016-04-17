@@ -31,7 +31,10 @@ def vcompare(cmp_op, version_x, version_y):
     Confirm if version x compares to y given an operator op.
     """
     operators = {'<=': operator.le, '==': operator.eq, '>=': operator.ge, '!=': operator.ne}
-    return operators[cmp_op](LooseVersion(version_x), LooseVersion(version_y))
+    try:
+        return operators[cmp_op](LooseVersion(version_x), LooseVersion(version_y))
+    except TypeError:
+        return False
 
 if __name__ == "__main__":
     print vcompare(">=", "2.3.4", "1.2.3")
