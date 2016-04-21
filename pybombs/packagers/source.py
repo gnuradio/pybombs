@@ -138,12 +138,7 @@ class Source(PackagerBase):
         """
         cwd = os.getcwd()
         pkg_src_dir = os.path.normpath(os.path.join(self.prefix.src_dir, recipe.id))
-        try:
-            _dir = recipe.builddir
-        except:
-            # self.log.warn("using 'installdir' rather than 'builddir'. Update your recipes") # enable this in a few weeks
-            _dir = recipe.installdir
-        builddir = os.path.normpath(os.path.join(pkg_src_dir, _dir))
+        builddir = os.path.normpath(os.path.join(pkg_src_dir, recipe.installdir))
         get_state = lambda: (self.inventory.get_state(recipe.id) or 0)
         set_state = lambda state: self.inventory.set_state(recipe.id, state) or self.inventory.save()
         if not os.path.isdir(pkg_src_dir):
@@ -214,12 +209,7 @@ class Source(PackagerBase):
         set_state = lambda state: self.inventory.set_state(recipe.id, state) or self.inventory.save()
         # Set up the build dir
         pkg_src_dir = os.path.normpath(os.path.join(self.prefix.src_dir, recipe.id))
-        try:
-            _dir = recipe.builddir
-        except:
-            # self.log.warn("using 'installdir' rather than 'builddir'. Update your recipes") # enable this in a few weeks
-            _dir = recipe.installdir
-        builddir = os.path.normpath(os.path.join(pkg_src_dir, _dir))
+        builddir = os.path.normpath(os.path.join(pkg_src_dir, recipe.installdir))
         self.log.debug("Using build directory: {0}".format(builddir))
         # The package source dir must exist, or something is wrong.
         if not os.path.isdir(pkg_src_dir):

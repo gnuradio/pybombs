@@ -30,6 +30,4 @@ gitrev: ""
 gitargs: ""
 gitbranch: master
 inherit: false
-builddir: build
-# Deprecated
 installdir: build
