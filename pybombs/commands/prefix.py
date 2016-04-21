@@ -61,11 +61,7 @@ def setup_subsubparser_init(parser):
     )
 
 def setup_subsubparser_write_env(parser):
-    parser.add_argument(
-        '-p', '--prefix',
-        help="Write the environment helper for the specified prefix (defaults to 'default_prefix')",
-        default='default_prefix',
-    )
+    pass
 
 ### Class definition
 class Prefix(CommandBase):
@@ -133,16 +129,7 @@ class Prefix(CommandBase):
         pybombs "setup_env.sh" generator
         """
         path = op.abspath(op.normpath(self.prefix.prefix_dir))
-        try:
-            skel_dir = op.join(self.cfg.module_dir, 'skel')
-            open(op.join(path, 'setup_env.sh'), 'w').write(
-                open(op.join(skel_dir, 'setup_env.sh')).read().format(
-                    prefix_dir=path,
-                )
-            )
-            self.log.info("Wrote `{0}/setup_env.sh'".format(path))
-        except Exception:
-            self.log.error("Cannot write to prefix path `{0}'.".format(path))
+        if not self._write_env_file(path):
             return -1
 
     def _run_init(self):
@@ -166,29 +153,10 @@ class Prefix(CommandBase):
             return
 
         # Copy template
-        # TODO: I'm not too happy about this, all the hard coded stuff. Needs
-        # cleaning up, for sure. Especially that setup_env.sh stuff at the end.
-        # Ideally, we could switch prefix templates.
-        self.log.info("Initializing PyBOMBS prefix in `{0}'...".format(path))
-        skel_dir = op.join(self.cfg.module_dir, 'skel')
-        for p in os.listdir(skel_dir):
-            if op.exists(op.join(path, p)):
-                self.log.obnoxious("Skipping {0}".format(p))
-                continue
-            self.log.obnoxious("Copying {0}".format(p))
-            p_full = op.join(skel_dir, p)
-            if op.isdir(p_full):
-                shutil.copytree(
-                    p_full, op.join(path, p),
-                    ignore=shutil.ignore_patterns('.ignore')
-                )
-            else:
-                shutil.copy(p_full, path)
-        open(op.join(path, 'setup_env.sh'), 'w').write(
-            open(op.join(skel_dir, 'setup_env.sh')).read().format(
-                prefix_dir=path,
-            )
-        )
+        self._copy_prefix_template(path)
+        # Create the env file
+        if not self._write_env_file(path):
+            return -1
         # Register alias
         if self.args.alias is not None:
             if self.prefix is not None and \
@@ -218,6 +186,47 @@ class Prefix(CommandBase):
             self.prefix = self.cfg.get_active_prefix()
             self.inventory = self.prefix.inventory
             self._install_sdk_to_prefix(self.args.sdkname)
+
+    def _write_env_file(self, path):
+        """
+        Create a setup_env.sh file in the prefix
+        """
+        ENV_FILENAME = 'setup_env.sh'
+        try:
+            skel_dir = op.join(self.cfg.module_dir, 'skel')
+            open(op.join(path, ENV_FILENAME), 'w').write(
+                open(op.join(skel_dir, ENV_FILENAME)).read().format(
+                    prefix_dir=path,
+                )
+            )
+            self.log.info("Wrote `{0}/{1}'".format(path, ENV_FILENAME))
+            return True
+        except (OSError, IOError):
+            self.log.error("Cannot write to prefix path `{0}'.".format(path))
+            return False
+
+    def _copy_prefix_template(self, path):
+        """
+        Create all the files and directories
+        """
+        # TODO: I'm not too happy about this, all the hard coded stuff. Needs
+        # cleaning up, for sure. Especially that setup_env.sh stuff at the end.
+        # Ideally, we could switch prefix templates.
+        self.log.info("Initializing PyBOMBS prefix in `{0}'...".format(path))
+        skel_dir = op.join(self.cfg.module_dir, 'skel')
+        for p in os.listdir(skel_dir):
+            if op.exists(op.join(path, p)):
+                self.log.obnoxious("Skipping {0}".format(p))
+                continue
+            self.log.obnoxious("Copying {0}".format(p))
+            p_full = op.join(skel_dir, p)
+            if op.isdir(p_full):
+                shutil.copytree(
+                    p_full, op.join(path, p),
+                    ignore=shutil.ignore_patterns('.ignore')
+                )
+            else:
+                shutil.copy(p_full, path)
 
     def _install_sdk_to_prefix(self, sdkname):
         """
