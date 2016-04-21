@@ -159,6 +159,14 @@ class ExternCmdPackagerBase(PackagerBase):
             return False
         if satisfy_rule is None:
             return None
+        if satisfy_rule is True:
+            self.log.debug(
+                "Package {0} has an always-true satisfier for packager {1}".format(
+                    recipe.id,
+                    self.pkgtype,
+                )
+            )
+            return True
         self.log.obnoxious("Calling ev for recursive satisfier rule evaluation")
         return satisfy_rule.ev(satisfy_evaluator)
 
