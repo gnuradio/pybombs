@@ -100,6 +100,8 @@ class Recipes(CommandBase):
                 help="Column to sort output by",
                 default='id',
             )
+        def setup_subsubparser_listrepos(parser):
+            pass
         ###### Start of setup_subparser()
         subparsers = parser.add_subparsers(
                 help="Recipe Commands:",
@@ -110,6 +112,7 @@ class Recipes(CommandBase):
             'remove': ('Remove a recipes location.', setup_subsubparser_remove),
             'update': ('Update recipes with a remote repository', setup_subsubparser_update),
             'list':   ('List recipes', setup_subsubparser_list),
+            'list-repos':  ('List recipes repositories', setup_subsubparser_listrepos),
         }
         for cmd_name, cmd_info in recipes_cmd_name_list.iteritems():
             subparser = subparsers.add_parser(cmd_name, help=cmd_info[0])
@@ -133,6 +136,7 @@ class Recipes(CommandBase):
                     'remove': self._remove_recipes,
                     'update': self._update_recipes,
                     'list': self._list_recipes,
+                    'list-repos': self._list_recipe_repos,
                    }[self.args.recipe_command]()
         except KeyError:
             self.log.error("Illegal recipes command: {}".format(self.args.recipe_command))
@@ -296,6 +300,54 @@ class Recipes(CommandBase):
         for row in rows:
             for col_id in self.args.format:
                 format_string = "{{0:{width}}}  ".format(width=widths[col_id])
+                print(format_string.format(row[col_id]), end="")
+            print("")
+        print("")
+
+    def _list_recipe_repos(self):
+        """
+        foo
+        """
+        all_locations = self.cfg.get_recipe_locations()
+        named_locations = self.cfg.get_named_recipe_dirs()
+        named_sources = self.cfg.get_named_recipe_sources()
+        unnamed_locations = [x for x in all_locations if not x in named_locations.keys()]
+        table = []
+        for name in named_locations.keys():
+            table.append({
+                'name': name,
+                'dir': named_locations.get(name, "FOO"),
+                'source': named_sources.get(name, '-'),
+            })
+        for loc in unnamed_locations:
+            table.append({
+                'name': '-',
+                'dir': loc,
+                'source': '-',
+            })
+        max_widths = {}
+        plottery = (
+            ('name', named_locations.keys()),
+            ('source', named_sources.values()),
+            ('dir', all_locations)
+        )
+        for w_index, data in plottery:
+            max_widths[w_index] = reduce(lambda a, x: max(a, len(x)), data, 0)
+        # Print Header
+        hdr_len = 0
+        column_hdrs = {'name': "Name", 'dir': "Directory", 'source': "Source"}
+        cols = ('dir', 'name', 'source')
+        for col_id in cols:
+            format_string = "{0:" + str(max_widths[col_id]) + "}  "
+            hdr_title = format_string.format(column_hdrs[col_id])
+            print(hdr_title, end="")
+            hdr_len += len(hdr_title)
+        print("")
+        print("-" * hdr_len)
+        # Print Data
+        for row in table:
+            for col_id in cols:
+                format_string = "{{0:{width}}}  ".format(width=max_widths[col_id])
                 print(format_string.format(row[col_id]), end="")
             print("")
         print("")

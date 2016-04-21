@@ -412,7 +412,6 @@ class ConfigManager(object):
                 self._named_recipe_dirs[name] = local_recipe_dir
                 self._named_recipe_sources[name] = uri
                 self._named_recipe_cfg_files[name] = cfg_file
-
         # Internal recipe list:
         self._recipe_locations.append(os.path.join(self.module_dir, 'recipes'))
         self.log.debug("Full list of recipe locations: {}".format(self._recipe_locations))
