@@ -36,7 +36,7 @@ def _download(url):
     """
     filename = os.path.split(url)[1]
     req = requests.get(url, stream=True, headers={'User-Agent': 'PyBOMBS'})
-    filesize = float(req.headers['content-length'])
+    filesize = float(req.headers.get('content-length', 0))
     filesize_dl = 0
     with open(filename, "wb") as f:
         for buff in req.iter_content(chunk_size=8192):
@@ -45,11 +45,16 @@ def _download(url):
                 filesize_dl += len(buff)
             # TODO wrap this into an output processor or at least
             # standardize the progress bars we use
-            status = r"%05d kB / %05d kB (%03d%%)" % (
-                    int(math.ceil(filesize_dl/1000.)),
-                    int(math.ceil(filesize/1000.)),
-                    int(math.ceil(filesize_dl*100.)/filesize)
-            )
+            if filesize:
+                status = r"%05d kB / %05d kB (%03d%%)" % (
+                        int(math.ceil(filesize_dl/1000.)),
+                        int(math.ceil(filesize/1000.)),
+                        int(math.ceil(filesize_dl*100.)/filesize)
+                )
+            else:
+                status = r"%05d kB" % (
+                        int(math.ceil(filesize_dl/1000.)),
+                )
             status += chr(8)*(len(status)+1)
             sys.stdout.write(status)
     sys.stdout.write("\n")
