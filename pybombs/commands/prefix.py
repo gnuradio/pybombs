@@ -147,7 +147,7 @@ class Prefix(CommandBase):
             return -1
 
         # Make sure that a pybombs directory doesn't already exist
-        if op.exists(op.join(path, self.prefix.prefix_conf_dir)):
+        if op.exists(op.join(path, '.pybombs')):
             self.log.error("Ignoring. A prefix already exists in `{0}'".format(path))
             return -1
 
