@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of GNU Radio
 #
@@ -66,6 +66,50 @@ class CommandBase(object):
     def run(self):
         """ Override this. """
         raise PBException("run() method not implemented for command {1}!".format(self.cmd))
+
+
+class SubCommandBase(CommandBase):
+    """
+    Supplies methods if the command only consists of other subcommands
+    """
+    # Every entry: {'cmd': COMMAND, 'help': HELP_STR, 'subparser': SUBPARSER_CALLBACK, 'run': RUN_CALLBACK}
+    subcommands = []
+
+    def __init__(self,
+            cmd, args,
+            load_recipes=False,
+            require_prefix=True,
+        ):
+        CommandBase.__init__(self, cmd, args, load_recipes, require_prefix)
+
+    @staticmethod
+    def setup_subcommandparser(parser, help_title, subcommands):
+        """
+        Set up a subparser for a specific subommand
+        """
+        subparsers = parser.add_subparsers(
+                help=help_title,
+                dest='sub_command',
+        )
+        for cmd, cmd_info in subcommands.iteritems():
+            subparser = subparsers.add_parser(cmd, help=cmd_info['help'])
+            if cmd_info['subparser'] is None:
+                continue
+            if isinstance(cmd_info['subparser'], tuple) or isinstance(cmd_info['subparser'], list):
+                pass
+                #for args in cmd_info['subparser']:
+                    #subparser.add_argument(**args)
+            else:
+                cmd_info['subparser'](subparser)
+        return parser
+
+    def run(self):
+        """ Go, go, go! """
+        try:
+            return self.subcommands[self.args.sub_command]['run'](self)()
+        except KeyError:
+            self.log.error("Illegal recipes command: {}".format(self.args.sub_command))
+            return -1
 
 ##############################################################################
 # Argument Parser

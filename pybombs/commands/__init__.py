@@ -20,7 +20,7 @@
 #
 
 ### List of commands:
-from base import CommandBase, dispatch
+from base import CommandBase, SubCommandBase, dispatch
 from config import Config
 from deploy import Deploy
 from digraph import Digraph

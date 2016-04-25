@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
-# This file is part of PyBOMBS
+# This file is part of GNU Radio
 #
 # PyBOMBS is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +26,7 @@ import os
 import shutil
 import sys
 from pybombs.utils import confirm
-from pybombs.commands import CommandBase
+from pybombs.commands import SubCommandBase
 from pybombs.config_file import PBConfigFile
 from pybombs.fetcher import Fetcher
 from pybombs.package_manager import PackageManager
@@ -35,12 +34,99 @@ from pybombs.recipe_manager import RecipeListManager
 from pybombs import recipe
 from pybombs.utils import tables
 
-class Recipes(CommandBase):
+#############################################################################
+# Subcommand arg parsers
+#############################################################################
+def setup_subsubparser_add(parser):
+    parser.add_argument(
+        'alias',
+        help="Name of new recipe location",
+        nargs=1,
+    )
+    parser.add_argument(
+        'uri',
+        help="Location of recipes (URL or directory)",
+        nargs=1,
+    )
+    parser.add_argument(
+        '-f', '--force',
+        help="Force additions", action='store_true',
+    )
+def setup_subsubparser_remove(parser):
+    parser.add_argument(
+        'alias',
+        help="Name of recipe location to remove",
+        nargs='+',
+    )
+def setup_subsubparser_update(parser):
+    parser.add_argument(
+        'alias',
+        help="Name of recipe location to update",
+        nargs='*',
+    )
+def setup_subsubparser_list(parser):
+    parser.add_argument(
+        '-l', '--list',
+        help="List only packages that match pattern (default is to list any)",
+        default=None,
+    )
+    parser.add_argument(
+        '-i', '--installed',
+        help="List only packages that are installed (default is to list all)",
+        action='store_true',
+    )
+    parser.add_argument(
+        '-x', '--in-prefix',
+        help="List only packages that are installed into prefix (implies -i, default is to list all)",
+        action='store_true',
+    )
+    parser.add_argument(
+        '--format',
+        help="Comma-separated list of columns",
+        default="id,path,installed_by",
+    )
+    parser.add_argument(
+        '--sort-by',
+        help="Column to sort output by",
+        default='id',
+    )
+
+#############################################################################
+# Command class
+#############################################################################
+class Recipes(SubCommandBase):
     """
-    Manage recipe lists
+    pybombs recipes <foo>
     """
     cmds = {
         'recipes': 'Manage recipe lists',
+    }
+    subcommands = {
+        'add': {
+            'help': 'Add a new recipes location.',
+            'subparser': setup_subsubparser_add,
+            'run': lambda x: x.run_add
+        },
+        'remove': {
+            'help': 'Remove a recipes location.',
+            'subparser': setup_subsubparser_remove,
+            'run': lambda x: x.run_remove,
+        },
+        'update': {
+            'help': 'Update recipes with a remote repository.',
+            'subparser': setup_subsubparser_update,
+            'run': lambda x: x.run_update,
+        },
+        'list': {
+            'help': 'List recipes.',
+            'subparser': setup_subsubparser_list,
+            'run': lambda x: x.run_list,
+        },
+        'list-repos': {
+            'help': 'List recipes repositories.',
+            'subparser': None,
+            'run': lambda x: x.run_list_recipe_repos,
+        },
     }
 
     @staticmethod
@@ -48,103 +134,23 @@ class Recipes(CommandBase):
         """
         Set up a subparser for a specific command
         """
-        def setup_subsubparser_add(parser):
-            parser.add_argument(
-                'alias',
-                help="Name of new recipe location",
-                nargs=1,
-            )
-            parser.add_argument(
-                'uri',
-                help="Location of recipes (URL or directory)",
-                nargs=1,
-            )
-            parser.add_argument(
-                '-f', '--force',
-                help="Force additions", action='store_true',
-            )
-        def setup_subsubparser_remove(parser):
-            parser.add_argument(
-                'alias',
-                help="Name of recipe location to remove",
-                nargs='+',
-            )
-        def setup_subsubparser_update(parser):
-            parser.add_argument(
-                'alias',
-                help="Name of recipe location to update",
-                nargs='*',
-            )
-        def setup_subsubparser_list(parser):
-            parser.add_argument(
-                '-l', '--list',
-                help="List only packages that match pattern (default is to list any)",
-                default=None,
-            )
-            parser.add_argument(
-                '-i', '--installed',
-                help="List only packages that are installed (default is to list all)",
-                action='store_true',
-            )
-            parser.add_argument(
-                '-x', '--in-prefix',
-                help="List only packages that are installed into prefix (implies -i, default is to list all)",
-                action='store_true',
-            )
-            parser.add_argument(
-                '--format',
-                help="Comma-separated list of columns",
-                default="id,path,installed_by",
-            )
-            parser.add_argument(
-                '--sort-by',
-                help="Column to sort output by",
-                default='id',
-            )
-        def setup_subsubparser_listrepos(parser):
-            pass
-        ###### Start of setup_subparser()
-        subparsers = parser.add_subparsers(
-                help="Recipe Commands:",
-                dest='recipe_command',
+        return SubCommandBase.setup_subcommandparser(
+                parser,
+                'Recipe Commands:',
+                Recipes.subcommands
         )
-        recipes_cmd_name_list = {
-            'add':    ('Add a new recipes location.', setup_subsubparser_add),
-            'remove': ('Remove a recipes location.', setup_subsubparser_remove),
-            'update': ('Update recipes with a remote repository', setup_subsubparser_update),
-            'list':   ('List recipes', setup_subsubparser_list),
-            'list-repos':  ('List recipes repositories', setup_subsubparser_listrepos),
-        }
-        for cmd_name, cmd_info in recipes_cmd_name_list.iteritems():
-            subparser = subparsers.add_parser(cmd_name, help=cmd_info[0])
-            cmd_info[1](subparser)
-        return parser
-
 
     def __init__(self, cmd, args):
-        CommandBase.__init__(self,
+        SubCommandBase.__init__(self,
                 cmd, args,
                 load_recipes=False,
                 require_prefix=False,
         )
 
-    def run(self):
-        """ Go, go, go! """
-        try:
-            return {'add': self._run_add,
-                    'remove': self._run_remove,
-                    'update': self._run_update,
-                    'list': self._run_list,
-                    'list-repos': self._run_list_recipe_repos,
-                   }[self.args.recipe_command]()
-        except KeyError:
-            self.log.error("Illegal recipes command: {}".format(self.args.recipe_command))
-            return -1
-
     #########################################################################
     # Subcommands
     #########################################################################
-    def _run_add(self):
+    def run_add(self):
         """
         pybombs recipes add [foo]
         """
@@ -153,14 +159,14 @@ class Recipes(CommandBase):
         if not self.add_recipe_dir(alias, uri):
             return -1
 
-    def _run_remove(self):
+    def run_remove(self):
         """
         pybombs recipes remove [aliases]
         """
         if not all([self.remove_recipe_dir(x) for x in self.args.alias]):
             return -1
 
-    def _run_update(self):
+    def run_update(self):
         """
         pybombs recipes update [alias]
         """
@@ -169,8 +175,7 @@ class Recipes(CommandBase):
         if not all([self.update_recipe_repo(x) for x in aliases_to_update]):
             return -1
 
-    # TODO: Factor out table printing code
-    def _run_list(self):
+    def run_list(self):
         """
         Print a list of recipes.
         """
@@ -219,7 +224,7 @@ class Recipes(CommandBase):
                 sort_by=self.args.sort_by,
         )
 
-    def _run_list_recipe_repos(self):
+    def run_list_recipe_repos(self):
         """
         pybombs recipes list-repos
         """
