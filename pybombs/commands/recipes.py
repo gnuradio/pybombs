@@ -33,6 +33,7 @@ from pybombs.fetcher import Fetcher
 from pybombs.package_manager import PackageManager
 from pybombs.recipe_manager import RecipeListManager
 from pybombs import recipe
+from pybombs.utils import tables
 
 class Recipes(CommandBase):
     """
@@ -191,7 +192,6 @@ class Recipes(CommandBase):
         if any(map(lambda x: x not in row_titles, self.args.format)):
             self.log.error("Invalid column formatting: {0}".format(self.args.format))
             return -1
-        widths = {k: len(row_titles[k]) for k in row_titles.keys()}
         print("Loading package information...", end="")
         sys.stdout.flush()
         home_dir = os.path.expanduser("~")
@@ -210,28 +210,14 @@ class Recipes(CommandBase):
             if row['installed_by'] == [not_installed_string] and (self.args.installed or self.args.in_prefix):
                 continue
             row['installed_by'] = ",".join(row['installed_by'])
-            widths = {k: max(widths[k], len(row[k])) for k in row.iterkeys()}
             rows.append(row)
-        print("\n")
-        # Sort rows
-        if self.args.sort_by is not None and self.args.sort_by in row_titles.keys():
-            rows = sorted(rows, key=lambda k: k[self.args.sort_by])
-        # Print Header
-        hdr_len = 0
-        for col_id in self.args.format:
-            format_string = "{0:" + str(widths[col_id]) + "}  "
-            hdr_title = format_string.format(row_titles[col_id])
-            print(hdr_title, end="")
-            hdr_len += len(hdr_title)
         print("")
-        print("-" * hdr_len)
-        # Print Table
-        for row in rows:
-            for col_id in self.args.format:
-                format_string = "{{0:{width}}}  ".format(width=widths[col_id])
-                print(format_string.format(row[col_id]), end="")
-            print("")
-        print("")
+        tables.print_table(
+                row_titles,
+                rows,
+                self.args.format,
+                sort_by=self.args.sort_by,
+        )
 
     def _run_list_recipe_repos(self):
         """
@@ -240,7 +226,7 @@ class Recipes(CommandBase):
         all_locations = self.cfg.get_recipe_locations()
         named_locations = self.cfg.get_named_recipe_dirs()
         named_sources = self.cfg.get_named_recipe_sources()
-        unnamed_locations = [x for x in all_locations if not x in named_locations.keys()]
+        unnamed_locations = [x for x in all_locations if not x in named_locations.values()]
         table = []
         for name in named_locations.keys():
             table.append({
@@ -254,32 +240,11 @@ class Recipes(CommandBase):
                 'dir': loc,
                 'source': '-',
             })
-        max_widths = {}
-        plottery = (
-            ('name', named_locations.keys()),
-            ('source', named_sources.values()),
-            ('dir', all_locations)
+        tables.print_table(
+            {'name': "Name", 'dir': "Directory", 'source': "Source"},
+            table,
+            col_order=('dir', 'name', 'source'),
         )
-        for w_index, data in plottery:
-            max_widths[w_index] = reduce(lambda a, x: max(a, len(x)), data, 0)
-        # Print Header
-        hdr_len = 0
-        column_hdrs = {'name': "Name", 'dir': "Directory", 'source': "Source"}
-        cols = ('dir', 'name', 'source')
-        for col_id in cols:
-            format_string = "{0:" + str(max_widths[col_id]) + "}  "
-            hdr_title = format_string.format(column_hdrs[col_id])
-            print(hdr_title, end="")
-            hdr_len += len(hdr_title)
-        print("")
-        print("-" * hdr_len)
-        # Print Data
-        for row in table:
-            for col_id in cols:
-                format_string = "{{0:{width}}}  ".format(width=max_widths[col_id])
-                print(format_string.format(row[col_id]), end="")
-            print("")
-        print("")
 
     #########################################################################
     # Helpers
