@@ -66,13 +66,13 @@ class Recipes(CommandBase):
             parser.add_argument(
                 'alias',
                 help="Name of recipe location to remove",
-                nargs=1,
+                nargs='+',
             )
         def setup_subsubparser_update(parser):
             parser.add_argument(
                 'alias',
                 help="Name of recipe location to update",
-                nargs=1,
+                nargs='*',
             )
         def setup_subsubparser_list(parser):
             parser.add_argument(
@@ -129,118 +129,47 @@ class Recipes(CommandBase):
 
     def run(self):
         """ Go, go, go! """
-        if hasattr(self.args, 'alias'):
-            self.args.alias = self.args.alias[0]
         try:
-            return {'add': self._add_recipes,
-                    'remove': self._remove_recipes,
-                    'update': self._update_recipes,
-                    'list': self._list_recipes,
-                    'list-repos': self._list_recipe_repos,
+            return {'add': self._run_add,
+                    'remove': self._run_remove,
+                    'update': self._run_update,
+                    'list': self._run_list,
+                    'list-repos': self._run_list_recipe_repos,
                    }[self.args.recipe_command]()
         except KeyError:
             self.log.error("Illegal recipes command: {}".format(self.args.recipe_command))
             return -1
 
-    def _add_recipes(self):
+    #########################################################################
+    # Subcommands
+    #########################################################################
+    def _run_add(self):
         """
-        Add recipe location:
-        - If a prefix was explicitly selected, install it there
-        - Otherwise, use local config file
-        - Check alias is not already used
+        pybombs recipes add [foo]
         """
-        alias = self.args.alias
+        alias = self.args.alias[0]
         uri = self.args.uri[0]
-        self.log.debug("Preparing to add recipe location {name} -> {uri}".format(
-            name=alias, uri=uri
-        ))
-        # Check recipe location alias is valid:
-        if re.match(r'[a-z][a-z0-9_]*', alias) is None:
-            self.log.error("Invalid recipe alias: {alias}".format(alias=alias))
-            exit(1)
-        if self.cfg.get_named_recipe_dirs().has_key(alias):
-            if self.args.force:
-                self.log.info("Overwriting existing recipe alias `{0}'".format(alias))
-            elif not confirm("Alias `{0}' already exists, overwrite?".format(alias)):
-                self.log.warn('Aborting.')
-                return -1
-        store_to_prefix = self.prefix is not None and self.prefix.prefix_src in ("cli", "cwd")
-        cfg_file = None
-        recipe_cache = None
-        if store_to_prefix:
-            cfg_file = self.prefix.cfg_file
-            recipe_cache_top_level = os.path.join(self.prefix.prefix_cfg_dir, self.cfg.recipe_cache_dir)
-        else:
-            cfg_file = self.cfg.local_cfg
-            recipe_cache_top_level = os.path.join(self.cfg.local_cfg_dir, self.cfg.recipe_cache_dir)
-        if not os.path.isdir(recipe_cache_top_level):
-            self.log.debug("Recipe cache dir does not exist, creating {0}".format(recipe_cache_top_level))
-            os.mkdir(recipe_cache_top_level)
-        recipe_cache = os.path.join(recipe_cache_top_level, alias)
-        self.log.debug("Storing new recipe location to {cfg_file}".format(cfg_file=cfg_file))
-        assert cfg_file is not None
-        assert os.path.isdir(recipe_cache_top_level)
-        assert recipe_cache is not None
-        assert alias
-        # Now make sure we don't already have a cache dir
-        if os.path.isdir(recipe_cache):
-            self.log.warn("Cache dir {cdir} for remote recipe location {alias} already exists! Deleting.".format(
-                cdir=recipe_cache, alias=alias
-            ))
-            shutil.rmtree(recipe_cache)
-        if not os.path.isdir(os.path.normpath(os.path.expanduser(uri))):
-            # Let the fetcher download the location
-            self.log.debug("Fetching into directory: {0}/{1}".format(recipe_cache_top_level, alias))
-            Fetcher().fetch_url(uri, recipe_cache_top_level, alias, {}) # No args
-        # Write this to config file
-        self.cfg.update_cfg_file({'recipes': {alias: uri}}, cfg_file=cfg_file)
-
-    def _remove_recipes(self):
-        """
-        Remove a recipe alias and, if applicable, its cache.
-        """
-        if not self.cfg.get_named_recipe_dirs().has_key(self.args.alias):
-            self.log.error("Unknown recipe alias: {alias}".format(alias=self.args.alias))
-            return -1
-        # Remove from config file
-        cfg_filename = self.cfg.get_named_recipe_cfg_file(self.args.alias)
-        cfg_file = PBConfigFile(cfg_filename)
-        cfg_data = cfg_file.get()
-        cfg_data['recipes'].pop(self.args.alias, None)
-        cfg_file.save(cfg_data)
-        recipe_cache_dir = os.path.join(
-            os.path.split(cfg_filename)[0],
-            self.cfg.recipe_cache_dir,
-            self.args.alias,
-        )
-        # If the recipe cache is not inside a PyBOMBS dir, don't delete it.
-        if self.cfg.pybombs_dir not in recipe_cache_dir:
-            return
-        if os.path.exists(recipe_cache_dir):
-            self.log.info("Removing directory: {cdir}".format(cdir=recipe_cache_dir))
-            shutil.rmtree(recipe_cache_dir)
-
-    def _update_recipes(self):
-        """
-        Update a remote recipe location.
-        """
-        try:
-            uri = self.cfg.get_named_recipe_sources()[self.args.alias]
-            recipes_dir = self.cfg.get_named_recipe_dirs()[self.args.alias]
-        except KeyError:
-            self.log.error("Error looking up recipe alias '{alias}'".format(alias=self.args.alias))
-            return -1
-        if not os.path.isdir(recipes_dir):
-            self.log.error("Recipe location does not exist. Run `recipes add --force' to add recipes.")
-            return -1
-        cache_dir_top_level, cache_dir = os.path.split(os.path.normpath(recipes_dir))
-        # Do actual update
-        self.log.info("Updating recipe location `{alias}'...".format(alias=self.args.alias))
-        if not Fetcher().update_src(uri, cache_dir_top_level, cache_dir, {}):
-            self.log.error("Failed to update recipe location `{alias}'...".format(alias=self.args.alias))
+        if not self.add_recipe_dir(alias, uri):
             return -1
 
-    def _list_recipes(self):
+    def _run_remove(self):
+        """
+        pybombs recipes remove [aliases]
+        """
+        if not all([self.remove_recipe_dir(x) for x in self.args.alias]):
+            return -1
+
+    def _run_update(self):
+        """
+        pybombs recipes update [alias]
+        """
+        # TODO allow directories
+        aliases_to_update = self.args.alias or self.cfg.get_named_recipe_sources().keys()
+        if not all([self.update_recipe_repo(x) for x in aliases_to_update]):
+            return -1
+
+    # TODO: Factor out table printing code
+    def _run_list(self):
         """
         Print a list of recipes.
         """
@@ -304,9 +233,9 @@ class Recipes(CommandBase):
             print("")
         print("")
 
-    def _list_recipe_repos(self):
+    def _run_list_recipe_repos(self):
         """
-        foo
+        pybombs recipes list-repos
         """
         all_locations = self.cfg.get_recipe_locations()
         named_locations = self.cfg.get_named_recipe_dirs()
@@ -351,4 +280,106 @@ class Recipes(CommandBase):
                 print(format_string.format(row[col_id]), end="")
             print("")
         print("")
+
+    #########################################################################
+    # Helpers
+    #########################################################################
+    def add_recipe_dir(self, alias, uri):
+        """
+        Add recipe location:
+        - If a prefix was explicitly selected, install it there
+        - Otherwise, use local config file
+        - Check alias is not already used
+        """
+        self.log.debug("Preparing to add recipe location {name} -> {uri}".format(
+            name=alias, uri=uri
+        ))
+        # Check recipe location alias is valid:
+        if re.match(r'[a-z][a-z0-9_]*', alias) is None:
+            self.log.error("Invalid recipe alias: {alias}".format(alias=alias))
+            exit(1)
+        if self.cfg.get_named_recipe_dirs().has_key(alias):
+            if self.args.force:
+                self.log.info("Overwriting existing recipe alias `{0}'".format(alias))
+            elif not confirm("Alias `{0}' already exists, overwrite?".format(alias)):
+                self.log.warn('Aborting.')
+                return False
+        store_to_prefix = self.prefix is not None and self.prefix.prefix_src in ("cli", "cwd")
+        cfg_file = None
+        recipe_cache = None
+        if store_to_prefix:
+            cfg_file = self.prefix.cfg_file
+            recipe_cache_top_level = os.path.join(self.prefix.prefix_cfg_dir, self.cfg.recipe_cache_dir)
+        else:
+            cfg_file = self.cfg.local_cfg
+            recipe_cache_top_level = os.path.join(self.cfg.local_cfg_dir, self.cfg.recipe_cache_dir)
+        if not os.path.isdir(recipe_cache_top_level):
+            self.log.debug("Recipe cache dir does not exist, creating {0}".format(recipe_cache_top_level))
+            os.mkdir(recipe_cache_top_level)
+        recipe_cache = os.path.join(recipe_cache_top_level, alias)
+        self.log.debug("Storing new recipe location to {cfg_file}".format(cfg_file=cfg_file))
+        assert cfg_file is not None
+        assert os.path.isdir(recipe_cache_top_level)
+        assert recipe_cache is not None
+        assert alias
+        # Now make sure we don't already have a cache dir
+        if os.path.isdir(recipe_cache):
+            self.log.warn("Cache dir {cdir} for remote recipe location {alias} already exists! Deleting.".format(
+                cdir=recipe_cache, alias=alias
+            ))
+            shutil.rmtree(recipe_cache)
+        if not os.path.isdir(os.path.normpath(os.path.expanduser(uri))):
+            # Let the fetcher download the location
+            self.log.debug("Fetching into directory: {0}/{1}".format(recipe_cache_top_level, alias))
+            Fetcher().fetch_url(uri, recipe_cache_top_level, alias, {}) # No args
+        # Write this to config file
+        self.cfg.update_cfg_file({'recipes': {alias: uri}}, cfg_file=cfg_file)
+        return True
+
+    def remove_recipe_dir(self, alias):
+        """
+        Remove a recipe alias and, if applicable, its cache.
+        """
+        if not self.cfg.get_named_recipe_dirs().has_key(alias):
+            self.log.error("Unknown recipe alias: {alias}".format(alias=alias))
+            return False
+        # Remove from config file
+        cfg_filename = self.cfg.get_named_recipe_cfg_file(alias)
+        cfg_file = PBConfigFile(cfg_filename)
+        cfg_data = cfg_file.get()
+        cfg_data['recipes'].pop(alias, None)
+        cfg_file.save(cfg_data)
+        recipe_cache_dir = os.path.join(
+            os.path.split(cfg_filename)[0],
+            self.cfg.recipe_cache_dir,
+            alias,
+        )
+        # If the recipe cache is not inside a PyBOMBS dir, don't delete it.
+        if self.cfg.pybombs_dir not in recipe_cache_dir:
+            return True
+        if os.path.exists(recipe_cache_dir):
+            self.log.info("Removing directory: {cdir}".format(cdir=recipe_cache_dir))
+            shutil.rmtree(recipe_cache_dir)
+        return True
+
+    def update_recipe_repo(self, alias):
+        """
+        Update a remote recipe location by its alias name.
+        """
+        try:
+            uri = self.cfg.get_named_recipe_sources()[alias]
+            recipes_dir = self.cfg.get_named_recipe_dirs()[alias]
+        except KeyError:
+            self.log.error("Error looking up recipe alias '{alias}'".format(alias=alias))
+            return False
+        if not os.path.isdir(recipes_dir):
+            self.log.error("Recipe location does not exist. Run `recipes add --force' to add recipes.")
+            return False
+        cache_dir_top_level, cache_dir = os.path.split(os.path.normpath(recipes_dir))
+        # Do actual update
+        self.log.info("Updating recipe location `{alias}'...".format(alias=alias))
+        if not Fetcher().update_src(uri, cache_dir_top_level, cache_dir, {}):
+            self.log.error("Failed to update recipe location `{alias}'...".format(alias=alias))
+            return False
+        return True
 
