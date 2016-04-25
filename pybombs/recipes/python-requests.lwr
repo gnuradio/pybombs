@@ -23,4 +23,5 @@ satisfy:
   pip: requests
   deb: python-requests
   rpm: python-requests
+  port: py27-requests
 source: wget+https://pypi.python.org/packages/source/r/requests/requests-2.8.1.tar.gz

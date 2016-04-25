@@ -22,3 +22,4 @@ inherit: autoconf
 satisfy:
   deb: xz-utils
   cmd: xz --version
+  port: xz

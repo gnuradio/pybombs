@@ -23,5 +23,6 @@ satisfy:
   deb: git-core || git
   rpm: git
   cmd: git --version
+  port: git
 source:
 - wget+http://git-core.googlecode.com/files/git-1.7.9.6.tar.gz
