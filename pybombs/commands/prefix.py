@@ -146,8 +146,9 @@ class Prefix(CommandBase):
             self.log.error("Cannot write to prefix path `{0}'.".format(path))
             return -1
 
+        from pybombs import config_manager
         # Make sure that a pybombs directory doesn't already exist
-        if op.exists(op.join(path, '.pybombs')):
+        if op.exists(op.join(path, config_manager.PrefixInfo.prefix_conf_dir)):
             self.log.error("Ignoring. A prefix already exists in `{0}'".format(path))
             return -1
 
