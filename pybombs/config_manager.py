@@ -77,6 +77,7 @@ class PrefixInfo(object):
         'PATH': "{prefix_dir}/bin:$PATH",
         'PYTHONPATH': "{prefix_dir}/python:{prefix_dir}/lib/python2.6/site-packages:{prefix_dir}/lib64/python2.6/site-packages:{prefix_dir}/lib/python2.6/dist-packages:{prefix_dir}/lib64/python2.6/dist-packages:{prefix_dir}/lib/python2.7/site-packages:{prefix_dir}/lib64/python2.7/site-packages:{prefix_dir}/lib/python2.7/dist-packages:{prefix_dir}/lib64/python2.7/dist-packages:{prefix_dir}/python/:{prefix_dir}/lib/python2.6/site-packages:{prefix_dir}/lib64/python2.6/site-packages:{prefix_dir}/lib/python2.6/dist-packages:{prefix_dir}/lib64/python2.6/dist-packages:{prefix_dir}/lib/python2.7/site-packages:{prefix_dir}/lib64/python2.7/site-packages:{prefix_dir}/lib/python2.7/dist-packages:{prefix_dir}/lib64/python2.7/dist-packages:$PYTHONPATH",
         'LD_LIBRARY_PATH': "{prefix_dir}/lib:{prefix_dir}/lib64/:$LD_LIBRARY_PATH",
+        'LIBRARY_PATH': "{prefix_dir}/lib:{prefix_dir}/lib64/:$LIBRARY_PATH",
         'PKG_CONFIG_PATH': "{prefix_dir}/lib/pkgconfig:{prefix_dir}/lib64/pkgconfig:$PKG_CONFIG_PATH",
         'GRC_BLOCKS_PATH': "{prefix_dir}/share/gnuradio/grc/blocks:$GRC_BLOCKS_PATH",
         'PYBOMBS_PREFIX': "{prefix_dir}",
