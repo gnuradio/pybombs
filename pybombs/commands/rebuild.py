@@ -80,7 +80,7 @@ class Rebuild(CommandBase):
         Returns True if pkg is either declared as installed by the package
         manager, or the the source package state is at least 'configured/fetched'.
         """
-        if self.args.keep-build:
+        if self.args.keep_build:
             test_state = self.inventory.STATE_CONFIGURED
         else:
             test_state = self.inventory.STATE_FETCHED
