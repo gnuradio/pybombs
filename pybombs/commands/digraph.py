@@ -62,6 +62,7 @@ class Digraph(CommandBase, Requirer):
             self.packages = recipe_manager.recipe_manager.list_all()
         else:
             self.packages = self.inventory.get_packages()
+        self.assert_requirements()
 
     def run(self):
         """ Go, go, go! """
