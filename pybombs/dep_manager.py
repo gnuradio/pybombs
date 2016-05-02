@@ -25,6 +25,7 @@ from pybombs import package_manager
 from pybombs import config_manager
 from pybombs import pb_logging
 from pybombs import recipe
+from pybombs.pb_exception import PBException
 
 class DepManager(object):
     """
@@ -74,12 +75,11 @@ class DepManager(object):
         deps = recipe.get_recipe(pkg).depends or []
         for dep in deps:
             if not self.pm.exists(pkg):
-                self.log.error(
+                raise PBException(
                     "Package does not exist: {0} (declared as dependency for package {1})".format(
                         dep, pkg
                     )
                 )
-                exit(1)
         deps_to_install = set([dep for dep in deps if filter_callback(dep)])
         for dep in deps_to_install:
             subtree = self.make_tree_recursive(dep, filter_callback)

@@ -252,4 +252,4 @@ class Deploy(CommandBase):
             deployer(skip_names).deploy(self.args.target, prefix_path)
         except PBException as ex:
             self.log.error("Failed to deploy: {0}".format(str(ex)))
-            exit(1)
+            return 1

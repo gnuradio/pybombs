@@ -82,7 +82,7 @@ class Fetch(CommandBase):
             ]
         except KeyError as e:
             self.log.error("Package has no recipe: {}".format(e))
-            exit(1)
+            return 1
         for r in recipe_list:
             if not len(r.source):
                 self.log.warn("Package {0} has no sources listed.".format(r.id))

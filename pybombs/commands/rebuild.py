@@ -120,5 +120,5 @@ class Rebuild(CommandBase):
                 nuke_builddir=not self.args.keep_build
             ):
                 self.log.error("Error rebuilding package {0}. Aborting.".format(pkg))
-                exit(1)
+                return 1
             self.log.info("Rebuild successful.")

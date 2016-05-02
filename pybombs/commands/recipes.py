@@ -267,7 +267,7 @@ class Recipes(SubCommandBase):
         # Check recipe location alias is valid:
         if re.match(r'[a-z][a-z0-9_]*', alias) is None:
             self.log.error("Invalid recipe alias: {alias}".format(alias=alias))
-            exit(1)
+            return False
         if self.cfg.get_named_recipe_dirs().has_key(alias):
             if self.args.force:
                 self.log.info("Overwriting existing recipe alias `{0}'".format(alias))

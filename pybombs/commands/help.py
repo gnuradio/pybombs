@@ -55,7 +55,7 @@ class Help(CommandBase):
         help_on = self.args.help[0]
         if help_on is None:
             config_manager.parser.print_help()
-            exit(0)
+            return
         from pybombs.commands.base import init_arg_parser
         init_arg_parser(help_on)
 

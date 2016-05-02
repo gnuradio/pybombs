@@ -93,8 +93,7 @@ class Source(PackagerBase):
         try:
             if update:
                 if get_state() < self.inventory.STATE_CONFIGURED:
-                    self.log.error("Can't update package {0}, it's not yet configured.".format(recipe.id))
-                    exit(1)
+                    raise PBException("Can't update package {0}, it's not yet configured.".format(recipe.id))
                 Fetcher().update(recipe)
                 set_state(self.inventory.STATE_CONFIGURED)
             self.log.debug("State on package {0} is {1}".format(recipe.id, get_state()))
@@ -231,8 +230,7 @@ class Source(PackagerBase):
                     self.log.warn("Build dir already exists: {}".format(builddir))
             else:
                 if fail_if_builddir_missing:
-                    self.log.error("Can't update package {0}, build directory seems to be missing.".format(recipe.id))
-                    exit(1)
+                    raise PBException("Can't update package {0}, build directory seems to be missing.".format(recipe.id))
                 os.mkdir(builddir)
         os.chdir(builddir)
         recipe.vars['builddir'] = builddir

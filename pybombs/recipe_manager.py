@@ -60,8 +60,7 @@ class RecipeListManager(object):
         try:
             return self._recipe_list[name]
         except KeyError:
-            self.log.error("Package {} has no recipe file!".format(name))
-            exit(1)
+            raise PBException("Package {0} has no recipe file!".format(name))
 
     def get_template_filename(self, template):
         """ Returns the filename for the requested template """
@@ -103,8 +102,7 @@ class RecipeListManager(object):
         # Load any templates from this directory.
         template_dir = self.cfg.get_template_dir()
         if not os.path.isdir(template_dir):
-            self.log.error("No template directory found at {0}".format(dirname))
-            exit(1)
+            raise PBException("No template directory found at {0}".format(dirname))
         template_files = [f for f in os.listdir(template_dir) if os.path.splitext(f)[1] == '.lwt']
         for f in template_files:
             template = os.path.splitext(f)[0]

@@ -86,7 +86,6 @@ class ExternalPip(ExternPackager):
         except Exception as e:
             self.log.error("Some error while running pip list.")
             self.log.error(str(e))
-        exit(1)
 
     def install(self, pkgname):
         """

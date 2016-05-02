@@ -66,7 +66,7 @@ class Show(CommandBase):
             self.args.packages = args.packages[0] # wat?
         if len(self.args.packages) == 0:
             self.log.error("No packages specified.")
-            exit(1)
+            return 1
 
     def run(self):
         """ Go, go, go! """

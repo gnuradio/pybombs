@@ -55,7 +55,7 @@ class Lint(CommandBase):
             if self.prefix is not None:
                 return self._lint_prefix(self.prefix.prefix_dir)
             self.log.error("No linting target specified.")
-            exit(1)
+            return 1
         if self.prefix is not None and self.prefix.prefix_aliases.has_key(self.args.target):
             return self._lint_prefix(self.prefix.prefix_aliases[self.args.target])
         elif os.path.isfile(self.args.target):

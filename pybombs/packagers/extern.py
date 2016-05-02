@@ -231,7 +231,5 @@ class ExternCmdPackagerBase(PackagerBase):
         try:
             return vcompare(comparator, installed_version, required_version)
         except TypeError:
-            self.log.error("booo" + str(installed_version))
-            print pkg_name
-            exit(1)
+            return False
 
