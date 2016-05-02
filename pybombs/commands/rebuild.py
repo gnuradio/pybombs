@@ -78,10 +78,15 @@ class Rebuild(CommandBase):
     def is_installed(self, pkg):
         """
         Returns True if pkg is either declared as installed by the package
-        manager, or the the source package state is at least 'configured'.
+        manager, or the the source package state is at least 'configured/fetched'.
         """
+        if self.args.keep_build:
+            test_state = self.inventory.STATE_CONFIGURED
+        else:
+            test_state = self.inventory.STATE_FETCHED
+
         return self.inventory.get_state(pkg) is not None \
-            and self.inventory.get_state(pkg) >= self.inventory.STATE_CONFIGURED
+            and self.inventory.get_state(pkg) >= test_state
 
     def run(self):
         """ Go, go, go! """
@@ -117,4 +122,3 @@ class Rebuild(CommandBase):
                 self.log.error("Error rebuilding package {0}. Aborting.".format(pkg))
                 exit(1)
             self.log.info("Rebuild successful.")
-
