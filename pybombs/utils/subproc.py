@@ -198,7 +198,7 @@ def monitor_process(args, **kwargs):
                 log.debug("Thread signaled termination or returned")
                 break
         log.debug("Return value: {0}".format(_process_thread.result))
-        if _process_thread.result != 0:
+        if _process_thread.result != 0 and kwargs.get("throw", False):
             raise PBException("Process returned value: " + str(_process_thread.result))
         return _process_thread.result
     except KeyboardInterrupt:
@@ -206,9 +206,9 @@ def monitor_process(args, **kwargs):
         log.info("Caught Ctrl+C. Killing all sub-processes.")
         quit_event.set()
         monitor_thread.join(15)
-        exit(1)
+        raise KeyboardInterrupt
     except Exception as ex:
-        if kwargs.get('throw_ex'):
+        if kwargs.get('throw_ex', False):
             raise ex
         else:
             return -1
