@@ -66,8 +66,8 @@ class InstallManager(object):
         if len(install_tree) == 0 and not quiet:
             self.log.info("No packages to install.")
             return True
-        self.log.debug("Install tree:")
         if self.log.getEffectiveLevel() <= 20 or print_tree:
+            print("Install tree:")
             install_tree.pretty_print()
         ### Recursively install/update, starting at the leaf nodes
         install_cache = []
