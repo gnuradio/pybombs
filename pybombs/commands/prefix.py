@@ -212,19 +212,16 @@ class Prefix(CommandBase):
             self.prefix = self.cfg.get_active_prefix()
         # Install dependencies
         if len(prefix_recipe.depends):
-            self.cfg.info("Installing default packages for prefix...")
-            from pybombs.commands import Install
-            args = argparse.Namespace(
-                packages=[deps_to_check],
-                update=False,
-                static=False,
-                no_deps=False,
-                print_tree=False,
-                quiet_install=True,
-                deps_only=False,
-                verify=False,
+            self.log.info("Installing default packages for prefix...")
+            self.log.info("".join(["\n  - {0}".format(x) for x in prefix_recipe.depends]))
+            from pybombs import install_manager
+            install_manager.InstallManager().install(
+                    prefix_recipe.depends,
+                    'install', # install / update
+                    fail_if_not_exists=False,
+                    update_if_exists=False,
+                    print_tree=True,
             )
-            Install('install', args).run()
 
     def _write_env_file(self):
         """
