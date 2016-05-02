@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Copyright 2015 Free Software Foundation, Inc.
 #
@@ -29,9 +28,13 @@ from pybombs.config_file import PBConfigFile
 from pybombs.utils import dict_merge
 from pybombs.utils import subproc
 from pybombs.utils import confirm
+from pybombs.utils import sysutils
+from pybombs.pb_exception import PBException
 from pybombs import fetcher
 
-### Parser Helpers
+#############################################################################
+# Sub-command sub-parsers
+#############################################################################
 def setup_subsubparser_initsdk(parser):
     parser.add_argument(
         'sdkname',
@@ -59,11 +62,26 @@ def setup_subsubparser_init(parser):
         '--virtualenv', action='store_true',
         help="Use this to make the new prefix also a virtualenv. Args for virtualenv may be passed in here",
     )
+    parser.add_argument(
+        '-R', '--recipe', default="default_prefix",
+        help="Use this recipe to set up the prefix",
+    )
+
 
 def setup_subsubparser_write_env(parser):
     pass
 
-### Class definition
+#############################################################################
+# Helpers
+#############################################################################
+def get_prefix_recipe(recipe_name):
+    " Return the prefix recipe or None "
+    from pybombs import recipe
+    return recipe.get_recipe(recipe_name, target='prefix', fail_easy=True)
+
+#############################################################################
+# Class definition
+#############################################################################
 class Prefix(CommandBase):
     """
     Prefix operations
@@ -128,46 +146,47 @@ class Prefix(CommandBase):
         """
         pybombs "setup_env.sh" generator
         """
-        path = op.abspath(op.normpath(self.prefix.prefix_dir))
-        if not self._write_env_file(path):
+        if not self._write_env_file():
             return -1
 
     def _run_init(self):
         """
         pybombs prefix init
         """
+        def register_alias(alias):
+            if alias is not None:
+                if self.prefix is not None and \
+                        self.prefix.prefix_aliases.get(alias) is not None \
+                        and not confirm("Alias `{0}' already exists, overwrite?".format(alias)):
+                    self.log.warn('Aborting.')
+                    raise PBException("Could not create alias.")
+                self.cfg.update_cfg_file({'prefix_aliases': {self.args.alias: path}})
+        # Go, go, go!
+        prefix_recipe = get_prefix_recipe(self.args.recipe)
+        if prefix_recipe is None:
+            self.log.error("Could not find recipe for `{0}'".format(self.args.recipe))
         # Make sure the directory is writable
         path = op.abspath(op.normpath(self.args.path))
-        if not op.isdir(path):
-            self.log.info("Creating directory `{0}'".format(path))
-            os.mkdir(path)
-        assert op.isdir(path)
-        if not os.access(path, os.W_OK|os.X_OK):
+        if not sysutils.mkdir_writable(path, self.log):
             self.log.error("Cannot write to prefix path `{0}'.".format(path))
             return -1
-
-        from pybombs import config_manager
         # Make sure that a pybombs directory doesn't already exist
+        from pybombs import config_manager
         if op.exists(op.join(path, config_manager.PrefixInfo.prefix_conf_dir)):
             self.log.error("Ignoring. A prefix already exists in `{0}'".format(path))
             return -1
-
-        # Copy template
-        self._copy_prefix_template(path)
-        # Create the env file
-        if not self._write_env_file(path):
-            return -1
+        # Add subdirs
+        sysutils.require_subdirs(path, [k for k, v in prefix_recipe.dirs.items() if v])
+        self.cfg.load(select_prefix=path)
+        self.prefix = self.cfg.get_active_prefix()
+        # Create files
+        for fname, content in prefix_recipe.files.items():
+            sysutils.write_file_in_subdir(path, fname, prefix_recipe.var_replace_all(content))
         # Register alias
         if self.args.alias is not None:
-            if self.prefix is not None and \
-                    self.prefix.prefix_aliases.get(self.args.alias) is not None \
-                    and not confirm("Alias `{0}' already exists, overwrite?".format(self.args.alias)):
-                self.log.warn('Aborting.')
-                return 1
-            self.cfg.update_cfg_file({'prefix_aliases': {self.args.alias: path}})
+            register_alias(self.args.alias)
         # If there is no default prefix, make this the default
-        curr_default_prefix = self.cfg.get('default_prefix')
-        if len(curr_default_prefix) == 0:
+        if len(self.cfg.get('default_prefix')) == 0:
             if self.args.alias is not None:
                 new_default_prefix = self.args.alias
             else:
@@ -186,24 +205,45 @@ class Prefix(CommandBase):
             self.prefix = self.cfg.get_active_prefix()
             self.inventory = self.prefix.inventory
             self._install_sdk_to_prefix(self.args.sdkname)
+        # Update config section
+        if len(prefix_recipe.config):
+            self.cfg.update_cfg_file(prefix_recipe.config, self.prefix.cfg_file)
+            self.cfg.load(select_prefix=path)
+            self.prefix = self.cfg.get_active_prefix()
+        # Install dependencies
+        if len(prefix_recipe.depends):
+            self.cfg.info("Installing default packages for prefix...")
+            from pybombs.commands import Install
+            args = argparse.Namespace(
+                packages=[deps_to_check],
+                update=False,
+                static=False,
+                no_deps=False,
+                print_tree=False,
+                quiet_install=True,
+                deps_only=False,
+                verify=False,
+            )
+            Install('install', args).run()
 
-    def _write_env_file(self, path):
+    def _write_env_file(self):
         """
         Create a setup_env.sh file in the prefix
         """
-        ENV_FILENAME = 'setup_env.sh'
-        try:
-            skel_dir = op.join(self.cfg.module_dir, 'skel')
-            open(op.join(path, ENV_FILENAME), 'w').write(
-                open(op.join(skel_dir, ENV_FILENAME)).read().format(
-                    prefix_dir=path,
-                )
-            )
-            self.log.info("Wrote `{0}/{1}'".format(path, ENV_FILENAME))
-            return True
-        except (OSError, IOError):
-            self.log.error("Cannot write to prefix path `{0}'.".format(path))
+        prefix_recipe = get_prefix_recipe("default_prefix")
+        if prefix_recipe is None:
+            self.log.error("Could not find recipe for `{0}'".format(self.args.recipe))
             return False
+        path = self.prefix.prefix_dir
+        if not sysutils.dir_is_writable(path):
+            self.log.error("Cannot write to prefix path `{0}'.".format(path))
+            return -1
+        try:
+            for fname, content in prefix_recipe.files.items():
+                sysutils.write_file_in_subdir(path, fname, prefix_recipe.var_replace_all(content))
+        except (PBException, OSError, IOError) as ex:
+            return False
+        return True
 
     def _copy_prefix_template(self, path):
         """

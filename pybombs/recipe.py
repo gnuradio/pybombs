@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -222,7 +222,8 @@ class Recipe(object):
             self._data['depends'] = self._data['depends'] + parent_data['depends']
             self._data = dict_merge(parent_data, self._data)
             self._data['inherit'] = parent_data.get('inherit')
-        self._data = self.get_local_package_data()
+        if self._data.get('target') == 'package':
+            self._data = self.get_local_package_data()
         # Map all recipe info onto self:
         for k, v in self._data.iteritems():
             if not hasattr(self, k):
@@ -304,7 +305,7 @@ class Recipe(object):
         """
         Replace all the $variables in string 's' with the vars
         from 'recipe'. If keys are not in vars, try config options.
-        Default to empty strings.
+        If no value is found, leave it as-is.
         """
         # PyBOMBS1 supported a conditional replacement mechanism,
         # where variable==FOO?{a}:{b} would return a if variables
@@ -314,14 +315,14 @@ class Recipe(object):
             Expects arguments to be matchobjects for strings starting with $.
             Returns the variable replacement value.
             """
-            var_name = mo.group(0)
-            assert len(var_name) > 1 and var_name[0] == '$'
-            var_name = var_name[1:] # Strip $
+            var_name_dollar = mo.group(0)
+            assert len(var_name_dollar) > 1 and var_name_dollar[0] == '$'
+            var_name = var_name_dollar[1:] # Strip $
             if var_name == 'prefix':
                 return cfg.get_active_prefix().prefix_dir
             if var_name == 'src_dir':
                 return cfg.get_active_prefix().src_dir
-            return vars.get(var_name, str(cfg.get(var_name, '')))
+            return vars.get(var_name, str(cfg.get(var_name, var_name_dollar)))
         ###
         # Starts with a $, unless preceded by \
         var_re = re.compile(r'(?<!\\)\$[a-z][a-z0-9_]*')
