@@ -70,7 +70,8 @@ formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 # Set default level:
-logger.setLevel(INFO)
+default_log_level = INFO
+logger.setLevel(default_log_level)
 
 if __name__ == "__main__":
     print("Testing logger: ")

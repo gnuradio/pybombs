@@ -327,7 +327,7 @@ class ConfigManager(object):
         cfg_files = []
         ## Set verbosity level:
         verb_offset = args.verbose - args.quiet
-        verb_level = pb_logging.logger.getEffectiveLevel() - 10 * verb_offset
+        verb_level = pb_logging.default_log_level - 10 * verb_offset
         if verb_level < pb_logging.OBNOXIOUS:
             verb_level = pb_logging.OBNOXIOUS
         pb_logging.logger.setLevel(verb_level)
