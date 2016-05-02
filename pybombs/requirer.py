@@ -37,23 +37,20 @@ def require_hostsys_dependencies(deps):
     deps_to_check = [d for d in deps if d not in REQUIRER_CHECKED_CACHE]
     if not deps_to_check:
         return
-    from pybombs.commands import Install
+    from pybombs import install_manager
     from pybombs.config_manager import config_manager
     s_order = config_manager.get('satisfy_order')
     # These are host system dependencies, so disallow source package manager
     config_manager.set('satisfy_order', 'native')
-    args = argparse.Namespace(
-        packages=[deps_to_check],
-        update=False,
-        static=False,
-        no_deps=False,
-        print_tree=False,
-        quiet_install=True,
-        deps_only=False,
-        verify=False,
-    )
     REQUIRER_CHECKED_CACHE += deps_to_check
-    Install('install', args).run()
+    install_manager.InstallManager().install(
+            deps_to_check,
+            'install', # install / update
+            fail_if_not_exists=False,
+            update_if_exists=False,
+            quiet=True,
+            print_tree=False,
+    )
     # Restore previous settings
     config_manager.set('satisfy_order', s_order)
 

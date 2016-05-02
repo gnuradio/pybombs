@@ -23,8 +23,7 @@
 
 from __future__ import print_function
 from pybombs.commands import CommandBase
-from pybombs import package_manager
-from pybombs import dep_manager
+from pybombs import install_manager
 
 class Install(CommandBase):
     """ Install or update a package """
@@ -105,57 +104,22 @@ class Install(CommandBase):
         self.fail_if_not_exists = (cmd == 'update')
         if get_all_pkgs:
             self.args.packages = self.inventory.get_packages()
-        self.pm = package_manager.PackageManager()
-
-    def _check_if_pkg_goes_into_tree(self, pkg):
-        """
-        Return True if pkg has a legitimate right to be in the tree.
-        """
-        if self.fail_if_not_exists:
-            return bool(self.pm.installed(pkg))
-        return self.update_if_exists or not self.pm.installed(pkg)
+        self.install_manager = install_manager.InstallManager()
 
     def run(self):
         """ Go, go, go! """
-        ### Sanity checks
-        if self.fail_if_not_exists:
-            for pkg in self.args.packages:
-                if not self.pm.installed(pkg):
-                    self.log.error("Package {0} is not installed. Aborting.".format(pkg))
-                    exit(1)
-        ### Make install tree
-        install_tree = dep_manager.DepManager().make_dep_tree(
-            self.args.packages,
-            self._check_if_pkg_goes_into_tree if not self.args.no_deps else lambda x: bool(x in self.args.packages)
+        self.install_manager.install(
+                self.args.packages,
+                mode=self.cmd,
+                fail_if_not_exists=self.fail_if_not_exists,
+                update_if_exists=self.update_if_exists,
+                quiet=False,
+                print_tree=self.args.print_tree,
+                deps_only=self.args.deps_only,
+                no_deps=self.args.no_deps,
+                verify=self.args.verify,
+                static=self.args.static,
         )
-        if len(install_tree) == 0 and not hasattr(self.args, 'quiet_install'):
-            self.log.info("No packages to install.")
-            return 0
-        self.log.debug("Install tree:")
-        if self.log.getEffectiveLevel() <= 20 or self.args.print_tree:
-            install_tree.pretty_print()
-        ### Recursively install/update, starting at the leaf nodes
-        install_cache = []
-        while len(install_tree):
-            pkg = install_tree.pop_leaf_node()
-            if pkg in install_cache:
-                continue
-            install_cache.append(pkg)
-            if self.cmd == 'install' and self.args.deps_only and pkg in self.args.packages:
-                self.log.debug("Skipping `{0}' because only deps are requested.")
-                continue
-            if self.pm.installed(pkg):
-                self.log.info("Updating package: {0}".format(pkg))
-                if not self.pm.update(pkg, verify=self.args.verify):
-                    self.log.error("Error updating package {0}. Aborting.".format(pkg))
-                    exit(1)
-                self.log.info("Update successful.")
-            else:
-                self.log.info("Installing package: {0}".format(pkg))
-                if not self.pm.install(pkg, static=self.args.static, verify=self.args.verify):
-                    self.log.error("Error installing package {0}. Aborting.".format(pkg))
-                    exit(1)
-                self.log.info("Installation successful.")
 
 ### Damn, you found it :)
 class Doge(CommandBase):
