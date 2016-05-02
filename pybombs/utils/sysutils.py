@@ -22,7 +22,10 @@
 System Utils
 """
 
+from __future__ import print_function
 import os
+import os.path as op
+from pybombs.pb_exception import PBException
 
 def which(program, env=None):
     """
@@ -47,6 +50,62 @@ def which(program, env=None):
             if is_exe(exe_file):
                 return exe_file
     return None
+
+def dir_is_writable(dir_path):
+    " Returns True if dir_path is a writable directory "
+    return op.isdir(dir_path) and os.access(dir_path, os.W_OK|os.X_OK)
+
+def mkdir_writable(dir_path, log=None):
+    """
+    Create a directory if it doesn't yet exist.
+    Returns True if that worked and the dir is writable.
+    """
+    if not op.isdir(dir_path):
+        if log is not None:
+            log.info("Creating directory `{0}'".format(dir_path))
+        os.mkdir(dir_path)
+    return dir_is_writable(dir_path)
+
+def mkdirp_writable(dir_path, log=None):
+    """
+    Like mkdir_writable(), but creates all parents if necessary (like mkdir -p)
+    """
+    if dir_is_writable(dir_path):
+        return True
+    parent = os.path.split(dir_path)[0]
+    if len(parent) != 0:
+        if not mkdirp_writable(parent, log):
+            return False
+    return mkdir_writable(dir_path, log)
+
+def require_subdirs(base_path, subdirs, log=None):
+    """
+    subdirs is a list of subdirectories that need to exist inside path.
+
+    If this is satisfied, returns True.
+    """
+    if not dir_is_writable(base_path):
+        if log:
+            log.error("Base path {0} does not exist".format(base_path))
+        return False
+    common_prefix = os.path.commonprefix(
+        [os.path.normpath(os.path.join(base_path, x)) for x in subdirs]
+    )
+    if not op.normpath(common_prefix) in op.normpath(base_path):
+        raise PBException("Invalid subdir list (going outside base path)")
+    return all([mkdirp_writable(os.path.join(base_path, subdir), log) for subdir in subdirs])
+
+def write_file_in_subdir(base_path, file_path, content):
+    """
+    Write 'content' to a file. The absolute path to the file comes from
+    joining base_path and file_path. However, if file_path tries to go
+    outside base_path, an exception is raised.
+    """
+    abs_file_path = os.path.join(base_path, file_path)
+    if not op.normpath(base_path) in op.normpath(abs_file_path):
+        raise PBException("Attempting write to file outside base_path")
+    open(abs_file_path, 'w').write(content)
+
 
 if __name__ == "__main__":
     print(which("vim"))
