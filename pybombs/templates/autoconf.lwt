@@ -23,3 +23,6 @@ make: make -j$makewidth
 install: make install
 uninstall: make uninstall
 installdir: .
+depends:
+ - autoconf
+ - automake

@@ -17,7 +17,12 @@
 # Boston, MA 02110-1301, USA.
 #
 
-inherit: empty
-depends:
-  - boost
-#var boostflags = "boost.satisfier==src?{-DBOOST_ROOT=$prefix -DBoost_NO_SYSTEM_PATHS=1}:{}"
+category: baseline
+inherit: autoconf
+satisfy:
+  deb: python2.7 && python-dev
+  rpm: python-devel >= 2.7
+  cmd: python --version >= 2.7
+  pacman: python2 >= 2.7
+vars:
+  config_opt: --enable-shared

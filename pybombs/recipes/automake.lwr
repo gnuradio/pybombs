@@ -17,7 +17,10 @@
 # Boston, MA 02110-1301, USA.
 #
 
-inherit: empty
-depends:
-  - boost
-#var boostflags = "boost.satisfier==src?{-DBOOST_ROOT=$prefix -DBoost_NO_SYSTEM_PATHS=1}:{}"
+category: baseline
+inherit: autoconf
+satisfy:
+  deb: automake >= 1.14
+  rpm: automake >= 1.14
+  pacman: automake >= 1.14
+source: wget+http://ftp.gnu.org/gnu/automake/automake-1.15.tar.gz
