@@ -18,7 +18,12 @@
 #
 
 category: baseline
-inherit: autoconf
+inherit: empty
+configure: ./configure --prefix=$prefix $config_opt CC=$cc CXX=$cxx
+make: make -j$makewidth
+install: make install
+uninstall: make uninstall
+installdir: .
 satisfy:
   deb: automake >= 1.14
   rpm: automake >= 1.14
