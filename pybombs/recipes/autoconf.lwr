@@ -23,4 +23,5 @@ satisfy:
   deb: autoconf >= 2.69
   rpm: autoconf >= 2.69
   pacman: autoconf >= 2.69
+  port: autoconf >= 2.69
 source: wget+http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz
