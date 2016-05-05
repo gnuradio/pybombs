@@ -1,5 +1,5 @@
 #
-# This file is part of PyBOMBS
+# This file is part of GNU Radio
 #
 # PyBOMBS is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,20 +17,20 @@
 # Boston, MA 02110-1301, USA.
 #
 
+# This is for bootstrapping autoconf and automake. If you need to build those
+# from source, you already need automake and autoconf installed, but an older
+# version will do fine. So this file will let your packager install any version
+# of autotools, and then the other recipes can be used to install a specific
+# version.
+# However, if this recipe is exercised, we cannot build automake and autoconf
+# from source, so do not add a source: line here!
+
 category: baseline
-# We're not inheriting from autoconf here, or we'd have a circular dependency
 inherit: empty
-configure: ./configure --prefix=$prefix $config_opt CC=$cc CXX=$cxx
-make: make -j$makewidth
-install: make install
-uninstall: make uninstall
-installdir: .
-depends:
-  - autotools-bootstrap
 satisfy:
-  deb: automake >= 1.14
-  rpm: automake >= 1.14
-  pacman: automake >= 1.14
-  port: automake >= 1.14
-  cmd: automake --version >= 1.14
-source: wget+http://ftp.gnu.org/gnu/automake/automake-1.15.tar.gz
+  deb: autoconf && automake
+  rpm: autoconf && automake
+  pacman: autoconf && automake
+  port: autoconf && automake
+  cmd: automake --version && autoconf --version
+# Do *NOT* add a source: line in this file!

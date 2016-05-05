@@ -1,5 +1,5 @@
 #
-# This file is part of PyBOMBS
+# This file is part of GNU Radio
 #
 # PyBOMBS is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,15 +18,19 @@
 #
 
 category: baseline
+# We're not inheriting from autoconf here, or we'd have a circular dependency
 inherit: empty
 configure: ./configure --prefix=$prefix $config_opt CC=$cc CXX=$cxx
 make: make -j$makewidth
 install: make install
 uninstall: make uninstall
 installdir: .
+depends:
+  - autotools-bootstrap
 satisfy:
   deb: autoconf >= 2.69
   rpm: autoconf >= 2.69
   pacman: autoconf >= 2.69
   port: autoconf >= 2.69
+  cmd: autoconf --version >= 2.69
 source: wget+http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz
