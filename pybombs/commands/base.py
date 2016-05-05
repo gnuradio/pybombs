@@ -52,7 +52,7 @@ class CommandBase(object):
             self.prefix = self.cfg.get_active_prefix()
         elif require_prefix:
             self.log.error("No prefix specified. Aborting.")
-            exit(1)
+            raise PBException("No prefix specified.")
         if self.prefix is not None:
             self.inventory = self.prefix.inventory
 

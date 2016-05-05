@@ -161,7 +161,7 @@ class PackageManager(object):
             self.log.debug('Package will be built statically.')
             if not self.prefix_available:
                 self.log.error('Static builds require source builds.')
-                exit(1)
+                raise PBException('Static builds require source builds.')
             pkgrs = [self.src,]
         return self._std_package_operation(
             name,

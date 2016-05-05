@@ -24,6 +24,7 @@
 from __future__ import print_function
 from pybombs.commands import CommandBase
 from pybombs import install_manager
+from pybombs.pb_exception import PBException
 
 class Install(CommandBase):
     """ Install or update a package """
@@ -99,7 +100,7 @@ class Install(CommandBase):
                     self.args.no_deps = True
             else:
                 self.log.error("No packages specified.")
-                exit(1)
+                raise PBException("No packages specified.")
         self.update_if_exists = (cmd == 'update' or self.args.update)
         self.fail_if_not_exists = (cmd == 'update')
         if get_all_pkgs:

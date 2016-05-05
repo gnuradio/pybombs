@@ -247,7 +247,7 @@ class PrefixInfo(object):
             script_output = subprocess.check_output(get_env_cmd, shell=True)
         except subprocess.CalledProcessError as e:
             self.log.error("Trouble sourcing file {env_file}".format(env_file=setup_env_file))
-            exit(1)
+            raise PBException("Could not source env file.")
         env_output = script_output.split(separator)[-1]
         # TODO assumption is that env_output now just holds the env output
         env_output = env_output.split('\n')

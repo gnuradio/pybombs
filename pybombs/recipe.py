@@ -365,7 +365,7 @@ def get_recipe(pkgname, target='package', fail_easy=False):
         pb_logging.logger.getChild("get_recipe").error("Recipe for `{pkg}' found, but does not match request target type `{req}' (is `{actual}').".format(
             pkg=pkgname, req=target, actual=r.target
         ))
-        exit(1)
+        raise PBException("Recipe has wrong target type.")
     return r
 
 

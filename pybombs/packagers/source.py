@@ -42,7 +42,7 @@ class Source(PackagerBase):
         PackagerBase.__init__(self)
         if self.cfg.get_active_prefix().prefix_dir is None:
             self.log.error("No prefix specified. Aborting.")
-            exit(1)
+            raise PBException("No prefix specified.")
         self.prefix = self.cfg.get_active_prefix()
         self.inventory = self.prefix.inventory
         self.static = False

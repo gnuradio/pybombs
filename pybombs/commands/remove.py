@@ -25,6 +25,7 @@ import shutil
 from pybombs.commands import CommandBase
 from pybombs import package_manager
 from pybombs import recipe
+from pybombs.pb_exception import PBException
 
 class Remove(CommandBase):
     """ Remove a package from this prefix """
@@ -59,7 +60,7 @@ class Remove(CommandBase):
         self.args.packages = args.packages[0]
         if len(self.args.packages) == 0:
             self.log.error("No packages specified.")
-            exit(1)
+            raise PBException("No packages specified.")
         # Do not allow any non-source packagers for this:
         self.cfg.set('packagers', '')
         self.pm = package_manager.PackageManager()

@@ -22,14 +22,19 @@
 """ PyBOMBS dispatcher. This will figure out which module to call
     and call it. """
 
+from __future__ import print_function
 from pybombs.commands import dispatch
+from pybombs.pb_exception import PBException
 
 def main():
     " Go, go, go! "
     try:
         return dispatch() or 0
+    except PBException as ex:
+        return 1
     except KeyboardInterrupt:
         pass
+    return 0
 
 if __name__ == '__main__':
     exit(main())

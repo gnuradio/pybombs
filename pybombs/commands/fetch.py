@@ -63,7 +63,7 @@ class Fetch(CommandBase):
         self.args.packages = args.packages[0]
         if len(self.args.packages) == 0 and not args.all:
             self.log.error("No packages specified.")
-            exit(1)
+            raise PBException("No packages specified.")
         if self.args.all:
             self.args.deps = False
 
