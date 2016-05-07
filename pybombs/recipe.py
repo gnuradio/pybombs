@@ -25,6 +25,8 @@ Recipe representation class.
 import re
 import os
 import shlex
+from io import StringIO
+from six import iteritems
 
 from pybombs import pb_logging
 from pybombs import recipe_manager
@@ -235,7 +237,7 @@ class Recipe(object):
         if self._data.get('target') == 'package':
             self._data = self.get_local_package_data()
         # Map all recipe info onto self:
-        for k, v in self._data.iteritems():
+        for k, v in iteritems(self._data):
             if not hasattr(self, k):
                 setattr(self, k, v)
         self.log.obnoxious("Loaded recipe - {}".format(self))
@@ -252,7 +254,7 @@ class Recipe(object):
         """
         data = PBConfigFile(filename).get()
         # Make sure dependencies is always a valid list:
-        if data.has_key('depends') and data['depends'] is not None:
+        if 'depends' in data and data['depends'] is not None:
             if not isinstance(data['depends'], list):
                 data['depends'] = [data['depends'], ]
         else:
@@ -263,7 +265,7 @@ class Recipe(object):
         """
         Make sure the package data follows certain rules.
         """
-        if package_data_dict.has_key('source') and not isinstance(package_data_dict['source'], list):
+        if 'source' in package_data_dict and not isinstance(package_data_dict['source'], list):
             package_data_dict['source'] = [package_data_dict['source'],]
         return package_data_dict
 
@@ -364,7 +366,7 @@ def get_recipe(pkgname, target='package', fail_easy=False):
     Return a recipe object by its package name.
     """
     cache_key = pkgname
-    if recipe_cache.has_key(cache_key):
+    if cache_key in recipe_cache:
         pb_logging.logger.getChild("get_recipe").obnoxious("Woohoo, this one's already cached ({})".format(pkgname))
         return recipe_cache[cache_key]
     r = Recipe(recipe_manager.recipe_manager.get_recipe_filename(pkgname))

@@ -49,7 +49,7 @@ class ExternalYumDnf(ExternPackager):
             if len(out) == 0:
                 self.log.debug("Did not expect empty output for `{0} info'...".format(self.command))
                 return False
-            ver = re.search(r'^Version\s+:\s+(?P<ver>.*$)', out, re.MULTILINE).group('ver')
+            ver = re.search(r'^Version\s+:\s+(?P<ver>.*$)', str(out), re.MULTILINE).group('ver')
             self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.command))
             return ver
         except subprocess.CalledProcessError as ex:

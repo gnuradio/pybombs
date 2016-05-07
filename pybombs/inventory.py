@@ -84,7 +84,7 @@ class Inventory(object):
         """
         Returns true if the package pkg is in the inventory.
         """
-        return self._invfile.data.has_key(pkg)
+        return pkg in self._invfile.data
 
     def remove(self, pkg):
         """

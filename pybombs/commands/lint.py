@@ -22,6 +22,7 @@
 
 from __future__ import print_function
 import os
+from six import iteritems
 from pybombs.commands import CommandBase
 from pybombs.config_file import PBConfigFile
 from pybombs import recipe
@@ -56,7 +57,7 @@ class Lint(CommandBase):
                 return self._lint_prefix(self.prefix.prefix_dir)
             self.log.error("No linting target specified.")
             return 1
-        if self.prefix is not None and self.prefix.prefix_aliases.has_key(self.args.target):
+        if self.prefix is not None and self.args.target in self.prefix.prefix_aliases:
             return self._lint_prefix(self.prefix.prefix_aliases[self.args.target])
         elif os.path.isfile(self.args.target):
             return self._lint_recipe(self.args.target)
@@ -117,8 +118,8 @@ class Lint(CommandBase):
             'HMM': ['source', 'depends'],
             'BAD': ['inherit', 'category'],
         }
-        for err_type, key_list in key_check.iteritems():
+        for err_type, key_list in iteritems(key_check):
             for key in key_list:
-                if not recipe_dict.has_key(key):
+                if not key in recipe_dict:
                     print("[{err}] Recipe doesn't have key: {key}".format(err=err_type, key=key))
 

@@ -47,7 +47,7 @@ class ExternalPacman(ExternPackager):
             if len(out) == 0:
                 self.log.debug("Did not expect empty output for `{0} info'...".format(self.command))
                 return False
-            ver = re.search(r'Version[ ]*: (?P<ver>[0-9,.]*)', out, re.MULTILINE).group('ver')
+            ver = re.search(r'Version[ ]*: (?P<ver>[0-9,.]*)', str(out), re.MULTILINE).group('ver')
             self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.command))
             return ver
         except subprocess.CalledProcessError as ex:
@@ -75,7 +75,7 @@ class ExternalPacman(ExternPackager):
             # Output is sth like local/<pkgname> x.x.x.x-x
             ver = re.search(
                 r'Version[ ]*: (?P<ver>[0-9,.]*)',
-                out,
+                str(out),
                 re.MULTILINE
             )
             if ver is None:

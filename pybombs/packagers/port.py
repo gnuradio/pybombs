@@ -43,7 +43,7 @@ class ExternalPort(ExternPackager):
             out = subprocess.check_output(["port", "search", "--name", "--glob", pkgname]).strip()
             if "No match" in out:
                 return False
-            ver = re.search(r'@(?P<ver>[0-9,.]*)', out).group('ver')
+            ver = re.search(r'@(?P<ver>[0-9,.]*)', str(out)).group('ver')
             return ver
         except subprocess.CalledProcessError:
             return False
@@ -59,7 +59,7 @@ class ExternalPort(ExternPackager):
             out = subprocess.check_output(["port", "installed", pkgname]).strip()
             if "None of the specified ports" in out:
                 return False
-            ver = re.search(r'@(?P<ver>[0-9,.]*)', out).group('ver')
+            ver = re.search(r'@(?P<ver>[0-9,.]*)', str(out)).group('ver')
             return ver
         except subprocess.CalledProcessError:
             # This usually means the packet is not installed -- not a problem.

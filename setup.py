@@ -99,6 +99,8 @@ deps = [
     "setuptools",
     "PyYAML",
     "requests",
+    "six",
+    "future",
 ]
 
 setup(

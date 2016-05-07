@@ -23,6 +23,8 @@
 import os
 import os.path as op
 import shutil
+from six import iteritems
+
 from pybombs.commands import CommandBase
 from pybombs.config_file import PBConfigFile
 from pybombs.utils import dict_merge
@@ -100,7 +102,7 @@ class Prefix(CommandBase):
                 help="Prefix Commands:",
                 dest='prefix_command',
         )
-        for cmd_name, cmd_info in Prefix.prefix_cmd_name_list.iteritems():
+        for cmd_name, cmd_info in iteritems(Prefix.prefix_cmd_name_list):
             subparser = subparsers.add_parser(
                     cmd_name,
                     help=cmd_info['help']
@@ -130,7 +132,7 @@ class Prefix(CommandBase):
         pybombs prefix env
         """
         print('Prefix env:')
-        for k, v in self.prefix.env.iteritems():
+        for k, v in iteritems(self.prefix.env):
             print("{}={}".format(k, v))
 
 
@@ -318,7 +320,7 @@ class Prefix(CommandBase):
             old_cfg_data = {}
         # Filter out keys we don't care about:
         sdk_recipe_keys_for_config = ('config', 'packages', 'categories', 'env')
-        sdk_cfg_data = {k: v for k, v in r.get_dict().iteritems() if k in sdk_recipe_keys_for_config}
+        sdk_cfg_data = {k: v for k, v in iteritems(r.get_dict()) if k in sdk_recipe_keys_for_config}
         self.log.obnoxious("New data: {new}".format(new=sdk_cfg_data))
         cfg_data = dict_merge(old_cfg_data, sdk_cfg_data)
         self.log.debug("Writing updated prefix config to `{0}'".format(cfg_file))

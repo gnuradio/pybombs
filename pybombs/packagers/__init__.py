@@ -19,13 +19,13 @@
 # Boston, MA 02110-1301, USA.
 #
 
-from base import PackagerBase, get_by_name
-from cmd import TestCommand
-from pkgconfig import PkgConfig
-from aptget import AptGet
-from yum import YumDnf
-from pip import Pip
-from pacman import Pacman
-from dummy import Dummy
-from source import Source
-from port import Port
+from .base import PackagerBase, get_by_name
+from .cmd import TestCommand
+from .pkgconfig import PkgConfig
+from .aptget import AptGet
+from .yum import YumDnf
+from .pip import Pip
+from .pacman import Pacman
+from .dummy import Dummy
+from .source import Source
+from .port import Port

@@ -25,6 +25,8 @@ Utilities
 
 import sys
 from copy import deepcopy
+from six import iteritems
+from builtins import input
 
 def dict_merge(a, b):
     """
@@ -33,7 +35,7 @@ def dict_merge(a, b):
     if not isinstance(b, dict):
         return b
     result = deepcopy(a)
-    for k, v in b.iteritems():
+    for k, v in iteritems(b):
         if k in result and isinstance(result[k], dict):
             result[k] = dict_merge(result[k], v)
         else:
@@ -62,10 +64,10 @@ def confirm(question, default="N", timeout=0):
     while True:
         inp = None
         if timeout == 0:
-            inp = raw_input(question)
+            inp = input(question)
         else:
             import select
-            print question
+            print(question)
             inp, o, e = select.select([sys.stdin], [], [], 10)
             if inp:
                 inp = sys.stdin.readline()
@@ -82,8 +84,8 @@ def confirm(question, default="N", timeout=0):
             print("`{0}' is not a valid response.".format(inp))
 
 if __name__ == "__main__":
-    print dict_merge(
+    print(dict_merge(
         {'a': 1, 'b': 2},
         {'a': 5},
-    )
+    ))
 

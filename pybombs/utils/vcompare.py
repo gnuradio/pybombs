@@ -37,4 +37,4 @@ def vcompare(cmp_op, version_x, version_y):
         return False
 
 if __name__ == "__main__":
-    print vcompare(">=", "2.3.4", "1.2.3")
+    print(vcompare(">=", "2.3.4", "1.2.3"))

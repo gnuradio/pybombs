@@ -47,7 +47,7 @@ class ExternalAptGet(ExternPackager):
                 # Get the versions
                 ver = re.search(
                     r'Versions: \n(?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n',
-                    out
+                    str(out)
                 )
                 if ver is None:
                     return False
@@ -73,7 +73,7 @@ class ExternalAptGet(ExternPackager):
             #ver = re.search(r'^Version: (?:\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n', out)
             ver = re.search(
                 r'^Version: (?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+)',
-                out,
+                str(out),
                 re.MULTILINE
             )
             if ver is None:

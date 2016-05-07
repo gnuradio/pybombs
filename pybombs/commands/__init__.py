@@ -20,17 +20,17 @@
 #
 
 ### List of commands:
-from base import CommandBase, SubCommandBase, dispatch
-from config import Config
-from deploy import Deploy
-from digraph import Digraph
-from fetch import Fetch
-from install import Install, Doge
-from inv import Inv
-from lint import Lint
-from prefix import Prefix
-from recipes import Recipes
-from rebuild import Rebuild
-from remove import Remove
+from .base import CommandBase, SubCommandBase, dispatch
+from .config import Config
+from .deploy import Deploy
+from .digraph import Digraph
+from .fetch import Fetch
+from .install import Install, Doge
+from .inv import Inv
+from .lint import Lint
+from .prefix import Prefix
+from .recipes import Recipes
+from .rebuild import Rebuild
+from .remove import Remove
 # Leave this at the end
-from help import Help
+from .help import Help

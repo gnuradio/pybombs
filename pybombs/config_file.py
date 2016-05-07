@@ -48,7 +48,7 @@ class PBConfigFile(object):
         if newdata is not None:
             assert isinstance(newdata, dict)
             self.data = newdata
-        open(self._filename, 'wb').write(yaml.dump(self.data, default_flow_style=False))
+        open(self._filename, 'w').write(yaml.dump(self.data, default_flow_style=False))
 
     def update(self, newdata):
         " Overwrite the data with newdata recursively. Updates the file. "
