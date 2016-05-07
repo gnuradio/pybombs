@@ -75,20 +75,18 @@ For the impatient:
         $ pybombs recipes add gr-recipes git+https://github.com/gnuradio/gr-recipes.git  
         $ pybombs recipes add gr-etcetera git+https://github.com/gnuradio/gr-etcetera.git
 
-3. Create a prefix (a place to store your local installation):
+3. Install GNU Radio, gr-osmosdr and some other goodies into the directory `/path/to/prefix`:
 
-        $ pybombs prefix init /path/to/prefix -a myprefix
+        $ pybombs prefix init /path/to/prefix -a myprefix -R gnuradio-default
 
    All commands after this will use `myprefix` as the default prefix. You can change the
    default prefix later by running `pybombs config default_prefix NEWPREFIX`
 
-4. Start installing:
+4. Run GNU Radio Companion from your new prefix:
 
-        $ pybombs [-p myprefix] install gnuradio gr-osmosdr
-
-    This installs GNU Radio and gr-osmosdr and all dependencies.
-    The `-p` switch is not necessary in this case, because it is already the default
-    prefix.
+        $ cd /path/to/prefix
+        $ . ./setup_env.sh
+        $ gnuradio-companion
 
 ## Prefixes
 
