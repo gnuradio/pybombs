@@ -101,19 +101,28 @@ class PackageManager(object):
                 return []
         return self._packagers
 
-    def exists(self, name):
+    def exists(self, name, return_pkgr_name=False):
         """
         Check to see if this package is available on this platform.
         Returns True or a version string if yes, False if not.
         """
+        self.log.debug("Checking if package {} is installable.".format(name))
         if self.check_package_flag(name, 'forceinstalled'):
-            return True
+            self.log.debug("Package {} is forced to state 'installed'.".format(name))
+            return ['force-installed'] if return_pkgr_name else True
         r = recipe.get_recipe(name)
+        pkgrs = []
         for pkgr in self.get_packagers(name):
             pkg_version = pkgr.exists(r)
             if pkg_version is None or not pkg_version:
                 continue
-            return pkg_version
+            else:
+                if return_pkgr_name:
+                    pkgrs.append(pkgr.name)
+                else:
+                    return pkg_version
+        if return_pkgr_name and len(pkgrs):
+            return pkgrs
         return False
 
     def installed(self, name, return_pkgr_name=False):
@@ -139,7 +148,7 @@ class PackageManager(object):
                 if return_pkgr_name:
                     pkgrs.append(pkgr.name)
                 else:
-                    return True
+                    return pkg_version
         if return_pkgr_name and len(pkgrs):
             return pkgrs
         return False
