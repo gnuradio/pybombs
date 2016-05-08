@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 #
 # Copyright 2015-2016 Free Software Foundation, Inc.
 #
-# This file is part of PyBOMBS
+# This file is part of GNU Radio
 #
 # PyBOMBS is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,8 +24,7 @@ Recipe representation class.
 
 import re
 import os
-import StringIO
-from plex import *
+import shlex
 
 from pybombs import pb_logging
 from pybombs import recipe_manager
@@ -82,55 +80,66 @@ class PBPackageRequirementPair(object):
             a = a + " "*lvl + "None"
         return a
 
-class PBPackageRequirementScanner(Scanner):
+class PBPackageRequirementScanner(object):
     """
     Turns a package requirement string (something like
     libfoo >= 2.0 && libbar >= 3.0) into a PBPackageRequirement(Pair).
     """
-    ### Plex: Patterns
-    letter      = Range("AZaz")
-    digit       = Range("09")
-    pkgname     = Rep1(letter | Str("-")) + Rep(letter | digit | Any("-.+_"))
-    space       = Any(" \t\n")
-    rspace      = Rep(space)
-    lpar        = Str("(")
-    rpar        = Str(")")
-    comparators = Str(">=") | Str("<=") | Str("==") | Str("!=")
-    combiner    = Str('&&') | Str('||')
-    version     = Rep(digit) + Rep(Str(".") + Rep(digit))
+    ### Tokens => Functors
+    # Token matching is simple: If the key is a string, it must match. If it's
+    # a tuple, the token must be an element. If it's a regular expression
+    # MatchObject, it has to match().
+    lexicon = {
+        # Package name
+        re.compile(r'[a-zA-Z-][a-zA-Z0-9.+_-]+'): lambda s, tok: s.pl_pkg(tok),
+        # Version
+        re.compile(r'[0-9]+[0-9.]*'): lambda s, tok: s.pl_ver(tok),
+        # Open parens
+        '(': lambda s, tok: s.pl_lpar(tok),
+        # Close parens
+        ')': lambda s, tok: s.pl_rpar(tok),
+        # Comparators
+        ('>=', '<=', '==', '!='): lambda s, tok: s.pl_cmp(tok),
+        # Combiners
+        ('&&', '||'): lambda s, tok: s.pl_cmb(tok),
+    }
 
     def __init__(self, req_string):
         self.log = pb_logging.logger.getChild("ReqScanner")
         self.preq = None
+        self.stack = []
         if not req_string:
             self.log.obnoxious("Empty requirements string.")
             return
-        lexicon = Lexicon([
-            (self.rspace, IGNORE),
-            (self.pkgname, self.pl_pkg),
-            (self.version, self.pl_ver),
-            (self.lpar, self.pl_lpar),
-            (self.rpar, self.pl_rpar),
-            (self.comparators, self.pl_cmp),
-            (self.combiner, self.pl_cmb),
-            (Eol, self.end_distro_pkg_expr),
-        ])
-        fileobj = StringIO.StringIO(req_string)
-        self.stack = []
-        Scanner.__init__(self, lexicon, fileobj, "ReqString")
-        self.log.debug("Parsing '{rs}'".format(rs=req_string))
-        Scanner.read(self)
-        fileobj.close()
-        self.log.obnoxious("Done Parsing.")
+        lexer = shlex.shlex(req_string)
+        lexer.wordchars += '-<>=.&|'
+        while True:
+            token = lexer.get_token()
+            if token == lexer.eof:
+                self.end_distro_pkg_expr()
+                break
+            self.get_token_functor(token)(self, token)
+        self.log.obnoxious("Done parsing requirements string `{0}`".format(req_string))
 
-    def pl_pkg(self, scanner, pkg_name):
+    def get_token_functor(self, token):
+        " Return a functor for a given token or throw "
+        for (match, functor) in self.lexicon.items():
+            if isinstance(match, str) and token == match:
+                return functor
+            if isinstance(match, tuple) and token in match:
+                return functor
+            if hasattr(match, 'match') and match.match(token):
+                return functor
+        raise PBException("Invalid token: {tok}".format(token))
+
+    def pl_pkg(self, pkg_name):
         " Called in a package requirements list, when a package name is found "
         if self.preq is None:
             self.log.obnoxious("Adding package with name {}".format(pkg_name))
             self.preq = PBPackageRequirement(pkg_name)
         elif isinstance(self.preq, PBPackageRequirement):
             if self.preq.compare is None:
-                self.preq.name =  " ".join((self.preq.name, pkg_name))
+                self.preq.name = " ".join((self.preq.name, pkg_name))
                 self.log.obnoxious("Extending package name {}".format(self.preq.name))
             else:
                 raise PBException("Parsing Error. Did not expect package name here.")
@@ -143,24 +152,25 @@ class PBPackageRequirementScanner(Scanner):
                     self.preq.second.name = " ".join((self.preq.second.name, pkg_name))
                     self.log.obnoxious("Extending package name {}".format(self.preq.second.name))
                 else:
-                    print(str(self.preq.second))
-                    raise PBException("Parsing Error. Did not expect package name here.")
+                    raise PBException("Parsing Error. Did not expect package name here ({0}).".format(self.preq.second))
         else:
             raise PBException("Random Foobar Parsing Error.")
 
-    def pl_lpar(self, scanner, par):
+    def pl_lpar(self, par):
         " Called in a package requirements list, when lparens are found "
+        assert par == "("
         self.stack.append(self.preq)
         self.preq = None
 
-    def pl_rpar(self, scanner, par):
+    def pl_rpar(self, par):
         " Called in a package requirements list, when rparens are found "
+        assert par == ")"
         prev = self.stack.pop()
         if prev is not None:
             prev.second = self.preq
             self.preq = prev
 
-    def pl_cmp(self, scanner, cmpr):
+    def pl_cmp(self, cmpr):
         " Called in a package requirements list, when version comparator is found "
         self.log.obnoxious("Adding version comparator {}".format(cmpr))
         if isinstance(self.preq, PBPackageRequirement):
@@ -168,7 +178,7 @@ class PBPackageRequirementScanner(Scanner):
         else:
             self.preq.second.compare = cmpr
 
-    def pl_ver(self, scanner, ver):
+    def pl_ver(self, ver):
         " Called in a package requirements list, when version number is found "
         self.log.obnoxious("Adding version number {}".format(ver))
         if isinstance(self.preq, PBPackageRequirement):
@@ -176,7 +186,7 @@ class PBPackageRequirementScanner(Scanner):
         else:
             self.preq.second.version = ver
 
-    def pl_cmb(self, scanner, cmb):
+    def pl_cmb(self, cmb):
         " Called in a package requirements list, when a logical combiner (||, &&) is found "
         self.log.obnoxious("Found package combiner {}".format(cmb))
         if self.preq is None:
@@ -184,7 +194,7 @@ class PBPackageRequirementScanner(Scanner):
         self.preq = PBPackageRequirementPair(self.preq)
         self.preq.combiner = cmb
 
-    def end_distro_pkg_expr(self, scanner, e):
+    def end_distro_pkg_expr(self):
         " Called when a list of package reqs is finished "
         self.log.obnoxious("End of requirements list")
         self.stack = []

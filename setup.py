@@ -2,7 +2,7 @@
 #
 # Copyright 2015 Free Software Foundation, Inc.
 #
-# This file is part of PyBOMBS
+# This file is part of GNU Radio
 #
 # PyBOMBS is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -86,12 +86,6 @@ packages = [
     "pybombs.fetchers",
     "pybombs.packagers",
     "pybombs.utils",
-    # The problem is plex is currently a pre-release, so if we just make
-    # it a dependency of this package, pip will barf unless you know
-    # the magic pip incantations. Sure, I know them, but it confuses the
-    # hell out of our users so I'll just copy plex into the package until
-    # we sort that out.
-    "pybombs.plex",
 ]
 
 package_data = {
@@ -103,7 +97,6 @@ package_data = {
 
 deps = [
     "setuptools",
-    #"plex", # See above. Yes, it is a requirement.
     "PyYAML",
     "requests",
 ]
