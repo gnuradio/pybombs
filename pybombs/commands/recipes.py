@@ -186,12 +186,13 @@ class Recipes(SubCommandBase):
         if self.args.list is not None:
             all_recipes = [x for x in all_recipes if re.search(self.args.list, x)]
         not_installed_string = '-'
-        format_installed_by = lambda x: [not_installed_string] if not x else x
+        format_pkg_list = lambda x: [not_installed_string] if not x else x
         rows = []
         row_titles = {
             'id': "Package Name",
             'path': "Recipe Filename",
             'installed_by': "Installed By",
+            'available_from': "Available From",
         }
         self.args.format = [x for x in self.args.format.split(",") if len(x)]
         if any(map(lambda x: x not in row_titles, self.args.format)):
@@ -208,7 +209,8 @@ class Recipes(SubCommandBase):
             row = {
                 'id': pkg,
                 'path': recmgr.get_recipe_filename(pkg).replace(home_dir, "~"),
-                'installed_by': format_installed_by(pkgmgr.installed(pkg, return_pkgr_name=True)),
+                'installed_by': format_pkg_list(pkgmgr.installed(pkg, return_pkgr_name=True)),
+                'available_from': ",".join(format_pkg_list(pkgmgr.exists(pkg, return_pkgr_name=True))),
             }
             if self.args.in_prefix and 'source' not in row['installed_by']:
                 continue
