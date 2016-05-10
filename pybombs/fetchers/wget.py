@@ -29,7 +29,7 @@ import requests
 from pybombs import utils
 from pybombs.fetchers.base import FetcherBase
 
-def _download(url):
+def _download(url, progress = True):
     """
     Do a wget: Download the file specified in url to the cwd.
     Return the filename.
@@ -45,6 +45,8 @@ def _download(url):
                 filesize_dl += len(buff)
             # TODO wrap this into an output processor or at least
             # standardize the progress bars we use
+            if not progress:
+                continue
             if filesize:
                 status = r"%05d kB / %05d kB (%03d%%)" % (
                         int(math.ceil(filesize_dl/1000.)),
@@ -79,7 +81,7 @@ class Wget(FetcherBase):
         - dirname: Put the result into a dir with this name, it'll be a subdir of dest
         - args: Additional args to pass to the actual fetcher
         """
-        filename = _download(url)
+        filename = _download(url, self.cfg.get("progress", True))
         if utils.is_archive(filename):
             # Move archive contents to the correct source location:
             utils.extract_to(filename, dirname)
