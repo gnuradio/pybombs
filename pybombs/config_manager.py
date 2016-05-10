@@ -457,6 +457,23 @@ class ConfigManager(object):
             return default
         raise PBException("Invalid configuration key: {}".format(key))
 
+    _truth_dict = { 'False': False,
+                    '0': False,
+                    'OFF': False,
+                    'no': False,
+                    'True': True,
+                    '1': True,
+                    'ON': True,
+                    'yes': True}
+    def get_bool(self, key, default=None):
+        """ Return the value for a given key, converted to boolean """
+        for set_of_vals in reversed(self.cfg_cascade):
+            if key in set_of_vals.keys():
+                return self._truth_dict.get(set_of_vals[key], False)
+        if default is not None:
+            return default
+        raise PBException("Invalid configuration key: {}".format(key))
+
     def keys(self):
         """ Return all currently active config keys """
         all_keys = set()

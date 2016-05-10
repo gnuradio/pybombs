@@ -81,7 +81,7 @@ class Wget(FetcherBase):
         - dirname: Put the result into a dir with this name, it'll be a subdir of dest
         - args: Additional args to pass to the actual fetcher
         """
-        filename = _download(url, self.cfg.get("progress", True))
+        filename = _download(url, self.cfg.get_bool("progress", True))
         if utils.is_archive(filename):
             # Move archive contents to the correct source location:
             utils.extract_to(filename, dirname)
