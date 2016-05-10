@@ -28,7 +28,7 @@ from pybombs import recipe
 from pybombs.utils import subproc
 
 class Digraph(CommandBase, Requirer):
-    """ Rebuild a previously installed source package """
+    """ Generate dependency graph """
     cmds = {
         'digraph': 'Write out package.dot digraph for graphviz',
     }
