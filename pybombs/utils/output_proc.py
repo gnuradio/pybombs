@@ -103,7 +103,7 @@ class OutputProcessorMake(OutputProcessor):
 
     def _check_for_percentage(self, strdata):
         " Check if strdata contains a percentage string. "
-        if self.percent_regex.search(strdata) is not None:
+        if self.percent_regex.search(str(strdata)) is not None:
             self.percent_found = True
 
     def _update_percentage(self, strdata):
@@ -154,6 +154,6 @@ class OutputProcessorMake(OutputProcessor):
                 100,
                 '=' * (progress_bar_len-1),
         )
-        print self.status_line
+        print(self.status_line)
 
 

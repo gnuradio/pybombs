@@ -28,6 +28,7 @@ Used as a central cache for all kinds of settings.
 import os
 import argparse
 import subprocess
+from six import iteritems
 
 from pybombs import pb_logging
 from pybombs.pb_exception import PBException
@@ -110,10 +111,10 @@ class PrefixInfo(object):
             self._set_attrs()
             return
         assert self.prefix_dir is not None
-        if self.alias is not None and self._cfg_info['prefix_config_dir'].has_key(self.alias):
+        if self.alias is not None and self.alias in self._cfg_info['prefix_config_dir']:
             self.prefix_cfg_dir = npath(self._cfg_info['prefix_config_dir'][self.alias])
             self.log.debug("Choosing prefix config dir from alias: {}".format(self.prefix_cfg_dir))
-        elif self._cfg_info['prefix_config_dir'].has_key(self.prefix_dir):
+        elif self.prefix_dir in self._cfg_info['prefix_config_dir']:
             self.prefix_cfg_dir = npath(self._cfg_info['prefix_config_dir'][self.prefix_dir])
             self.log.debug("Choosing prefix config dir from path lookup in prefix_config_dir: {}".format(self.prefix_cfg_dir))
         else:
@@ -149,7 +150,7 @@ class PrefixInfo(object):
             self.recipe_dir = None
         # 7) Load environment
         # If there's a setup_env option in the current config file, we use that
-        if config_section.has_key(self.setup_env_key):
+        if self.setup_env_key in config_section:
             self.log.debug('Loading environment from shell script: {}'.format(config_section[self.setup_env_key]))
             self.env = self._load_environ_from_script(config_section[self.setup_env_key])
         else:
@@ -160,14 +161,14 @@ class PrefixInfo(object):
         # Update os.environ so we can use os.path.expandvars
         os.environ = self.env
         # env: sections are always respected:
-        for k, v in self._cfg_info['env'].iteritems():
+        for k, v in iteritems(self._cfg_info['env']):
             self.env[k.upper()] = os.path.expandvars(v.strip())
         # 8) Keep relevant config sections as attributes
         self._set_attrs()
 
     def _set_attrs(self):
         """ Map the _cfg_info dict onto attributes. """
-        for k, v in self._cfg_info.iteritems():
+        for k, v in iteritems(self._cfg_info):
             if k == 'env' or not k in self.default_config_info.keys():
                 continue
             setattr(self, k, v)
@@ -197,7 +198,7 @@ class PrefixInfo(object):
         If all of these fail, we have no prefix.
         """
         if args.prefix is not None:
-            if self._cfg_info['prefix_aliases'].has_key(args.prefix):
+            if args.prefix in self._cfg_info['prefix_aliases']:
                 self.log.debug("Resolving prefix alias {}.".format(args.prefix))
                 self.alias = args.prefix
                 args.prefix = self._cfg_info['prefix_aliases'][args.prefix]
@@ -207,7 +208,7 @@ class PrefixInfo(object):
             self.prefix_src = 'cli'
             self.log.debug("Choosing prefix dir from command line: {}".format(self.prefix_dir))
             return
-        if os.environ.has_key(self.env_prefix_var) and os.path.isdir(os.environ[self.env_prefix_var]):
+        if self.env_prefix_var in os.environ and os.path.isdir(os.environ[self.env_prefix_var]):
             self.prefix_dir = npath(os.environ[self.env_prefix_var])
             self.prefix_src = 'env'
             self.log.debug('Using environment variable {} as prefix ({})'.format(self.env_prefix_var, self.prefix_dir))
@@ -219,7 +220,7 @@ class PrefixInfo(object):
             return
         if self._cfg_info.get('config', {}).get('default_prefix'):
             self.prefix_dir = npath(self._cfg_info['config']['default_prefix'])
-            if self._cfg_info['prefix_aliases'].has_key(self.prefix_dir):
+            if self.prefix_dir in self._cfg_info['prefix_aliases']:
                 self.log.debug("Resolving prefix alias {}.".format(self.prefix_dir))
                 self.prefix_dir = npath(self._cfg_info['prefix_aliases'][self.prefix_dir])
             self.log.debug('Using default_prefix as prefix ({})'.format(self.prefix_dir))
@@ -264,7 +265,7 @@ class PrefixInfo(object):
         """
         TODO: Make this portable
         """
-        for k, v in self.default_env_unix.iteritems():
+        for k, v in iteritems(self.default_env_unix):
             env[k] = os.path.expandvars(v.strip().format(prefix_dir=self.prefix_dir))
         return env
 
@@ -338,7 +339,7 @@ class ConfigManager(object):
         # self.cfg_cascade is a list of dicts. The higher the index,
         # the more important the dict.
         # Zeroth layer: The default values.
-        self.cfg_cascade = [{k: v[0] for k, v in self.defaults.iteritems()},]
+        self.cfg_cascade = [{k: v[0] for k, v in iteritems(self.defaults)},]
         # Global defaults
         global_cfg = os.path.join(self.global_base_dir, self.cfg_file_name)
         if self._append_cfg_from_file(global_cfg):
@@ -349,7 +350,7 @@ class ConfigManager(object):
             try:
                 self.log.debug("Creating local config dir {0}".format(self.local_cfg_dir))
                 os.mkdir(self.local_cfg_dir)
-            except IOError, OSError:
+            except (IOError, OSError):
                 self.log.debug("Failed.")
         self.local_cfg = os.path.join(self.local_cfg_dir, self.cfg_file_name)
         if self._append_cfg_from_file(self.local_cfg):
@@ -405,7 +406,7 @@ class ConfigManager(object):
         # From config files (from here, recipe locations are named):
         for cfg_file in reversed(cfg_files):
             recipe_locations = extract_cfg_items(cfg_file, "recipes", False)
-            for name, uri in recipe_locations.iteritems():
+            for name, uri in iteritems(recipe_locations):
                 local_recipe_dir = self.resolve_recipe_uri(
                     uri, name, os.path.join(os.path.split(cfg_file)[0], 'recipes')
                 )
@@ -590,7 +591,7 @@ class ConfigManager(object):
         group.add_argument(
             '--prefix-conf',
             help="Specify a prefix configuration file",
-            type=file,
+            type=argparse.FileType('r'),
             default=None
         )
         group.add_argument(
@@ -602,7 +603,7 @@ class ConfigManager(object):
         group.add_argument(
             '--config-file',
             help="Specify a config file via command line",
-            type=file,
+            type=argparse.FileType('r'),
             default=None,
         )
         group.add_argument(
@@ -637,7 +638,7 @@ config_manager = ConfigManager()
 
 # Some test code:
 if __name__ == "__main__":
-    print config_manager.get_help("satisfy_order")
-    print config_manager.get("satisfy_order")
+    print(config_manager.get_help("satisfy_order"))
+    print(config_manager.get("satisfy_order"))
     config_manager.set("satisfy_order", "foo, bar")
-    print config_manager.get("satisfy_order")
+    print(config_manager.get("satisfy_order"))

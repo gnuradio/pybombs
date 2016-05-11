@@ -46,7 +46,7 @@ class ExternalTestCmd(ExternReadOnlyPackager):
             output = subprocess.check_output(command.split(), stderr=subprocess.STDOUT).strip()
             ver = re.search(
                 r'(?P<ver>[0-9]+\.[0-9]+(\.[0-9]+)?)',
-                output,
+                str(output),
                 re.MULTILINE
             )
             if ver is None:

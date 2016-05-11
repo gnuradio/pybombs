@@ -2,6 +2,7 @@
 " A simple tree object "
 
 from __future__ import print_function
+from functools import reduce # FIXME: this is a new dependency?
 
 class TreeNode(object):
     """

@@ -21,6 +21,8 @@
 """ Base class for PyBOMBS commands """
 
 import argparse
+from six import iteritems
+
 from pybombs import pb_logging
 from pybombs.config_manager import config_manager
 from pybombs.pb_exception import PBException
@@ -91,7 +93,7 @@ class SubCommandBase(CommandBase):
                 help=help_title,
                 dest='sub_command',
         )
-        for cmd, cmd_info in subcommands.iteritems():
+        for cmd, cmd_info in iteritems(subcommands):
             subparser = subparsers.add_parser(cmd, help=cmd_info['help'])
             if cmd_info['subparser'] is None:
                 continue
@@ -138,7 +140,7 @@ def init_arg_parser(show_help_for=None, hide_hidden=True):
         parser.error = dummy_error
     # Set up options for each command:
     for cmd in cmd_list:
-        for cmd_name, cmd_help in cmd.cmds.iteritems():
+        for cmd_name, cmd_help in iteritems(cmd.cmds):
             subparser = subparsers.add_parser(cmd_name, help=cmd_help, add_help=True)
             cmd.setup_subparser(subparser, cmd_name)
             if cmd_name == show_help_for:
@@ -169,7 +171,7 @@ def get_cmd_dict(cmd_list):
     """
     cmd_dict = {}
     for cmd in cmd_list:
-        for cmd_name in cmd.cmds.iterkeys():
+        for cmd_name in cmd.cmds:
             cmd_dict[cmd_name] = cmd
     return cmd_dict
 

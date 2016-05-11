@@ -270,7 +270,7 @@ class Recipes(SubCommandBase):
         if re.match(r'[a-z][a-z0-9_]*', alias) is None:
             self.log.error("Invalid recipe alias: {alias}".format(alias=alias))
             return False
-        if self.cfg.get_named_recipe_dirs().has_key(alias):
+        if alias in self.cfg.get_named_recipe_dirs():
             if self.args.force:
                 self.log.info("Overwriting existing recipe alias `{0}'".format(alias))
             elif not confirm("Alias `{0}' already exists, overwrite?".format(alias)):
@@ -312,7 +312,7 @@ class Recipes(SubCommandBase):
         """
         Remove a recipe alias and, if applicable, its cache.
         """
-        if not self.cfg.get_named_recipe_dirs().has_key(alias):
+        if not alias in self.cfg.get_named_recipe_dirs():
             self.log.error("Unknown recipe alias: {alias}".format(alias=alias))
             return False
         # Remove from config file
