@@ -164,9 +164,14 @@ class Prefix(CommandBase):
                     raise PBException("Could not create alias.")
                 self.cfg.update_cfg_file({'prefix_aliases': {self.args.alias: path}})
         # Go, go, go!
-        prefix_recipe = get_prefix_recipe(self.args.recipe)
+        try:
+            prefix_recipe = get_prefix_recipe(self.args.recipe)
+        except PBException as ex:
+            self.log.error(str(ex))
+            return -1
         if prefix_recipe is None:
             self.log.error("Could not find recipe for `{0}'".format(self.args.recipe))
+            return -1
         # Make sure the directory is writable
         path = op.abspath(op.normpath(self.args.path))
         if not sysutils.mkdir_writable(path, self.log):
