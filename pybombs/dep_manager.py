@@ -56,7 +56,6 @@ class DepManager(object):
         for pkg in pkg_set:
             dep_trees[pkg] = self.make_tree_recursive(pkg, filter_callback)
             assert dep_trees[pkg] is not None
-            dep_trees[pkg].pretty_print()
             for other_pkg in new_pkg_set.difference([pkg]):
                 if other_pkg in dep_trees[pkg]:
                     new_pkg_set.remove(other_pkg)
