@@ -344,6 +344,9 @@ class Recipes(SubCommandBase):
         except KeyError:
             self.log.error("Error looking up recipe alias '{alias}'".format(alias=alias))
             return False
+        if os.path.isdir(uri):
+            self.log.debug("`{0}' is a directory, can't run an update operation.".format(uri))
+            return True
         if not os.path.isdir(recipes_dir):
             self.log.error("Recipe location does not exist. Run `recipes add --force' to add recipes.")
             return False
