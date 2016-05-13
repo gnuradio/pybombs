@@ -264,6 +264,7 @@ The config.yml files are in YAML format. A typical file looks like this:
 config:
 	satisfy_order: native,src
 	default_prefix: default
+        progress: True
 	# ... more options
 
 # Prefix aliases:

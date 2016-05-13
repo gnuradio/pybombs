@@ -302,6 +302,7 @@ class ConfigManager(object):
         'cxx': ('', 'C++ Compiler Executable [g++, clang++, icpc, etc]'),
         'makewidth': ('4', 'Concurrent make threads [1,2,4,8...]'),
         'packagers': ('pip,apt-get,yumdnf,port,pacman,pkgconfig,cmd', 'Priority of non-source package managers'),
+        'progress': ('True', 'Show progress when fetching? [True, False]')
     }
     LAYER_DEFAULT = 0
     LAYER_GLOBALS = 1
@@ -453,6 +454,23 @@ class ConfigManager(object):
         for set_of_vals in reversed(self.cfg_cascade):
             if key in set_of_vals.keys():
                 return set_of_vals[key]
+        if default is not None:
+            return default
+        raise PBException("Invalid configuration key: {}".format(key))
+
+    _truth_dict = { 'False': False,
+                    '0': False,
+                    'OFF': False,
+                    'no': False,
+                    'True': True,
+                    '1': True,
+                    'ON': True,
+                    'yes': True}
+    def get_bool(self, key, default=None):
+        """ Return the value for a given key, converted to boolean """
+        for set_of_vals in reversed(self.cfg_cascade):
+            if key in set_of_vals.keys():
+                return self._truth_dict.get(set_of_vals[key], False)
         if default is not None:
             return default
         raise PBException("Invalid configuration key: {}".format(key))
