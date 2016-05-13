@@ -317,7 +317,7 @@ class Recipe(object):
         """
         Replace all the $variables in string 's' with the vars
         from 'recipe'. If keys are not in vars, try config options.
-        If no value is found, leave it as-is.
+        Default to empty strings.
         """
         # PyBOMBS1 supported a conditional replacement mechanism,
         # where variable==FOO?{a}:{b} would return a if variables
@@ -334,7 +334,7 @@ class Recipe(object):
                 return cfg.get_active_prefix().prefix_dir
             if var_name == 'src_dir':
                 return cfg.get_active_prefix().src_dir
-            return vars.get(var_name, str(cfg.get(var_name, var_name_dollar)))
+            return vars.get(var_name, str(cfg.get(var_name, '')))
         ###
         # Starts with a $, unless preceded by \
         var_re = re.compile(r'(?<!\\)\$[a-z][a-z0-9_]*')
