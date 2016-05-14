@@ -33,6 +33,7 @@ from pybombs.package_manager import PackageManager
 from pybombs.recipe_manager import RecipeListManager
 from pybombs import recipe
 from pybombs.utils import tables
+from pybombs.pb_exception import PBException
 
 #############################################################################
 # Subcommand arg parsers
@@ -303,7 +304,11 @@ class Recipes(SubCommandBase):
         if not os.path.isdir(os.path.normpath(os.path.expanduser(uri))):
             # Let the fetcher download the location
             self.log.debug("Fetching into directory: {0}/{1}".format(recipe_cache_top_level, alias))
-            Fetcher().fetch_url(uri, recipe_cache_top_level, alias, {}) # No args
+            try:
+                Fetcher().fetch_url(uri, recipe_cache_top_level, alias, {}) # No args
+            except PBException as ex:
+                self.log.error("Could not fetch recipes: {s}".format(str(ex)))
+                return False
         # Write this to config file
         self.cfg.update_cfg_file({'recipes': {alias: uri}}, cfg_file=cfg_file)
         return True
