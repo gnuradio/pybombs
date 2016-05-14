@@ -172,13 +172,18 @@ class PackageManager(object):
                 self.log.error('Static builds require source builds.')
                 raise PBException('Static builds require source builds.')
             pkgrs = [self.src,]
-        return self._std_package_operation(
+        pkg_optional = self.check_package_flag(name, 'optional')
+        install_result = self._std_package_operation(
             name,
             'install',
             pkgrs,
             verify=verify,
             static=static,
         )
+        if not install_result and pkg_optional:
+            self.log.warn("Optional package {0} failed to install.".format(name))
+            return True
+        return install_result
 
     def update(self, name, verify=False):
         """
