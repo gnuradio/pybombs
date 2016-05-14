@@ -383,6 +383,7 @@ class ConfigManager(object):
         prefix_config = self._prefix_info.cfg_file
         if prefix_config is not None and os.path.exists(prefix_config):
             cfg_files.insert(0, prefix_config)
+            self._append_cfg_from_file(prefix_config, self.LAYER_PREFIX)
         ## Init recipe-lists:
         # Go through cfg files, then env variable, then command line args
         self._recipe_locations = []
@@ -419,7 +420,7 @@ class ConfigManager(object):
         self.log.debug("Full list of recipe locations: {}".format(self._recipe_locations))
         self.log.debug("Named recipe locations: {}".format(self._named_recipe_sources))
 
-    def _append_cfg_from_file(self, cfg_filename):
+    def _append_cfg_from_file(self, cfg_filename, index=None):
         """
         Load file filename, interpret it as a config file
         and append to cfg_cascade
@@ -435,7 +436,10 @@ class ConfigManager(object):
             return False
         config_items = cfg_data.get('config', {})
         self.log.debug('New config items: {items}'.format(items=config_items))
-        self.cfg_cascade.append(config_items)
+        if index is None:
+            self.cfg_cascade.append(config_items)
+        else:
+            self.cfg_cascade[index] = config_items
         return True
 
     def get_pybombs_dir(self, prefix_dir=None):
