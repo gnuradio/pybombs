@@ -322,7 +322,7 @@ class Recipe(object):
         # PyBOMBS1 supported a conditional replacement mechanism,
         # where variable==FOO?{a}:{b} would return a if variables
         # matches FOO, or b otherwise. We'll leave this out for now.
-        def var_replace(mo, vars, cfg):
+        def var_replace(mo, var_dict, cfg):
             """
             Expects arguments to be matchobjects for strings starting with $.
             Returns the variable replacement value.
@@ -334,12 +334,21 @@ class Recipe(object):
                 return cfg.get_active_prefix().prefix_dir
             if var_name == 'src_dir':
                 return cfg.get_active_prefix().src_dir
-            return vars.get(var_name, str(cfg.get(var_name, '')))
+            if var_name in var_dict:
+                return var_dict.get(var_name)
+            try:
+                return str(cfg.get(var_name))
+            except PBException as ex:
+                raise PBException("Could not expand variable {0}.".format(var_name_dollar))
         ###
         # Starts with a $, unless preceded by \
         var_re = re.compile(r'(?<!\\)\$[a-z][a-z0-9_]*')
         var_repl = lambda mo: var_replace(mo, self.vars, config_manager.config_manager)
-        (s, n_subs) = var_re.subn(var_repl, s)
+        try:
+            (s, n_subs) = var_re.subn(var_repl, s)
+        except PBException as ex:
+            self.log.error("Error parsing {s}: {e}".format(s=s, e=str(ex)))
+            raise ex
         if n_subs == 0:
             return s
         return self.var_replace_all(s)
