@@ -42,7 +42,7 @@ class ExternalPip(ExternPackager):
         See if 'pip search' finds our package.
         """
         try:
-            out = subprocess.check_output(["pip", "search", pkgname]).decode()
+            out = subproc.check_output(["pip", "search", pkgname])
             if len(out) == 0:
                 return True
             if re.search(r'^\b{pkg}\b'.format(pkg=pkgname), str(out), re.MULTILINE):
@@ -72,7 +72,7 @@ class ExternalPip(ExternPackager):
         self.log.debug("Loading pip install cache.")
         PIP_INSTALLED_CACHE = {}
         try:
-            installed_packages = str(subprocess.check_output(["pip", "list"])).strip().split("\n")
+            installed_packages = str(subproc.check_output(["pip", "list"])).strip().split("\n")
             for pkg in installed_packages:
                 mobj = re.match(r'(?P<pkg>\S+)\s+\((?P<ver>[^)]+)\)', str(pkg))
                 if mobj is None:

@@ -22,7 +22,6 @@
 Packager: pacman
 """
 
-import re
 import subprocess
 from pybombs.packagers.extern import ExternCmdPackagerBase, ExternPackager
 from pybombs.utils import subproc
@@ -43,12 +42,13 @@ class ExternalPacman(ExternPackager):
         Return a version that we can install through this package manager.
         """
         try:
-            out = subprocess.check_output([self.command, "-Si", pkgname]).strip().decode()
-            if len(out) == 0:
-                self.log.debug("Did not expect empty output for `{0} info'...".format(self.command))
-                return False
-            ver = re.search(r'Version[ ]*: (?P<ver>[0-9,.]*)', str(out), re.MULTILINE).group('ver')
-            self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.command))
+            ver = subproc.match_output(
+                [self.command, "-Si", pkgname],
+                r'Version[ ]*: (?P<ver>[0-9,.]*)',
+                'ver'
+            ) or False
+            if ver:
+                self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.command))
             return ver
         except subprocess.CalledProcessError as ex:
             # This usually means the package was not found, so don't worry
@@ -67,21 +67,15 @@ class ExternalPacman(ExternPackager):
         """
         try:
             # '-Qi' will return non-zero if package does not exist, thus will throw
-            out = subprocess.check_output(
-                    [self.command, "-Qi", pkgname],
-                    stderr=subprocess.STDOUT
-            ).decode()
-            # Get the versions
             # Output is sth like local/<pkgname> x.x.x.x-x
-            ver = re.search(
+            ver = subproc.match_output(
+                [self.command, "-Si", pkgname],
                 r'Version[ ]*: (?P<ver>[0-9,.]*)',
-                str(out),
-                re.MULTILINE
+                'ver'
             )
             if ver is None:
                 self.log.debug("Looks like pacman -Qi can't find package {pkg}".format(pkg=pkgname))
                 return False
-            ver = ver.group('ver')
             self.log.debug("Package {} has version {}".format(pkgname, ver))
             return ver
         except subprocess.CalledProcessError:

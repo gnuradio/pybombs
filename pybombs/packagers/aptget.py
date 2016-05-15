@@ -22,7 +22,6 @@
 Packager: apt-get
 """
 
-import re
 import subprocess
 from pybombs.packagers.extern import ExternCmdPackagerBase, ExternPackager
 from pybombs.utils import subproc
@@ -41,25 +40,18 @@ class ExternalAptGet(ExternPackager):
         """
         try:
             self.log.obnoxious("Checking apt-cache for `{0}'".format(pkgname))
-            out = subprocess.check_output(["apt-cache", "showpkg", pkgname]).decode()
-            # apt-cache returns nothing on stdout if a package is not found
-            if len(out) >= 0:
-                # Get the versions
-                ver = re.search(
-                    r'Versions: \n(?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n',
-                    out,
-                    re.MULTILINE
-                )
-                if ver is None:
-                    return False
-                ver = ver.group('ver')
-                self.log.debug("Package {} has version {} in apt-cache".format(pkgname, ver))
-                return ver
-            else:
+            ver = subproc.match_output(
+                ["apt-cache", "showpkg", pkgname],
+                r'Versions: \n(?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n',
+                'ver'
+            )
+            if ver is None:
                 return False
+            if ver:
+                self.log.debug("Package {} has version {} in apt-cache".format(pkgname, ver))
+            return ver
         except subprocess.CalledProcessError:
-            # Non-zero return. Shouldn't happen, even if package is not found.
-            self.log.error("Error running apt-cache showpkg")
+            self.log.error("Error running apt-cache showpkg. This shouldn't happen. Probably a bug.")
         return False
 
     def get_installed_version(self, pkgname):
@@ -68,18 +60,14 @@ class ExternalAptGet(ExternPackager):
         If pkgname is not installed, return None.
         """
         try:
-            # dpkg -s will return non-zero if package does not exist, thus will throw
-            out = subprocess.check_output(["dpkg", "-s", pkgname], stderr=subprocess.STDOUT).decode()
-            # Get the versions
-            ver = re.search(
+            ver = subproc.match_output(
+                ["dpkg", "-s", pkgname],
                 r'^Version: (?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+)',
-                out,
-                re.MULTILINE
+                'ver'
             )
             if ver is None:
                 self.log.debug("Looks like dpkg -s can't find package {pkg}. This is most likely a bug.".format(pkg=pkgname))
                 return False
-            ver = ver.group('ver')
             self.log.debug("Package {} has version {} in dpkg".format(pkgname, ver))
             return ver
         except subprocess.CalledProcessError:

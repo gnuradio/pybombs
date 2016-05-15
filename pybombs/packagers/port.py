@@ -40,7 +40,7 @@ class ExternalPort(ExternPackager):
         Search for package with 'port search'
         """
         try:
-            out = subprocess.check_output(["port", "search", "--name", "--glob", pkgname]).strip().decode()
+            out = subproc.check_output(["port", "search", "--name", "--glob", pkgname]).strip()
             if "No match" in out:
                 return False
             ver = re.search(r'@(?P<ver>[0-9,.]*)', str(out)).group('ver')
@@ -56,7 +56,7 @@ class ExternalPort(ExternPackager):
         Retrun installed version. Return False if package is not installed
         """
         try:
-            out = subprocess.check_output(["port", "installed", pkgname]).strip().decode()
+            out = subproc.check_output(["port", "installed", pkgname]).strip()
             if "None of the specified ports" in out:
                 return False
             ver = re.search(r'@(?P<ver>[0-9,.]*)', str(out)).group('ver')
