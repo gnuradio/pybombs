@@ -45,11 +45,11 @@ class ExternalYumDnf(ExternPackager):
         Return a version that we can install through this package manager.
         """
         try:
-            out = subprocess.check_output([self.command, "info", pkgname]).strip()
+            out = subprocess.check_output([self.command, "info", pkgname]).strip().decode()
             if len(out) == 0:
                 self.log.debug("Did not expect empty output for `{0} info'...".format(self.command))
                 return False
-            ver = re.search(r'^Version\s+:\s+(?P<ver>.*$)', str(out), re.MULTILINE).group('ver')
+            ver = re.search(r'^Version\s+:\s+(?P<ver>.*$)', out, re.MULTILINE).group('ver')
             self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.command))
             return ver
         except subprocess.CalledProcessError as ex:
@@ -72,7 +72,7 @@ class ExternalYumDnf(ExternPackager):
             out = subprocess.check_output(
                     [self.command, "list", "installed", pkgname],
                     stderr=subprocess.STDOUT
-            ).strip().split("\n")
+            ).decode().strip().split("\n")
             # Output looks like this:
             # <pkgname>.<arch>   <version>   <more info>
             # So, two steps:

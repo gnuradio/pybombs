@@ -40,7 +40,7 @@ class ExternalPkgConfig(ExternReadOnlyPackager):
         """
         try:
             # pkg-config will return non-zero if package does not exist, thus will throw
-            ver = subprocess.check_output(["pkg-config", "--modversion", pkgname], stderr=subprocess.STDOUT).strip()
+            ver = subprocess.check_output(["pkg-config", "--modversion", pkgname], stderr=subprocess.STDOUT).strip().decode()
             self.log.debug("Package {0} has version {1} in pkg-config".format(pkgname, ver))
             return ver
         except subprocess.CalledProcessError:

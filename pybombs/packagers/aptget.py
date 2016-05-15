@@ -41,13 +41,14 @@ class ExternalAptGet(ExternPackager):
         """
         try:
             self.log.obnoxious("Checking apt-cache for `{0}'".format(pkgname))
-            out = subprocess.check_output(["apt-cache", "showpkg", pkgname])
+            out = subprocess.check_output(["apt-cache", "showpkg", pkgname]).decode()
             # apt-cache returns nothing on stdout if a package is not found
             if len(out) >= 0:
                 # Get the versions
                 ver = re.search(
                     r'Versions: \n(?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n',
-                    str(out)
+                    out,
+                    re.MULTILINE
                 )
                 if ver is None:
                     return False
@@ -68,16 +69,15 @@ class ExternalAptGet(ExternPackager):
         """
         try:
             # dpkg -s will return non-zero if package does not exist, thus will throw
-            out = subprocess.check_output(["dpkg", "-s", pkgname], stderr=subprocess.STDOUT)
+            out = subprocess.check_output(["dpkg", "-s", pkgname], stderr=subprocess.STDOUT).decode()
             # Get the versions
-            #ver = re.search(r'^Version: (?:\d+:)?([0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n', out)
             ver = re.search(
                 r'^Version: (?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+)',
-                str(out),
+                out,
                 re.MULTILINE
             )
             if ver is None:
-                self.log.debug("Looks like dpkg -s can't find package {pkg}".format(pkg=pkgname))
+                self.log.debug("Looks like dpkg -s can't find package {pkg}. This is most likely a bug.".format(pkg=pkgname))
                 return False
             ver = ver.group('ver')
             self.log.debug("Package {} has version {} in dpkg".format(pkgname, ver))

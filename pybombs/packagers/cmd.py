@@ -40,13 +40,13 @@ class ExternalTestCmd(ExternReadOnlyPackager):
         try:
             # If this fails, it almost always throws.
             # NOTE: the split is to handle multi-argument commands. There's
-            # cases where this is not intended, e.g. it won't handle argument
+            # cases where this is not intended, e.g. it won't handle arguments
             # with spaces! But currently this is preferable to running the
             # command in a shell.
-            output = subprocess.check_output(command.split(), stderr=subprocess.STDOUT).strip()
+            out = subprocess.check_output(command.split(), stderr=subprocess.STDOUT).strip().decode()
             ver = re.search(
                 r'(?P<ver>[0-9]+\.[0-9]+(\.[0-9]+)?)',
-                str(output),
+                out,
                 re.MULTILINE
             )
             if ver is None:

@@ -42,17 +42,16 @@ class ExternalPip(ExternPackager):
         See if 'pip search' finds our package.
         """
         try:
-            out = str(subprocess.check_output(["pip", "search", pkgname])).strip()
+            out = subprocess.check_output(["pip", "search", pkgname]).decode()
             if len(out) == 0:
                 return True
-            out = out.split("\n")
-            for line in out:
-                if re.match(pkgname, line):
-                    return True
+            if re.search(r'^\b{pkg}\b'.format(pkg=pkgname), str(out), re.MULTILINE):
+                return True
         except subprocess.CalledProcessError:
             return False
-        except Exception as e:
+        except Exception as ex:
             self.log.error("Error running pip search")
+            self.log.debug(ex)
         return False
 
     def get_installed_version(self, pkgname):

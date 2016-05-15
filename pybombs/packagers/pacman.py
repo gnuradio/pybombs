@@ -43,7 +43,7 @@ class ExternalPacman(ExternPackager):
         Return a version that we can install through this package manager.
         """
         try:
-            out = subprocess.check_output([self.command, "-Si", pkgname]).strip()
+            out = subprocess.check_output([self.command, "-Si", pkgname]).strip().decode()
             if len(out) == 0:
                 self.log.debug("Did not expect empty output for `{0} info'...".format(self.command))
                 return False
@@ -70,7 +70,7 @@ class ExternalPacman(ExternPackager):
             out = subprocess.check_output(
                     [self.command, "-Qi", pkgname],
                     stderr=subprocess.STDOUT
-            )
+            ).decode()
             # Get the versions
             # Output is sth like local/<pkgname> x.x.x.x-x
             ver = re.search(

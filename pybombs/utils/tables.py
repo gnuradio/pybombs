@@ -21,6 +21,7 @@
 """ Utilities for printing tables """
 
 from __future__ import print_function
+from functools import reduce
 
 def print_table(headers, data, col_order=None, sort_by=None):
     """
