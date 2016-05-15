@@ -25,6 +25,7 @@ Pseudo-Packager: Test command
 import re
 import subprocess
 from pybombs.packagers.extern import ExternCmdPackagerBase, ExternReadOnlyPackager
+from pybombs.utils import subproc
 
 class ExternalTestCmd(ExternReadOnlyPackager):
     " Wrapper around running a command "
@@ -43,16 +44,14 @@ class ExternalTestCmd(ExternReadOnlyPackager):
             # cases where this is not intended, e.g. it won't handle arguments
             # with spaces! But currently this is preferable to running the
             # command in a shell.
-            out = subprocess.check_output(command.split(), stderr=subprocess.STDOUT).strip().decode()
-            ver = re.search(
+            ver = subproc.match_output(
+                command.split(),
                 r'(?P<ver>[0-9]+\.[0-9]+(\.[0-9]+)?)',
-                out,
-                re.MULTILINE
+                'ver'
             )
             if ver is None:
                 self.log.debug("Could run, but couldn't find a version number.")
                 return True
-            ver = ver.group('ver')
             self.log.debug("Found version number: {0}".format(ver))
             return ver
         except (subprocess.CalledProcessError, OSError):

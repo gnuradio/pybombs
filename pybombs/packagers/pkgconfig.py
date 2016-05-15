@@ -25,6 +25,7 @@ Packager: pkg-config
 import subprocess
 from pybombs.packagers.extern import ExternCmdPackagerBase, ExternReadOnlyPackager
 from pybombs.utils import sysutils
+from pybombs.utils import subproc
 
 class ExternalPkgConfig(ExternReadOnlyPackager):
     """
@@ -40,7 +41,7 @@ class ExternalPkgConfig(ExternReadOnlyPackager):
         """
         try:
             # pkg-config will return non-zero if package does not exist, thus will throw
-            ver = subprocess.check_output(["pkg-config", "--modversion", pkgname], stderr=subprocess.STDOUT).strip().decode()
+            ver = subproc.check_output(["pkg-config", "--modversion", pkgname], stderr=subprocess.STDOUT).strip()
             self.log.debug("Package {0} has version {1} in pkg-config".format(pkgname, ver))
             return ver
         except subprocess.CalledProcessError:
