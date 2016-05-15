@@ -1,6 +1,5 @@
-#!/usr/bin/env python2
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -25,6 +24,7 @@ Subprocess utils
 
 from __future__ import print_function
 import os
+import re
 import signal
 import subprocess
 import threading
@@ -212,4 +212,32 @@ def monitor_process(args, **kwargs):
             raise ex
         else:
             return -1
+
+
+def check_output(*args, **kwargs):
+    """
+    Identical to Python's subprocess.check_output(), with one difference:
+    It will *always* return a string, never a byte string.
+    This makes it work with string-based tools (e.g. regex stuff) across Python
+    versions 2 and 3.
+    """
+    return subprocess.check_output(*args, **kwargs).decode('utf-8')
+
+def match_output(command, pattern, match_key=None):
+    """
+    Runs `command', and matches it against regex `pattern'.
+    If there was a match, returns that, as a string.
+    `match_key` is used to identify the match group key.
+    """
+    if match_key is None:
+        match_key = 0
+    out = check_output(command, stderr=subprocess.STDOUT)
+    if len(out) > 0:
+        # Get the versions
+        ver = re.search(pattern, out, re.MULTILINE)
+        if ver is None:
+            return False
+        ver = ver.group(match_key)
+        return ver
+    return False
 
