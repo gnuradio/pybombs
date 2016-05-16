@@ -103,7 +103,7 @@ class Inventory(object):
         try:
             return self._invfile.data[pkg]["state"]
         except KeyError:
-            return None
+            return self.STATE_NONE
 
     def set_state(self, pkg, state):
         """
