@@ -29,6 +29,14 @@ from pybombs.config_manager import config_manager
 from pybombs import recipe
 from pybombs import packagers
 
+class PackageManagerCache(object):
+    " Remember what's installed and installable "
+    def __init__(self):
+        self.known_installable = set()
+        self.known_installed = set()
+
+package_manager_cache = PackageManagerCache()
+
 class PackageManager(object):
     """
     Meta-package manager. This will determine, according to our system
@@ -41,6 +49,7 @@ class PackageManager(object):
         # Set up logger:
         self.log = pb_logging.logger.getChild("PackageManager")
         self.cfg = config_manager
+        self.pmc = package_manager_cache
         self.prefix_available = self.cfg.get_active_prefix().prefix_dir is not None
         # Create a source package manager
         if self.prefix_available:
@@ -106,6 +115,9 @@ class PackageManager(object):
         Check to see if this package is available on this platform.
         Returns True or a version string if yes, False if not.
         """
+        if not return_pkgr_name and name in self.pmc.known_installable:
+            self.log.obnoxious("{0} is cached and known to be installable.".format(name))
+            return True
         self.log.debug("Checking if package {} is installable.".format(name))
         if self.check_package_flag(name, 'forceinstalled'):
             self.log.debug("Package {} is forced to state 'installed'.".format(name))
@@ -117,6 +129,7 @@ class PackageManager(object):
             if pkg_version is None or not pkg_version:
                 continue
             else:
+                self.pmc.known_installable.add(name)
                 if return_pkgr_name:
                     pkgrs.append(pkgr.name)
                 else:
@@ -133,6 +146,9 @@ class PackageManager(object):
         and is either a list of packager name that installed it, or a version
         string (if the version string can't be determined, returns True instead).
         """
+        if not return_pkgr_name and name in self.pmc.known_installed:
+            self.log.obnoxious("{0} is cached and known to be installed.".format(name))
+            return True
         self.log.debug("Checking if package {} is installed.".format(name))
         if self.check_package_flag(name, 'forceinstalled'):
             self.log.debug("Package {} is forced to state 'installed'.".format(name))
@@ -145,6 +161,7 @@ class PackageManager(object):
             if pkg_version is None or not pkg_version:
                 continue
             else:
+                self.pmc.known_installed.add(name)
                 if return_pkgr_name:
                     pkgrs.append(pkgr.name)
                 else:
