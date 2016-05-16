@@ -93,7 +93,7 @@ def run_with_output_processing(p, o_proc, event, cleanup=None):
         " Safe polling from queue "
         line = ""
         try:
-            line = q.get(timeout=READ_TIMEOUT)
+            line = q.get(timeout=READ_TIMEOUT).decode('utf-8')
         except Empty:
             return ""
         # Got line:
