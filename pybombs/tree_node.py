@@ -2,7 +2,8 @@
 " A simple tree object "
 
 from __future__ import print_function
-from functools import reduce # FIXME: this is a new dependency?
+import copy
+from functools import reduce
 
 class TreeNode(object):
     """
@@ -73,7 +74,7 @@ class TreeNode(object):
         return reduce(lambda a, x: a + x.get_values(), self._children, list_values)
 
     def pretty_print(self, lead=''):
-        " Pretty-prints the tree to the console. "
+        " Pretty-prints the tree to stdout. "
         lead_char = '|'
         for idx, child in enumerate(self._children):
             if idx == len(self._children) - 1:
@@ -82,6 +83,19 @@ class TreeNode(object):
             print("{0}{1}- {2}".format(lead, '\\' if  idx == len(self._children)-1 else '+', str(child.value())))
             child.pretty_print(lead + lead_char + '  ')
 
+    def serialize(self):
+        """
+        Returns the tree in serialized order, starting at the leaf nodes.
+        Duplicates are removed.
+        """
+        serialized_tree = []
+        tree_copy = copy.deepcopy(self)
+        while len(tree_copy):
+            leaf_node = tree_copy.pop_leaf_node()
+            if not leaf_node in serialized_tree:
+                serialized_tree.append(leaf_node)
+        return serialized_tree
+
 
 if __name__ == "__main__":
     tree = TreeNode()
@@ -89,12 +103,14 @@ if __name__ == "__main__":
     print('foo' in tree)
     tree.insert_below('bar', 'foo')
     tree.insert_below('bam', 'bar')
+    tree.insert_below('bam', 'foo')
     tree.insert_below('baz')
     print('baz' in tree)
     print('boom' in tree)
     print(tree.get_values())
     print(len(tree))
+    tree.pretty_print()
+    print(tree.serialize())
     print(tree.pop_leaf_node())
     print(len(tree))
-    tree.pretty_print()
 
