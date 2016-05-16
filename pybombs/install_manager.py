@@ -70,12 +70,7 @@ class InstallManager(object):
             print("Install tree:")
             install_tree.pretty_print()
         ### Recursively install/update, starting at the leaf nodes
-        install_cache = []
-        while len(install_tree):
-            pkg = install_tree.pop_leaf_node()
-            if pkg in install_cache:
-                continue
-            install_cache.append(pkg)
+        for pkg in install_tree.serialize():
             if mode == 'install' and deps_only and pkg in packages:
                 self.log.debug("Skipping `{0}' because only deps are requested.")
                 continue
