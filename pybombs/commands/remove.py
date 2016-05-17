@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of GNU Radio
 #
@@ -18,13 +18,13 @@
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
 #
-""" PyBOMBS command: install """
+""" PyBOMBS command: remove """
 
-import os
-import shutil
+from __future__ import print_function
 from pybombs.commands import CommandBase
 from pybombs import package_manager
 from pybombs import recipe
+from pybombs import dep_manager
 from pybombs.pb_exception import PBException
 
 class Remove(CommandBase):
@@ -66,6 +66,7 @@ class Remove(CommandBase):
         self.pm = package_manager.PackageManager()
         if not self.args.no_deps:
             self.args.packages = self.get_dependees(self.args.packages)
+            print(self.args.packages)
 
     def is_installed(self, pkg):
         """
@@ -87,8 +88,12 @@ class Remove(CommandBase):
             if not self.is_installed(pkg):
                 self.log.error("Package {0} is not installed. Aborting.".format(pkg))
                 return 1
+        dep_tree = dep_manager.DepManager().make_dep_tree(
+            self.args.packages,
+            lambda x: bool(x in self.args.packages),
+        )
         ### Remove packages
-        for pkg in self.args.packages:
+        for pkg in reversed(dep_tree.serialize()):
             self.log.info("Removing package {0}.".format(pkg))
             # Uninstall:
             self.log.debug("Uninstalling.")
