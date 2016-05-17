@@ -31,6 +31,9 @@ def main():
     try:
         return dispatch() or 0
     except PBException as ex:
+        from pybombs import pb_logging
+        if pb_logging.logger.getEffectiveLevel() <= pb_logging.DEBUG:
+            pb_logging.logger.debug(str(ex))
         return 1
     except KeyboardInterrupt:
         pass
