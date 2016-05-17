@@ -240,7 +240,7 @@ class Recipe(object):
         for k, v in iteritems(self._data):
             if not hasattr(self, k):
                 setattr(self, k, v)
-        self.log.obnoxious("Loaded recipe - {}".format(self))
+        self.log.obnoxious("Loaded recipe - {}".format(self.id))
 
     def __str__(self):
         import yaml
