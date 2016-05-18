@@ -19,7 +19,9 @@
 
 inherit: empty
 vars:
-        install_opt: "setuptools.satisfier==deb?{--install-layout=deb}:{}"
+        install_opt: ""
+        #install_opt: "setuptools.satisfier==deb?{--install-layout=deb}:{}"
+        # Maybe some day we'll figure out a good way to do this conditionally.
 depends:
  - python
 make: python setup.py build_ext --library-dirs=$prefix/lib:$prefix/lib64
