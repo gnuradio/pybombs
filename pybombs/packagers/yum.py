@@ -67,8 +67,11 @@ class ExternalYumDnf(ExternPackager):
     def get_installed_version(self, pkgname):
         """
         Return the currently installed version. If pkgname is not installed,
-        return None.
+        return False.
         """
+        pkgarch = None
+        if pkgname.find('.') != -1:
+            pkgname, pkgarch = pkgname.split('.', 1)
         try:
             # 'list installed' will return non-zero if package does not exist, thus will throw
             out = subproc.check_output(
@@ -78,11 +81,13 @@ class ExternalYumDnf(ExternPackager):
             # Output looks like this:
             # <pkgname>.<arch>   <version>   <more info>
             # So, two steps:
-            # 1) Check that pkgname is correct
+            # 1) Check that pkgname is correct (and, if necessary, the package arch)
             # 2) return version
             for line in out:
                 mobj = re.match(r"^(?P<pkg>[^\.]+)\.(?P<arch>\S+)\s+(\d+:)?(?P<ver>[0-9]+(\.[0-9]+){0,2})", line)
                 if mobj and mobj.group('pkg') == pkgname:
+                    if pkgarch is not None and mobj.group('arch') != pkgarch:
+                        continue
                     ver = mobj.group('ver')
                     self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.command))
                     return ver
