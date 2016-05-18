@@ -46,5 +46,7 @@ config:
     packages:
         gnuradio:
             forcebuild: True
+        gqrx:
+            forcebuild: True
 depends: []
 
