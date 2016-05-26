@@ -113,6 +113,7 @@ class Fetcher(object):
             )
         # Do the fetch
         for src in recipe.source:
+            src = recipe.var_replace_all(src)
             self.log.obnoxious("Trying to fetch {0}".format(src))
             try:
                 if self.fetch_url(src, self.src_dir, recipe.id, recipe.get_dict()):
