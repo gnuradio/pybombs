@@ -206,12 +206,14 @@ class Prefix(CommandBase):
             venv_args.append(path)
             subproc.monitor_process(args=venv_args)
         # Install SDK if so desired
-        if self.args.sdkname is not None:
+        sdk = self.args.sdkname or prefix_recipe.sdk
+        if sdk is not None:
+            self.log.info("Installing SDK recipe {0}.".format(sdk))
             self.log.info("Reloading configuration...")
             self.cfg.load(select_prefix=path)
             self.prefix = self.cfg.get_active_prefix()
             self.inventory = self.prefix.inventory
-            self._install_sdk_to_prefix(self.args.sdkname)
+            self._install_sdk_to_prefix(sdk)
         # Update config section
         if len(prefix_recipe.config):
             self.cfg.update_cfg_file(prefix_recipe.config, self.prefix.cfg_file)
