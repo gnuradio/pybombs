@@ -236,6 +236,8 @@ class Recipe(object):
             self._data['inherit'] = parent_data.get('inherit')
         if self._data.get('target') == 'package':
             self._data = self.get_local_package_data()
+        else:
+            self._data = self._normalize_package_data(self._data)
         # Map all recipe info onto self:
         for k, v in iteritems(self._data):
             if not hasattr(self, k):
