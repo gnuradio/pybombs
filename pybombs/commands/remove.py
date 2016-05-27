@@ -114,7 +114,10 @@ class Remove(CommandBase):
         new_pkgs = []
         for other_installed_pkg in other_installed_pkgs:
             self.log.obnoxious("Checking if {0} is a dependee...".format(other_installed_pkg))
-            deps = recipe.get_recipe(other_installed_pkg).depends or []
+            try:
+                deps = recipe.get_recipe(other_installed_pkg).depends or []
+            except PBException:
+                continue
             for pkg in pkgs:
                 if pkg in deps:
                     self.log.obnoxious("Yup, it is.")
