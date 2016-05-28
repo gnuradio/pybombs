@@ -117,7 +117,7 @@ class Rebuild(CommandBase):
             if not self.pm.rebuild(
                 rec,
                 make_clean=self.args.clean,
-                nuke_builddir=not self.args.keep_build
+                nuke_builddir=not (self.args.keep_build or bool(self.cfg.get('keep_builddir', False))
             ):
                 self.log.error("Error rebuilding package {0}. Aborting.".format(pkg))
                 return 1
