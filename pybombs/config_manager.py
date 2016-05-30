@@ -54,7 +54,7 @@ def npath(path):
     """
     Normalize path and expand user.
     """
-    return os.path.expanduser(os.path.normpath(path))
+    return os.path.abspath(os.path.expanduser(os.path.normpath(path)))
 
 class PrefixInfo(object):
     """
