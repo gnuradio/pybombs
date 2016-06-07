@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Copyright 2015 Free Software Foundation, Inc.
 #
@@ -219,10 +218,12 @@ class PrefixInfo(object):
             self.log.debug('Using CWD as prefix ({})'.format(self.prefix_dir))
             return
         if self._cfg_info.get('config', {}).get('default_prefix'):
-            self.prefix_dir = npath(self._cfg_info['config']['default_prefix'])
-            if self.prefix_dir in self._cfg_info['prefix_aliases']:
-                self.log.debug("Resolving prefix alias {}.".format(self.prefix_dir))
-                self.prefix_dir = npath(self._cfg_info['prefix_aliases'][self.prefix_dir])
+            default_prefix = self._cfg_info['config']['default_prefix']
+            if default_prefix in self._cfg_info['prefix_aliases']:
+                self.log.debug("Resolving prefix alias `{}'.".format(default_prefix))
+                self.prefix_dir = npath(self._cfg_info['prefix_aliases'][default_prefix])
+            else:
+                self.prefix_dir = npath(default_prefix)
             self.log.debug('Using default_prefix as prefix ({})'.format(self.prefix_dir))
             self.prefix_src = 'default'
             return
