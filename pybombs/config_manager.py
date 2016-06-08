@@ -26,7 +26,6 @@ Used as a central cache for all kinds of settings.
 
 import os
 import argparse
-import subprocess
 from six import iteritems
 
 from pybombs import pb_logging
@@ -246,8 +245,8 @@ class PrefixInfo(object):
         separator = '<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>'
         get_env_cmd = "source {env_file} && echo '{sep}' && env".format(env_file=setup_env_file, sep=separator)
         try:
-            script_output = subprocess.check_output(get_env_cmd, shell=True)
-        except subprocess.CalledProcessError as e:
+            script_output = subproc.check_output(get_env_cmd, shell=True)
+        except subproc.CalledProcessError as e:
             self.log.error("Trouble sourcing file {env_file}".format(env_file=setup_env_file))
             raise PBException("Could not source env file.")
         env_output = script_output.split(separator)[-1]
