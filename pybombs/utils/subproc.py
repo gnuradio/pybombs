@@ -39,6 +39,8 @@ from pybombs.pb_exception import PBException
 
 READ_TIMEOUT = 0.1 # s
 
+CalledProcessError = subprocess.CalledProcessError
+
 def get_child_pids(pid):
     """
     Returns a list of all child pids associated with this pid.

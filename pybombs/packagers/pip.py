@@ -23,7 +23,6 @@ Packager: pip
 """
 
 import re
-import subprocess
 from pybombs.packagers.extern import ExternCmdPackagerBase, ExternPackager
 from pybombs.utils import sysutils
 from pybombs.utils import subproc
@@ -47,7 +46,7 @@ class ExternalPip(ExternPackager):
                 return True
             if re.search(r'^\b{pkg}\b'.format(pkg=pkgname), str(out), re.MULTILINE):
                 return True
-        except subprocess.CalledProcessError:
+        except subproc.CalledProcessError:
             return False
         except Exception as ex:
             self.log.error("Error running pip search")
@@ -79,7 +78,7 @@ class ExternalPip(ExternPackager):
                     continue
                 PIP_INSTALLED_CACHE[mobj.group('pkg')] = mobj.group('ver')
             return
-        except subprocess.CalledProcessError as e:
+        except subproc.CalledProcessError as e:
             self.log.error("Could not run pip list. Hm.")
             self.log.error(str(e))
         except Exception as e:
