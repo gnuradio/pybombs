@@ -23,10 +23,11 @@
 Output Processors
 """
 
+from __future__ import print_function
 import os
 import re
 import sys
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import PIPE, STDOUT
 
 ROTATION_ANIM = ('-', '\\', '|', '/',)
 DEFAULT_CONSOLE_WIDTH = 80
