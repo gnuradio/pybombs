@@ -407,7 +407,7 @@ class ConfigManager(object):
         if self._prefix_info.recipe_dir is not None:
             self._recipe_locations.append(self._prefix_info.recipe_dir)
         # From config files (from here, recipe locations are named):
-        for cfg_file in reversed(cfg_files):
+        for cfg_file in cfg_files:
             recipe_locations = extract_cfg_items(cfg_file, "recipes", False)
             for name, uri in iteritems(recipe_locations):
                 local_recipe_dir = self.resolve_recipe_uri(
