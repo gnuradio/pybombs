@@ -237,21 +237,33 @@ class Recipes(SubCommandBase):
         unnamed_locations = [x for x in all_locations if not x in named_locations.values()]
         table = []
         for name in named_locations.keys():
+            try:
+                pref_index = all_locations.index(named_locations.get(name, "FOO"))
+            except ValueError:
+                pref_index = -1
             table.append({
                 'name': name,
                 'dir': named_locations.get(name, "FOO"),
                 'source': named_sources.get(name, '-'),
+                'pref': pref_index,
+
             })
         for loc in unnamed_locations:
+            try:
+                pref_index = all_locations.index(loc)
+            except ValueError:
+                pref_index = -1
             table.append({
                 'name': '-',
                 'dir': loc,
                 'source': '-',
+                'pref': pref_index,
             })
         tables.print_table(
-            {'name': "Name", 'dir': "Directory", 'source': "Source"},
+            {'pref': "Index", 'name': "Name", 'dir': "Directory", 'source': "Source"},
             table,
-            col_order=('dir', 'name', 'source'),
+            col_order=('dir', 'name', 'source'), # Add 'pref' here to print the index
+            sort_by='pref',
         )
 
     #########################################################################
