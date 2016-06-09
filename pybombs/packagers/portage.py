@@ -58,7 +58,6 @@ class ExternalPortage(ExternPackager):
             ver = None
             pkg = []
             self.search.searchre = self.re.compile(pkgname, self.re.I)
-            print('searching for {} in portage'.format(pkgname))
             for package in self.search._cp_all():
                 match_string = package[:]
                 if self.search.searchre.search(match_string):
@@ -67,8 +66,6 @@ class ExternalPortage(ExternPackager):
             for p in pkg:
                 full_package += [self.search._xmatch('bestmatch-visible',p)]
             versions = []
-            print('search completed')
-            print(full_package)
             for p in full_package:
                 versions += [self.portage.catpkgsplit(p, True)[2]]
             if len(versions) > 1:
@@ -106,7 +103,6 @@ class ExternalPortage(ExternPackager):
                 self.log.debug("Package {} has version {}".format(pkgname, ver))
             else:
                 ver = None
-            #print('Portage ver: {}'.format(ver))
             return ver
         except Exception as ex:
             self.log.error("Error: `{} ".format(ex))
@@ -115,15 +111,25 @@ class ExternalPortage(ExternPackager):
 
     def install(self, pkgname):
         """
-        pacman install pkgname
+        emerge =pkgname-ver
         """
-        return NotImplementedError
-
+        ver = self.get_available_version(pkgname)
+        return self._run_cmd('='+pkgname+'-'+ver, '')
     def update(self, pkgname):
         """
-        pacman update pkgname
+        emerge --update =pkgname-ver
         """
-        return NotImplementedError
+        ver = self.get_available_version(pkgname)
+        return self._run_cmd('='+pkgname+'-'+ver,'--update')
+
+    def _run_cmd(self, pkgname, cmd):
+        try:
+            subproc.monitor_process(['emerge',"--quiet-build y","--ask n", cmd, '"'+pkgname+'"'], elevate=True, shell=True )
+            return True
+        except Exception as e:
+            self.log.error("Running `emerge {}` failed.".format(cmd))
+            self.log.obnoxious(str(e))
+            return False
 
 class Portage(ExternCmdPackagerBase):
     """
