@@ -39,6 +39,7 @@ class ExternalPortage(ExternPackager):
             from _emerge import actions
             from _emerge.actions import load_emerge_config
             self.portage = __import__('portage')
+            self.re = __import__('re')
             emerge_config = load_emerge_config()
             self.root_config = emerge_config.running_config
             # search init args:
@@ -46,7 +47,7 @@ class ExternalPortage(ExternPackager):
             self.search = search.search(self.root_config,False,False,False,True,False)
             self.search._vardb.cp_all()
             self.available = True
-        except ImportError as e:
+        except ImportError :
             self.available = False
 
     def get_available_version(self, pkgname):
@@ -55,10 +56,30 @@ class ExternalPortage(ExternPackager):
         """
         try:
             ver = None
-            pkg = self.search._xmatch('bestmatch-visible',pkgname)
-            ver = self.portage.catpkgsplit(pkg, True)[2]
-            if ver:
+            pkg = []
+            self.search.searchre = self.re.compile(pkgname, self.re.I)
+            print('searching for {} in portage'.format(pkgname))
+            for package in self.search._cp_all():
+                match_string = package[:]
+                if self.search.searchre.search(match_string):
+                    pkg += [package]
+            full_package = []
+            for p in pkg:
+                full_package += [self.search._xmatch('bestmatch-visible',p)]
+            versions = []
+            print('search completed')
+            print(full_package)
+            for p in full_package:
+                versions += [self.portage.catpkgsplit(p, True)[2]]
+            if len(versions) > 1:
+                ver_string = ", ".join(versions)
+                self.log.debug("Package {} has ".format(pkgname)+"versions "+ver_string.format(*versions)+" in portage")
+                ver = versions[-1]
+            elif len(versions) == 1:
                 self.log.debug("Package {} has version {} in portage".format(pkgname, ver))
+                ver = versions[0]
+            else:
+                self.log.debug("Package {} is not available in portage".format(pkgname))
             return ver
         except Exception as ex:
             self.log.error("Error: {}".format(ex))
