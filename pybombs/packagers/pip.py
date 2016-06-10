@@ -41,15 +41,15 @@ class ExternalPip(ExternPackager):
         See if 'pip search' finds our package.
         """
         try:
-            out = subproc.check_output(["pip", "search", pkgname])
-            if len(out) == 0:
-                return True
-            if re.search(r'^\b{pkg}\b'.format(pkg=pkgname), str(out), re.MULTILINE):
-                return True
+            output_match = subproc.match_output(
+                ["pip", "search", pkgname],
+                r'^\b{pkg}\b'.format(pkg=pkgname),
+            )
+            return bool(output_match)
         except subproc.CalledProcessError:
             return False
         except Exception as ex:
-            self.log.error("Error running pip search")
+            self.log.error("Error running `pip search {0}`".format(pkgname))
             self.log.debug(ex)
         return False
 

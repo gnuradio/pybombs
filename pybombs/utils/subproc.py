@@ -230,6 +230,8 @@ def match_output(command, pattern, match_key=None):
     Runs `command', and matches it against regex `pattern'.
     If there was a match, returns that, as a string.
     `match_key` is used to identify the match group key.
+
+    Note: This uses re.search(), not re.match()!
     """
     if match_key is None:
         match_key = 0
