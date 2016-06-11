@@ -93,7 +93,7 @@ class PBPackageRequirementScanner(object):
     # MatchObject, it has to match().
     lexicon = {
         # Package name
-        re.compile(r'[a-zA-Z-][a-zA-Z0-9.+_-]+'): lambda s, tok: s.pl_pkg(tok),
+        re.compile(r'[a-zA-Z-][a-zA-Z0-9./+_-]+'): lambda s, tok: s.pl_pkg(tok),
         # Version
         re.compile(r'[0-9]+[0-9.]*'): lambda s, tok: s.pl_ver(tok),
         # Open parens
@@ -114,7 +114,7 @@ class PBPackageRequirementScanner(object):
             self.log.obnoxious("Empty requirements string.")
             return
         lexer = shlex.shlex(req_string)
-        lexer.wordchars += '-<>=.&|'
+        lexer.wordchars += '-<>=.&|/'
         while True:
             token = lexer.get_token()
             if token == lexer.eof:
