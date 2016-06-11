@@ -203,7 +203,12 @@ class Recipes(SubCommandBase):
         sys.stdout.flush()
         home_dir = os.path.expanduser("~")
         for pkg in all_recipes:
-            if recipe.get_recipe(pkg, target=None).target != 'package':
+            rec = recipe.get_recipe(pkg, target=None, fail_easy=True)
+            if rec is None:
+                print()
+                self.log.warn("Recipe for `{0}' is invalid.".format(pkg))
+                continue
+            if rec.target != 'package':
                 continue
             print(".", end="")
             sys.stdout.flush()

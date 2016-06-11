@@ -383,12 +383,12 @@ def get_recipe(pkgname, target='package', fail_easy=False):
     try:
         r = Recipe(recipe_manager.recipe_manager.get_recipe_filename(pkgname))
     except PBException as ex:
-        pb_logging.logger.getChild("get_recipe").error("Error fetching recipe `{0}':\n{1}".format(
-            pkgname, str(ex)
-        ))
         if fail_easy:
             return None
         else:
+            pb_logging.logger.getChild("get_recipe").error("Error fetching recipe `{0}':\n{1}".format(
+                pkgname, str(ex)
+            ))
             raise ex
     recipe_cache[cache_key] = r
     if target is not None and r.target != target:
