@@ -126,11 +126,10 @@ class Prefix(CommandBase):
         pybombs prefix info
         """
         #self.log.info('Prefix dir: {}'.format(self.prefix.prefix_dir))
-        cfg_file = PBConfigFile(self.cfg.local_cfg) 
-        self.log.info("Default Prefix: {}".format(cfg_file.get()['config']['default_prefix']))
-        prefixes = cfg_file.get()['prefix_aliases']
+        print("\x1b[32m[Default Prefix]: {} \033[0m".format(self.cfg.get('default_prefix')))
+        self.active_prefix = self.cfg.get_active_prefix()
         print("Available Prefixes :")
-        for key,value in iteritems(prefixes):
+        for key,value in iteritems(self.active_prefix.prefix_aliases):
             print("{} - {}".format(key, value))
 
 
