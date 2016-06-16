@@ -93,7 +93,7 @@ class PBPackageRequirementScanner(object):
     # MatchObject, it has to match().
     lexicon = {
         # Package name
-        re.compile(r'[a-zA-Z-][a-zA-Z0-9.+_-]+'): lambda s, tok: s.pl_pkg(tok),
+        re.compile(r'[a-zA-Z-][a-zA-Z0-9./+_-]+'): lambda s, tok: s.pl_pkg(tok),
         # Version
         re.compile(r'[0-9]+[0-9.]*'): lambda s, tok: s.pl_ver(tok),
         # Open parens
@@ -114,7 +114,7 @@ class PBPackageRequirementScanner(object):
             self.log.obnoxious("Empty requirements string.")
             return
         lexer = shlex.shlex(req_string)
-        lexer.wordchars += '-<>=.&|'
+        lexer.wordchars += '-<>=.&|/'
         while True:
             token = lexer.get_token()
             if token == lexer.eof:
@@ -236,6 +236,8 @@ class Recipe(object):
             self._data['inherit'] = parent_data.get('inherit')
         if self._data.get('target') == 'package':
             self._data = self.get_local_package_data()
+        else:
+            self._data = self._normalize_package_data(self._data)
         # Map all recipe info onto self:
         for k, v in iteritems(self._data):
             if not hasattr(self, k):
@@ -381,12 +383,12 @@ def get_recipe(pkgname, target='package', fail_easy=False):
     try:
         r = Recipe(recipe_manager.recipe_manager.get_recipe_filename(pkgname))
     except PBException as ex:
-        pb_logging.logger.getChild("get_recipe").error("Error fetching recipe `{0}':\n{1}".format(
-            pkgname, str(ex)
-        ))
         if fail_easy:
             return None
         else:
+            pb_logging.logger.getChild("get_recipe").error("Error fetching recipe `{0}':\n{1}".format(
+                pkgname, str(ex)
+            ))
             raise ex
     recipe_cache[cache_key] = r
     if target is not None and r.target != target:

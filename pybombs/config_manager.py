@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Copyright 2015 Free Software Foundation, Inc.
 #
@@ -27,7 +26,6 @@ Used as a central cache for all kinds of settings.
 
 import os
 import argparse
-import subprocess
 from six import iteritems
 
 from pybombs import pb_logging
@@ -54,7 +52,7 @@ def npath(path):
     """
     Normalize path and expand user.
     """
-    return os.path.expanduser(os.path.normpath(path))
+    return os.path.abspath(os.path.expanduser(os.path.normpath(path)))
 
 class PrefixInfo(object):
     """
@@ -219,10 +217,12 @@ class PrefixInfo(object):
             self.log.debug('Using CWD as prefix ({})'.format(self.prefix_dir))
             return
         if self._cfg_info.get('config', {}).get('default_prefix'):
-            self.prefix_dir = npath(self._cfg_info['config']['default_prefix'])
-            if self.prefix_dir in self._cfg_info['prefix_aliases']:
-                self.log.debug("Resolving prefix alias {}.".format(self.prefix_dir))
-                self.prefix_dir = npath(self._cfg_info['prefix_aliases'][self.prefix_dir])
+            default_prefix = self._cfg_info['config']['default_prefix']
+            if default_prefix in self._cfg_info['prefix_aliases']:
+                self.log.debug("Resolving prefix alias `{}'.".format(default_prefix))
+                self.prefix_dir = npath(self._cfg_info['prefix_aliases'][default_prefix])
+            else:
+                self.prefix_dir = npath(default_prefix)
             self.log.debug('Using default_prefix as prefix ({})'.format(self.prefix_dir))
             self.prefix_src = 'default'
             return
@@ -245,8 +245,8 @@ class PrefixInfo(object):
         separator = '<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>'
         get_env_cmd = "source {env_file} && echo '{sep}' && env".format(env_file=setup_env_file, sep=separator)
         try:
-            script_output = subprocess.check_output(get_env_cmd, shell=True)
-        except subprocess.CalledProcessError as e:
+            script_output = subproc.check_output(get_env_cmd, shell=True)
+        except subproc.CalledProcessError as e:
             self.log.error("Trouble sourcing file {env_file}".format(env_file=setup_env_file))
             raise PBException("Could not source env file.")
         env_output = script_output.split(separator)[-1]
@@ -301,7 +301,8 @@ class ConfigManager(object):
         'cc': ('', 'C Compiler Executable [gcc, clang, icc, etc]'),
         'cxx': ('', 'C++ Compiler Executable [g++, clang++, icpc, etc]'),
         'makewidth': ('4', 'Concurrent make threads [1,2,4,8...]'),
-        'packagers': ('pip,apt-get,yumdnf,port,pacman,pkgconfig,cmd', 'Priority of non-source package managers'),
+        'packagers': ('pip,apt-get,yumdnf,port,pacman,portage,pkgconfig,cmd', 'Priority of non-source package managers'),
+        'keep_builddir': ('', 'When rebuilding, default to keeping the build directory'),
     }
     LAYER_DEFAULT = 0
     LAYER_GLOBALS = 1
@@ -405,7 +406,7 @@ class ConfigManager(object):
         if self._prefix_info.recipe_dir is not None:
             self._recipe_locations.append(self._prefix_info.recipe_dir)
         # From config files (from here, recipe locations are named):
-        for cfg_file in reversed(cfg_files):
+        for cfg_file in cfg_files:
             recipe_locations = extract_cfg_items(cfg_file, "recipes", False)
             for name, uri in iteritems(recipe_locations):
                 local_recipe_dir = self.resolve_recipe_uri(

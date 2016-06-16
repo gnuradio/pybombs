@@ -28,14 +28,14 @@ def print_table(headers, data, col_order=None, sort_by=None):
     Print a table.
     """
     def get_max_column_widths(cols, headers, data):
-        return {col_id: reduce(lambda a, x: max(a, len(x[col_id])), data, len(headers[col_id])) for col_id in cols}
+        return {col_id: reduce(lambda a, x: max(a, len(str(x[col_id]))), data, len(str(headers[col_id]))) for col_id in cols}
     def print_header(cols, headers, max_widths):
         hdr_len = 0
         for col_id in col_order:
             format_string = "{0:" + str(max_widths[col_id]) + "}  "
             hdr_title = format_string.format(headers[col_id])
             print(hdr_title, end="")
-            hdr_len += len(hdr_title)
+            hdr_len += len(str(hdr_title))
         print("")
         print("-" * hdr_len)
     def sort_data(data, cols, sort_by):

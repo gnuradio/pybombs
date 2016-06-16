@@ -22,6 +22,7 @@
 
 import yaml
 from pybombs.utils import dict_merge
+from pybombs.pb_exception import PBException
 
 class PBConfigFile(object):
     """
@@ -36,7 +37,7 @@ class PBConfigFile(object):
             self.data = {}
             pass
         except Exception as e:
-            print("Error loading {0}: {1}".format(filename, str(e)))
+            raise PBException("Error loading {0}: {1}".format(filename, str(e)))
         assert isinstance(self.data, dict)
 
     def get(self):
