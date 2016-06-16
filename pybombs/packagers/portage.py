@@ -22,7 +22,6 @@
 Packager: portage
 """
 
-import subprocess
 from pybombs.packagers.extern import ExternCmdPackagerBase, ExternPackager
 from pybombs.utils import subproc
 from pybombs.utils import sysutils
@@ -115,6 +114,7 @@ class ExternalPortage(ExternPackager):
         """
         ver = self.get_available_version(pkgname)
         return self._run_cmd('='+pkgname+'-'+ver, '')
+
     def update(self, pkgname):
         """
         emerge --update =pkgname-ver
