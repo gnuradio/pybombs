@@ -116,10 +116,10 @@ class Install(CommandBase):
                 update_if_exists=self.update_if_exists,
                 quiet=False,
                 print_tree=self.args.print_tree,
-                deps_only=self.args.deps_only,
+                deps_only=getattr(self.args, 'deps_only', False),
                 no_deps=self.args.no_deps,
                 verify=self.args.verify,
-                static=self.args.static,
+                static=getattr(self.args, 'static', False),
         )
 
 ### Damn, you found it :)
