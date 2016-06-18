@@ -316,6 +316,7 @@ class ConfigManager(object):
         ## Get location of module
         self.module_dir = os.path.dirname(pb_logging.__file__)
         self.load(select_prefix)
+        pb_logging.logger.info("PyBOMBS Version " + str(__version__))
 
     def load(self, select_prefix=None):
         """

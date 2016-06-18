@@ -64,7 +64,7 @@ class PBLogger(logging.getLoggerClass()):
 
 logging.addLevelName(OBNOXIOUS, 'OBNOXIOUS')
 logging.setLoggerClass(PBLogger)
-logger = logging.getLogger('PyBombs')
+logger = logging.getLogger('PyBOMBS')
 ch = ColoredConsoleHandler()
 formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
