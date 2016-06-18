@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -23,11 +23,21 @@ git fetcher functions
 """
 
 import os
+import re
 from pybombs.fetchers.base import FetcherBase
 from pybombs.utils import output_proc
 from pybombs.utils import subproc
 from pybombs import pb_logging
 from pybombs.pb_exception import PBException
+
+def parse_git_url(url, args):
+    """
+    - If a git rev is given in the URL, split that out and put it into the args
+    """
+    split_url_and_rev = re.split(r'@(?=[^:]+$)', url)
+    if len(split_url_and_rev) == 2:
+        url, args['gitrev'] = split_url_and_rev
+    return url, args
 
 class Git(FetcherBase):
     """
@@ -44,7 +54,7 @@ class Git(FetcherBase):
         """
         git clone
         """
-        args = args or {}
+        url, args = parse_git_url(url, args or {})
         self.log.debug("Using url - {}".format(url))
         git_cmd = ['git', 'clone', url, dirname]
         if args.get('gitargs'):
@@ -118,7 +128,7 @@ class Git(FetcherBase):
                 if subproc.monitor_process(args=cmd, o_proc=o_proc, throw_ex=True) != 0:
                     self.log.error("Could not run command `{0}`".format(" ".join(cmd)))
                     return False
-            except Exception as ex:
+            except Exception:
                 self.log.error("Could not run command `{0}`".format(" ".join(cmd)))
                 raise PBException("git commands failed.")
         self.log.obnoxious("Switching cwd back to: {0}".format(cwd))
@@ -132,7 +142,6 @@ class Git(FetcherBase):
         #cwd = os.getcwd()
         #self.log.obnoxious("Switching cwd to: {}".format(os.path.join(self.src_dir, recipe.id)))
         #os.chdir(os.path.join(self.src_dir, recipe.id))
-        ## TODO run this process properly
         #out1 = subprocess.check_output("git rev-parse HEAD", shell=True)
         #rm = re.search("([0-9a-f]+).*", out1)
         #self.version = rm.group(1)
