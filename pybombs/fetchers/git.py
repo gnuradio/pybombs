@@ -34,20 +34,14 @@ def parse_git_url(url, args):
     """
     - If a git rev is given in the URL, split that out and put it into the args
 
-    First handle a url of the form:
-        <username>@<IP|HOSTNAME>:</path/to/repo.git>@<commit|rev|tag>
+    Look for format:
+        <URL>@<commit|rev|tag>
 
-    If a URL of the above form isn't found, then proceed with extracting the
-    hash from the end of the URL when it is in a form similar to:
-        http://<IP|HOSTNAME>/<repo.git>@<commit|rev|tag>
+    <commit|rev|tag> cannot contain a ':' or whitespace.
     """
-    m = re.search(r'(\S*@\S*)@(\S*)', url)
+    m = re.search(r'(\S*)@((?!\S*[:*])\S*$)', url)
     if m:
         url, args['gitrev']  = (m.group(1), m.group(2))
-    else:
-        split_url_and_rev = re.split(r'@(?=[^:]+$)', url)
-        if len(split_url_and_rev) == 2:
-            url, args['gitrev'] = split_url_and_rev
     return url, args
 
 class Git(FetcherBase):
