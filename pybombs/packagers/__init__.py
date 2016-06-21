@@ -30,3 +30,4 @@ from .dummy import Dummy
 from .source import Source
 from .port import Port
 from .portage import Portage
+from .brew import Homebrew
