@@ -124,7 +124,10 @@ class ExternalPortage(ExternPackager):
 
     def _run_cmd(self, pkgname, cmd):
         try:
-            subproc.monitor_process(['emerge',"--quiet-build y","--ask n", cmd, '"'+pkgname+'"'], elevate=True, shell=True )
+            if cmd:
+                subproc.monitor_process(["emerge","--quiet-build","y","--ask","n",cmd,pkgname], elevate=True )
+            else:
+                subproc.monitor_process(["emerge","--quiet-build","y","--ask","n",pkgname], elevate=True )
             return True
         except Exception as e:
             self.log.error("Running `emerge {}` failed.".format(cmd))
