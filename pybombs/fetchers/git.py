@@ -127,6 +127,7 @@ class Git(FetcherBase):
             git_cmds = [
                 ['git', 'pull', '--rebase'],
             ]
+        git_cmds.append(['git', 'submodule', 'update', '--recursive'])
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG:
             o_proc = output_proc.OutputProcessorMake(preamble="Updating: ")
