@@ -41,7 +41,6 @@ class ExternalHomebrew(ExternPackager):
         try:
             self.log.obnoxious("Checking homebrew for `{0}'".format(pkgname))
             out = subprocess.check_output(["brew", "info", "--json=v1", pkgname])
-
             # Returns non-zero exit status if package does not exist in brew taps
             if len(out) >= 0:
                 # Get the version.
@@ -95,15 +94,13 @@ class ExternalHomebrew(ExternPackager):
         """
         Call 'brew install pkgname' if we can satisfy the version requirements.
         """
-        available_version = self.get_version_from_apt_cache(pkg_name)
-        if required_version is not None and not vcompare(comparator, available_version, required_version):
-            return False
         try:
             # Need to do some better checking here. Brew does not necessarily need sudo
             #sysutils.monitor_process(["sudo", "brew", "", "install", pkg_name])
-            sysutils.monitor_process(["brew", "install", pkg_name])
+            subproc.monitor_process(["brew", "install", pkgname])
             return True
-        except:
+        except Exception as e:
+            #self.log.obnoxious(e)
             self.log.error("Running brew install failed.")
         return False
 
