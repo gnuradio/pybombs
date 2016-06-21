@@ -39,9 +39,11 @@ def parse_git_url(url, args):
 
     <commit|rev|tag> cannot contain a ':' or whitespace.
     """
-    m = re.search(r'(\S*)@((?!\S*[:*])\S*$)', url)
+    if re.match(r'[a-z]+://[a-z]+@([^@:]+)$', url):
+        return url, args
+    m = re.search(r'(.*)@([^:@]+)$', url)
     if m:
-        url, args['gitrev']  = (m.group(1), m.group(2))
+        url, args['gitrev'] = m.groups()
     return url, args
 
 class Git(FetcherBase):
