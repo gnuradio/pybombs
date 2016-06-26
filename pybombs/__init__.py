@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -22,4 +22,4 @@
 This is PyBOMBS -- gnuradio.org/pybombs
 """
 
-__version__ = "2.1.0rc1"
+__version__ = "2.1.0"
