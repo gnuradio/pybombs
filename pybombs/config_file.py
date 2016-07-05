@@ -20,22 +20,24 @@
 #
 """ Abstraction for config files """
 
+import os
 import yaml
 from pybombs.utils import dict_merge
 from pybombs.pb_exception import PBException
+from pybombs.utils import sysutils
 
 class PBConfigFile(object):
     """
     Abstraction layer for our config and other files
     """
     def __init__(self, filename):
-        self._filename = filename
+        # Store normalized path, in case someone chdirs after calling the ctor
+        self._filename = os.path.abspath(os.path.expanduser(os.path.normpath(filename)))
         self.data = None
         try:
             self.data = yaml.safe_load(open(filename).read()) or {}
         except (IOError, OSError):
             self.data = {}
-            pass
         except Exception as e:
             raise PBException("Error loading {0}: {1}".format(filename, str(e)))
         assert isinstance(self.data, dict)
@@ -49,6 +51,9 @@ class PBConfigFile(object):
         if newdata is not None:
             assert isinstance(newdata, dict)
             self.data = newdata
+        fpath = os.path.split(self._filename)[0]
+        if len(fpath):
+            sysutils.mkdirp_writable(fpath)
         open(self._filename, 'w').write(yaml.dump(self.data, default_flow_style=False))
 
     def update(self, newdata):
