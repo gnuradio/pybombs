@@ -31,6 +31,7 @@ from six import iteritems
 from pybombs import pb_logging
 from pybombs.pb_exception import PBException
 from pybombs.utils import dict_merge
+from pybombs.utils import sysutils
 from pybombs.config_file import PBConfigFile
 from pybombs import inventory
 from pybombs import __version__
@@ -179,7 +180,7 @@ class PrefixInfo(object):
         try:
             self.log.debug('Inspecting config file: {}'.format(cfg_file))
             cfg_data_new = PBConfigFile(cfg_file).get()
-        except Exception as e:
+        except Exception:
             self.log.debug('Well, looks like that failed.')
             return cfg_data
         return dict_merge(cfg_data, cfg_data_new)
@@ -244,9 +245,10 @@ class PrefixInfo(object):
         # TODO unportable command:
         separator = '<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>'
         get_env_cmd = "source {env_file} && echo '{sep}' && env".format(env_file=setup_env_file, sep=separator)
+        from pybombs.utils import subproc
         try:
             script_output = subproc.check_output(get_env_cmd, shell=True)
-        except subproc.CalledProcessError as e:
+        except subproc.CalledProcessError:
             self.log.error("Trouble sourcing file {env_file}".format(env_file=setup_env_file))
             raise PBException("Could not source env file.")
         env_output = script_output.split(separator)[-1]
@@ -268,6 +270,13 @@ class PrefixInfo(object):
         for k, v in iteritems(self.default_env_unix):
             env[k] = os.path.expandvars(v.strip().format(prefix_dir=self.prefix_dir))
         return env
+
+    def get_prefix_cfg_dir_writable(self):
+        " Returns self.prefix_cfg_dir, but if that doesn't exist, create it first. "
+        if self.prefix_dir is None:
+            raise PBException("Can't access prefix config dir if prefix does not exist.")
+        sysutils.mkdir_writable(self.prefix_cfg_dir, self.log)
+        return self.prefix_cfg_dir
 
 
 # Don't instantiate this directly, use the config_manager object
@@ -563,10 +572,9 @@ class ConfigManager(object):
             cfg_file = self.local_cfg
         if not os.path.isfile(cfg_file):
             self.log.info("Creating new config file {0}".format(cfg_file))
-            cfg_data = new_data
             path = os.path.split(cfg_file)[0]
             if not os.path.isdir(path):
-                os.path.mkdir(path)
+                os.mkdir(path)
         self.log.obnoxious(
             "Updating file {0} with new data: {1}".format(cfg_file, new_data)
         )
