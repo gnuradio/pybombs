@@ -63,19 +63,16 @@ For more informations see the `documentation`_.
 .. _documentation: http://gnuradio.org/pybombs/
 """
 
+from __future__ import print_function
 try:
     import setuptools
 except ImportError:
-    import ez_setup
-    try:
-        ez_setup.use_setuptools()
-    except AttributeError:
-        print("=========================================================")
-        print("Detected incompatibility between ez_setup and setuptools.")
-        print("Re-running this script might fix things.")
-        print("If not, install setuptools separately and try again.")
-        print("=========================================================")
-        exit(1)
+    print("=========================================================")
+    print(" PyBOMBS requires setuptools for installing.             ")
+    print(" You can install setuptools using pip:                   ")
+    print("    $ pip install setuptools                             ")
+    print("=========================================================")
+    exit(1)
 
 from setuptools import setup
 import pybombs
