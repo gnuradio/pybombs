@@ -160,13 +160,29 @@ class PackageManager(object):
         self.current_prefix = self.cfg.get_active_prefix()
         virtualenv = config_manager.extract_cfg_items(self.current_prefix.cfg_file,
                                                       'virtualenv')
-        if virtualenv and 'python' in r.depends and 'pip' in r.satisfy:
-            #This pip list is specific to virtualenv
-            pip_output = subproc.check_output(["pip", "list"])
-            pip_list = [x.split(' ')[0] for x in str(pip_output).strip().
-                        lower().split("\n")]
-            if not name in pip_list:
-                return False
+        self.log.debug("Checking if the prefix has a virtualenv")
+        if virtualenv and 'python' in r.depends:
+            try:
+                if 'pip' in r.satisfy:
+                    #This pip list is specific to virtualenv
+                    pip_output = subproc.check_output(["pip", "list"])
+                    pip_list = [x.split(' ')[0] for x in str(pip_output).strip().
+                                lower().split("\n")]
+                    if not name in pip_list:
+                        return False
+            except AttributeError:
+                self.log.debug("Package depends on python, but isn't pip installable")
+                pkgrs = []
+                for pkgr in self.get_packagers(name):
+                    pkg_version = pkgr.installed(r)
+                    if pkg_version is None or not pkg_version:
+                        continue
+                    else:
+                        self.pmc.known_installed.add(name)
+                        if return_pkgr_name:
+                            pkgrs.append(pkgr.name)
+                        else:
+                            return pkg_version
         else:
             pkgrs = []
             for pkgr in self.get_packagers(name):
@@ -249,22 +265,38 @@ class PackageManager(object):
 
         #If the following condition is satisfied, pybombs uses pip explicity
         #to install those packages specific to the virtualenv
-        if virtualenv and 'python' in rec.depends and 'pip' in rec.satisfy:
-            pkgr = pkgrs[0]
-            self.log.debug("Using packager {}".format(pkgr.name))
+        if virtualenv and 'python' in rec.depends:
             try:
-                result = getattr(pkgr, operation)(rec, **kwargs)
-                if result:
-                    if verify and not pkgr.verify(rec):
-                        self.log.warn("Package reported successful {0},' \
-                                      'but verification failed.".format(operation))
-                    return True
-            except PBException as ex:
-                self.log.error(
-                    "Something went wrong while trying to {} {} using {}: {}".format(
-                        operation, name, pkgr.name, str(ex).strip()
-                    )
-                )
+                if 'pip' in rec.satisfy:
+                    pkgr = pkgrs[0]
+                    self.log.debug("Using packager {}".format(pkgr.name))
+                    try:
+                        result = getattr(pkgr, operation)(rec, **kwargs)
+                        if result:
+                            if verify and not pkgr.verify(rec):
+                                self.log.warn("Package reported successful {0},' \
+                                              'but verification failed.".format(operation))
+                                return True
+                    except PBException as ex:
+                        self.log.error(
+                            "Something went wrong while trying to {} {} using {}: {}".format(
+                                operation, name, pkgr.name, str(ex).strip()))
+            except:
+                for pkgr in pkgrs:
+                    self.log.debug("Using packager {}".format(pkgr.name))
+                    try:
+                        result = getattr(pkgr, operation)(rec, **kwargs)
+                        if result:
+                            if verify and not pkgr.verify(rec):
+                                self.log.warn("Package reported successful {0},' \
+                                              'but verification failed.".format(operation))
+                                continue
+                            return True
+                    except PBException as ex:
+                        self.log.error(
+                            "Something went wrong while trying to {} {} using {}: {}".format(
+                                operation, name, pkgr.name, str(ex).strip()))
+
         #This works exactly like the above piece of code, but with all the
         #available packagers
         else:
