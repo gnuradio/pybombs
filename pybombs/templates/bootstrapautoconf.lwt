@@ -19,5 +19,6 @@
 
 inherit: autoconf
 configure: |
-    ./bootstrap
+    test -f ./bootstrap && ./bootstrap
+    test -f ./bootstrap.sh && ./bootstrap.sh
     ./configure --prefix=$prefix $config_opt CC=$cc CXX=$cxx
