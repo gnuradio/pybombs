@@ -110,7 +110,7 @@ class SubCommandBase(CommandBase):
         try:
             return self.subcommands[self.args.sub_command]['run'](self)()
         except KeyError:
-            self.log.error("Illegal recipes command: {}".format(self.args.sub_command))
+            self.log.error("Illegal recipes command: `{0}'".format(self.args.sub_command))
             return -1
 
 ##############################################################################
