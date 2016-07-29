@@ -107,10 +107,12 @@ class SubCommandBase(CommandBase):
 
     def run(self):
         """ Go, go, go! """
+        print("FOOOOOOOOOOOOOOOOOO")
         try:
             return self.subcommands[self.args.sub_command]['run'](self)()
         except KeyError:
-            self.log.error("Illegal recipes command: `{0}'".format(self.args.sub_command))
+            self.log.error("Illegal sub-command: `{0}'".format(self.args.sub_command))
+            self.log.error("Valid sub-commands are: {0}".format(",".join(self.subcommands.keys())))
             return -1
 
 ##############################################################################
