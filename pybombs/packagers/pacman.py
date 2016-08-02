@@ -69,7 +69,7 @@ class ExternalPacman(ExternPackager):
             # '-Qi' will return non-zero if package does not exist, thus will throw
             # Output is sth like local/<pkgname> x.x.x.x-x
             ver = subproc.match_output(
-                [self.command, "-Si", pkgname],
+                [self.command, "-Qi", pkgname],
                 r'Version[ ]*: (?P<ver>[0-9,.]*)',
                 'ver'
             )
