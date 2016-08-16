@@ -75,7 +75,7 @@ class SubCommandBase(CommandBase):
     Supplies methods if the command only consists of other subcommands
     """
     # Every entry: {'cmd': COMMAND, 'help': HELP_STR, 'subparser': SUBPARSER_CALLBACK, 'run': RUN_CALLBACK}
-    subcommands = []
+    subcommands = {}
 
     def __init__(self,
             cmd, args,
@@ -107,13 +107,11 @@ class SubCommandBase(CommandBase):
 
     def run(self):
         """ Go, go, go! """
-        print("FOOOOOOOOOOOOOOOOOO")
-        try:
-            return self.subcommands[self.args.sub_command]['run'](self)()
-        except KeyError:
+        if self.args.sub_command not in self.subcommands:
             self.log.error("Illegal sub-command: `{0}'".format(self.args.sub_command))
             self.log.error("Valid sub-commands are: {0}".format(",".join(self.subcommands.keys())))
             return -1
+        return self.subcommands[self.args.sub_command]['run'](self)()
 
 ##############################################################################
 # Argument Parser
@@ -123,6 +121,7 @@ def init_arg_parser(show_help_for=None, hide_hidden=True):
     Create a base argument parser
     """
     def dummy_error(msg):
+        " Bogus error handler for ArgParse in case we don't want all the output."
         raise PBException('parse error')
     cmd_list = get_cmd_list(hide_hidden=hide_hidden)
     # Set up global options:
