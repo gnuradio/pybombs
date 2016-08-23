@@ -122,10 +122,18 @@ def run_with_output_processing(p, o_proc, event, cleanup=None):
     return p.returncode
 
 ELEVATE_PRE_ARGS = ['sudo', '-H']
+
 def _process_thread(event, args, kwargs):
     """
     This actually runs the process.
     """
+    pybombs_cfg_dir = config_manager.get_pybombs_dir()
+    ui_lock = os.path.join(pybombs_cfg_dir, 'uilock')
+    if os.path.isfile(ui_lock):
+        ELEVATE_PRE_ARGS = ['pkexec']
+    else:
+        ELEVATE_PRE_ARGS = ELEVATE_PRE_ARGS
+
     _process_thread.result = 0
     extra_popen_args = {}
     use_oproc = False
@@ -137,7 +145,8 @@ def _process_thread(event, args, kwargs):
         args = ' '.join(args)
     if kwargs.get('elevate'):
         if kwargs.get('shell', False) and isinstance(args, str):
-            args = ' '.join(ELEVATE_PRE_ARGS) + args
+            if os.path.isfile(uilock):
+                args = ' '.join(ELEVATE_PRE_ARGS) + args
         else:
             args = ELEVATE_PRE_ARGS + args
     log = logger.getChild("_process_thread()")
