@@ -53,6 +53,12 @@ class File(FetcherBase):
         else:
             self.log.debug("Symlinking file to source dir.")
             os.symlink(url, os.path.join(os.getcwd(), filename))
+        if args.has_key("md5"):
+            self.log.debug("Calculating MD5 sum for {0}...".format(filename))
+            actual_md5 = utils.md5sum(filename)
+            if actual_md5 != args["md5"]:
+                self.log.error("MD5 sums do not match!")
+                return False
         if utils.is_archive(filename):
             self.log.debug("Unpacking {ar}".format(ar=filename))
             # Move to the correct source location.
