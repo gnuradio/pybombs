@@ -60,6 +60,9 @@ def mkdir_writable(dir_path, log=None):
     Create a directory if it doesn't yet exist.
     Returns True if that worked and the dir is writable.
     """
+    parent_dir = os.path.split(os.path.normpath(dir_path))[0]
+    if len(parent_dir) and not dir_is_writable(parent_dir):
+        raise PBException("Can't create dir `{0}'. Parent directory does not exist.".format(dir_path))
     if not op.isdir(dir_path):
         if log is not None:
             log.info("Creating directory `{0}'".format(dir_path))
