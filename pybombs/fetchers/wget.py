@@ -22,6 +22,7 @@
 wget-style fetcher
 """
 
+from  __future__ import print_function
 import hashlib
 import math
 import os
@@ -30,18 +31,24 @@ import requests
 from pybombs import utils
 from pybombs.fetchers.base import FetcherBase
 
-def _download(url):
+
+MAX_RETRY_COUNT = 10
+def _download(url, filesize=None, range_start=None, hash_md5=None, partial_retry_count=None):
     """
     Do a wget: Download the file specified in url to the cwd.
     Return the filename and the MD5 hash as hexdigest string.
     """
     filename = os.path.split(url)[1]
-    req = requests.get(url, stream=True, headers={'User-Agent': 'PyBOMBS'})
-    filesize = float(req.headers.get('content-length', 0))
-    filesize_dl = 0
-    hash_md5 = hashlib.md5()
-    with open(filename, "wb") as f:
-        for buff in req.iter_content(chunk_size=8192):
+    req_headers = {'User-Agent': 'PyBOMBS'}
+    if range_start is not None:
+        req_headers['Range'] = "bytes={0}-".format(range_start)
+    req = requests.get(url, stream=True, headers=req_headers)
+    filesize = filesize or float(req.headers.get('content-length', 0))
+    filesize_dl = range_start or 0
+    hash_md5 = hash_md5 or hashlib.md5()
+    file_mode = "wb" if range_start is None else "ab"
+    with open(filename, file_mode) as f:
+        for buff in req.iter_content(chunk_size=1024):
             if buff:
                 f.write(buff)
                 filesize_dl += len(buff)
@@ -54,6 +61,8 @@ def _download(url):
                         int(math.ceil(filesize/1000.)),
                         int(math.ceil(filesize_dl*100.)/filesize)
                 )
+                if filesize_dl > filesize:
+                    raise IOError("Downloaded file size is bigger than specified file size.")
             else:
                 status = r"%05d kB" % (
                         int(math.ceil(filesize_dl/1000.)),
@@ -61,7 +70,11 @@ def _download(url):
             status += chr(8)*(len(status)+1)
             sys.stdout.write(status)
     if filesize != 0 and filesize_dl != filesize:
-        raise IOError("Downloaded file size does not match specified file size.")
+        partial_retry_count = partial_retry_count or 0
+        if partial_retry_count < MAX_RETRY_COUNT:
+            return _download(url, filesize, filesize_dl, hash_md5, partial_retry_count+1)
+        else:
+            raise IOError("Downloaded file size does not match specified file size.")
     sys.stdout.write("\n")
     return filename, hash_md5.hexdigest()
 
@@ -85,10 +98,13 @@ class Wget(FetcherBase):
         - args: Additional args to pass to the actual fetcher
         """
         try:
+            self.log.debug("Downloading file: {0}".format(url))
             filename, md5_hash = _download(url)
             self.log.debug("MD5: {0}".format(md5_hash))
             if 'md5' in args and args['md5'] != md5_hash:
-                self.log.error("While downloading {fname}: MD5 hashes to not match. Expected {exp}, got {actual}.".format(filename, args['md5'], md5_hash))
+                self.log.error("While downloading {fname}: MD5 hashes to not match. Expected {exp}, got {actual}.".format(
+                    fname=filename, exp=args['md5'], actual=md5_hash
+                ))
                 return False
         except IOError as ex:
             self.log.error(str(ex))
