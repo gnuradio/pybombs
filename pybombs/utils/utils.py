@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 #
 # Copyright 2015 Free Software Foundation, Inc.
 #
@@ -82,6 +81,15 @@ def confirm(question, default="N", timeout=0):
             return False
         else:
             print("`{0}' is not a valid response.".format(inp))
+
+def md5sum(filename):
+    " Calculate the MD5 sum of file at filename "
+    import hashlib
+    hash_md5 = hashlib.md5()
+    with open(filenam , "rb") as f:
+        for buff in iter(lambda: f.read(4096), b""):
+            hash_md5.update(buff)
+    return hash_md5.hexdigest()
 
 if __name__ == "__main__":
     print(dict_merge(
