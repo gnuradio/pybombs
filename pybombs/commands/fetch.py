@@ -84,7 +84,7 @@ class Fetch(CommandBase):
             self.log.error("Package has no recipe: {}".format(e))
             return 1
         for r in recipe_list:
-            if not len(r.source):
+            if (not hasattr(r,'source')) or (not len(r.source)):
                 self.log.warn("Package {0} has no sources listed.".format(r.id))
                 continue
             self.log.info("Downloading source for package {0}".format(r.id))
