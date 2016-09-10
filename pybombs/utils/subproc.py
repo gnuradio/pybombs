@@ -122,6 +122,13 @@ def run_with_output_processing(p, o_proc, event, cleanup=None):
     return p.returncode
 
 ELEVATE_PRE_ARGS = ['sudo', '-H']
+try:
+    subprocess.check_output(['sudo'], shell=True)
+except subprocess.CalledProcessError:
+    # There is no working sudo. There is no need
+    # to try to execute with it.
+    ELEVATE_PRE_ARGS = []
+
 def _process_thread(event, args, kwargs):
     """
     This actually runs the process.
