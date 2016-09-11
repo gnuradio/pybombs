@@ -208,7 +208,7 @@ class Prefix(CommandBase):
         # Create virtualenv if so desired
         if self.args.virtualenv:
             self.log.info("Creating Python virtualenv in prefix...")
-            venv_args = ['virtualenv']
+            venv_args = ['virtualenv', '--no-site-packages']
             venv_args.append(path)
             subproc.monitor_process(args=venv_args)
         # Install SDK if so desired
@@ -222,7 +222,15 @@ class Prefix(CommandBase):
             self._install_sdk_to_prefix(sdk)
         # Update config section
         if len(prefix_recipe.config):
-            self.cfg.update_cfg_file(prefix_recipe.config, self.prefix.cfg_file)
+            if self.args.virtualenv:
+                prefix_recipe.config = dict_merge(
+                    {'virtualenv': True}, prefix_recipe.config)
+                self.cfg.update_cfg_file(prefix_recipe.config, self.prefix.cfg_file)
+            else:
+                prefix_recipe.config = dict_merge(
+                    {'virtualenv': False}, prefix_recipe.config)
+                self.cfg.update_cfg_file(prefix_recipe.config, self.prefix.cfg_file)
+
             self.cfg.load(select_prefix=path)
             self.prefix = self.cfg.get_active_prefix()
         # Install dependencies
