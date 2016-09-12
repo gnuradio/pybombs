@@ -48,10 +48,7 @@ class Inv(CommandBase):
         )
 
     def __init__(self, cmd, args):
-        CommandBase.__init__(self,
-            cmd, args,
-            require_prefix=True,
-        )
+        CommandBase.__init__(self, cmd, args, require_prefix=True)
         verb = "Showing" if self.args.value is None else "Setting"
         if self.args.key is None:
             print("{verb} package state:".format(verb=verb))
@@ -67,10 +64,10 @@ class Inv(CommandBase):
                 if self.run():
                     return_value = 1
             return return_value
-        if not self.args.pkg in self.inventory.get_packages():
+        if self.args.pkg not in self.inventory.get_packages():
             self.log.error("`{0}' is not listed in inventory.".format(self.args.pkg))
             return 1
-        print("{0}:\t".format(self.args.pkg), end='')
+        print("{0:20}".format(str(self.args.pkg)+":"), end='')
         if self.args.value is None:
             if self.args.key is None:
                 print(self.inventory.get_state_name(self.inventory.get_state(self.args.pkg)))
