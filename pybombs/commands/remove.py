@@ -66,7 +66,6 @@ class Remove(CommandBase):
         self.pm = package_manager.PackageManager()
         if not self.args.no_deps:
             self.args.packages = self.get_dependees(self.args.packages)
-            print(self.args.packages)
 
     def is_installed(self, pkg):
         """
