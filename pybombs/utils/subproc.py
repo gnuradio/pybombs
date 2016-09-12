@@ -33,8 +33,6 @@ try:
 except ImportError:
     from queue import Queue, Empty  # Py3k
 from pybombs.pb_logging import logger
-from pybombs.config_manager import config_manager
-from pybombs.utils import output_proc
 from pybombs.pb_exception import PBException
 
 READ_TIMEOUT = 0.1 # s
@@ -126,6 +124,8 @@ def _process_thread(event, args, kwargs):
     """
     This actually runs the process.
     """
+    from pybombs.config_manager import config_manager
+    from pybombs.utils import output_proc
     _process_thread.result = 0
     extra_popen_args = {}
     use_oproc = False
