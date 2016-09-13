@@ -32,5 +32,6 @@ from .prefix import Prefix
 from .recipes import Recipes
 from .rebuild import Rebuild
 from .remove import Remove
+from .run import Run
 # Leave this at the end
 from .help import Help
