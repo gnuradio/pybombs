@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of GNU Radio
 #
@@ -74,11 +74,12 @@ class DepManager(object):
         deps = recipe.get_recipe(pkg).depends or []
         for dep in deps:
             if not self.pm.exists(pkg):
-                raise PBException(
+                self.log.error(
                     "Package does not exist: {0} (declared as dependency for package {1})".format(
                         dep, pkg
                     )
                 )
+                raise PBException("Unresolved dependency.")
         deps_to_install = set([dep for dep in deps if filter_callback(dep)])
         for dep in deps_to_install:
             subtree = self.make_tree_recursive(dep, filter_callback)
