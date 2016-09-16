@@ -42,8 +42,8 @@ class PackageManager(object):
     Meta-package manager. This will determine, according to our system
     and the configuration, who takes care of managing packages and
     then dispatches specific package managers. For example, this might
-    dispatch an apt-get backend on Ubuntu and Debian systems, or a
-    yum backend on Fedora systems.
+    dispatch an apt backend on Ubuntu and Debian systems, or a
+    yum/dnf backend on Fedora systems.
     """
     def __init__(self,):
         # Set up logger:

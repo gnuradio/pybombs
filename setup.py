@@ -48,7 +48,7 @@ Then, you call PyBOMBS to do the installation:
 
 PyBOMBS will determine the dependency tree for GNU Radio, and install
 dependencies either through the local system's package manager (e.g.
-apt-get, yum, pip...) or pull the source files and build them in the
+apt, yum, pip...) or pull the source files and build them in the
 prefix.
 
 With slight modifications, the same commands would have worked to create

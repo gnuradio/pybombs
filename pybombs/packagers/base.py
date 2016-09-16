@@ -39,7 +39,7 @@ class PackagerBase(object):
     def supported(self):
         """
         Return true if this platform is detected, e.g. on Debian systems
-        return true for the 'apt-get' packager but False for the 'yum' packager.
+        return true for the 'apt' packager but False for the 'yum' packager.
         """
         raise NotImplementedError()
 

@@ -80,7 +80,7 @@ class ExternReadOnlyPackager(ExternPackager):
 
 class ExternCmdPackagerBase(PackagerBase):
     """
-    Base class for packagers that use external commands (e.g. apt-get, yum).
+    Base class for packagers that use external commands (e.g. apt, yum).
 
     Most packagers will work with a system packager in the background (e.g.
     ap-get, dnf, etc. All of these pretty much have the same behaviour, and

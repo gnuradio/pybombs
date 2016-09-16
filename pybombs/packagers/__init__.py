@@ -22,7 +22,7 @@
 from .base import PackagerBase, get_by_name
 from .cmd import TestCommand
 from .pkgconfig import PkgConfig
-from .aptget import AptGet
+from .apt import Apt
 from .yum import YumDnf
 from .pip import Pip
 from .pacman import Pacman

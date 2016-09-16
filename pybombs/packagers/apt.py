@@ -19,7 +19,7 @@
 # Boston, MA 02110-1301, USA.
 #
 """
-Packager: apt-get
+Packager: apt
 """
 
 import subprocess
@@ -27,31 +27,37 @@ from pybombs.packagers.extern import ExternCmdPackagerBase, ExternPackager
 from pybombs.utils import subproc
 from pybombs.utils import sysutils
 
-class ExternalAptGet(ExternPackager):
+class ExternalApt(ExternPackager):
     """
-    Wrapper around apt-get and dpkg
+    Wrapper around apt(-get) and dpkg
     """
     def __init__(self, logger):
         ExternPackager.__init__(self, logger)
+        if sysutils.which('apt') is not None:
+            self.getcmd = 'apt'
+            self.searchcmd = 'apt'
+        else:
+            self.getcmd = 'apt'
+            self.searchcmd = 'apt-cache'
 
     def get_available_version(self, pkgname):
         """
-        Check which version is available in apt-cache.
+        Check which version is available.
         """
         try:
-            self.log.obnoxious("Checking apt-cache for `{0}'".format(pkgname))
+            self.log.obnoxious("Checking {0} for `{1}'".format(self.searchcmd, pkgname))
             ver = subproc.match_output(
-                ["apt-cache", "showpkg", pkgname],
-                r'Versions: \n(?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n',
+                [self.searchcmd, "show", pkgname],
+                r'Version: (?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n',
                 'ver'
             )
             if ver is None:
                 return False
             if ver:
-                self.log.debug("Package {} has version {} in apt-cache".format(pkgname, ver))
+                self.log.debug("Package {0} has version {1} in repositories".format(pkgname, ver))
             return ver
         except subprocess.CalledProcessError:
-            self.log.error("Error running apt-cache showpkg. This shouldn't happen. Probably a bug.")
+            self.log.error("Error running {0} show. This shouldn't happen. Probably a bug.")
         return False
 
     def get_installed_version(self, pkgname):
@@ -80,34 +86,36 @@ class ExternalAptGet(ExternPackager):
 
     def install(self, pkgname):
         """
-        apt-get -y install pkgname
+        apt(-get) -y install pkgname
         """
         try:
-            subproc.monitor_process(["apt-get", "-y", "install", pkgname], elevate=True, throw=True)
+            subproc.monitor_process([self.getcmd, "-y", "install", pkgname], elevate=True, throw=True)
             return True
         except Exception as ex:
-            self.log.error("Running apt-get install failed.")
+            self.log.error("Running {0} install failed.".format(self.getcmd))
             self.log.obnoxious(str(ex))
             return False
 
 
-class AptGet(ExternCmdPackagerBase):
+class Apt(ExternCmdPackagerBase):
     """
-    apt-get install xyz
+    apt(-get) install xyz
     """
-    name = 'apt-get'
+    name = 'apt'
     pkgtype = 'deb'
 
     def __init__(self):
         ExternCmdPackagerBase.__init__(self)
-        self.packager = ExternalAptGet(self.log)
+        self.packager = ExternalApt(self.log)
 
     def supported(self):
         """
-        Check if we can even run apt-get.
+        Check if we're on a Debian/Ubuntu.
         Return True if so.
         """
-        return sysutils.which('dpkg') is not None \
-            and sysutils.which('apt-cache') is not None \
-            and sysutils.which('apt-get') is not None
+        has_dpkg = sysutils.which('dpkg') is not None
+        has_apt = sysutils.which('apt') is not None or \
+            (sysutils.which('apt-cache') is not None \
+            and sysutils.which('apt-get') is not None)
+        return has_dpkg and has_apt
 
