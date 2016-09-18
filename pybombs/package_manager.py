@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 #
 # Copyright 2015 Free Software Foundation, Inc.
 #
