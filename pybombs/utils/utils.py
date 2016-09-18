@@ -86,7 +86,7 @@ def md5sum(filename):
     " Calculate the MD5 sum of file at filename "
     import hashlib
     hash_md5 = hashlib.md5()
-    with open(filenam , "rb") as f:
+    with open(filename , "rb") as f:
         for buff in iter(lambda: f.read(4096), b""):
             hash_md5.update(buff)
     return hash_md5.hexdigest()
