@@ -118,7 +118,7 @@ class PackageManager(object):
         if not return_pkgr_name and name in self.pmc.known_installable:
             self.log.obnoxious("{0} is cached and known to be installable.".format(name))
             return True
-        self.log.debug("Checking if package {} is installable.".format(name))
+        self.log.debug("Checking if package {0} is installable...".format(name))
         if self.check_package_flag(name, 'forceinstalled'):
             self.log.debug("Package {} is forced to state 'installed'.".format(name))
             return ['force-installed'] if return_pkgr_name else True
@@ -136,6 +136,7 @@ class PackageManager(object):
                     return pkg_version
         if return_pkgr_name and len(pkgrs):
             return pkgrs
+        self.log.debug("Package {0} is not installable.".format(name))
         return False
 
     def installed(self, name, return_pkgr_name=False):
@@ -149,7 +150,7 @@ class PackageManager(object):
         if not return_pkgr_name and name in self.pmc.known_installed:
             self.log.obnoxious("{0} is cached and known to be installed.".format(name))
             return True
-        self.log.debug("Checking if package {} is installed.".format(name))
+        self.log.debug("Checking if package {0} is installed...".format(name))
         if self.check_package_flag(name, 'forceinstalled'):
             self.log.debug("Package {} is forced to state 'installed'.".format(name))
             # TODO maybe we can figure out a version string
@@ -168,6 +169,7 @@ class PackageManager(object):
                     return pkg_version
         if return_pkgr_name and len(pkgrs):
             return pkgrs
+        self.log.debug("Package {0} is not installed.".format(name))
         return False
 
     def install(self, name, static=False, verify=False):
