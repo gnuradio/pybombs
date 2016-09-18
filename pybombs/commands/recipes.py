@@ -324,7 +324,7 @@ class Recipes(SubCommandBase):
             try:
                 Fetcher().fetch_url(uri, recipe_cache_top_level, alias, {}) # No args
             except PBException as ex:
-                self.log.error("Could not fetch recipes: {s}".format(str(ex)))
+                self.log.error("Could not fetch recipes: {s}".format(s=str(ex)))
                 return False
         # Write this to config file
         self.cfg.update_cfg_file({'recipes': {alias: uri}}, cfg_file=cfg_file)
