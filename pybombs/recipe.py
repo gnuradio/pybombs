@@ -132,7 +132,7 @@ class PBPackageRequirementScanner(object):
                 return functor
             if hasattr(match, 'match') and match.match(token):
                 return functor
-        raise PBException("Invalid token: {tok}".format(token))
+        raise PBException("Invalid token: {0}".format(token))
 
     def pl_pkg(self, pkg_name):
         " Called in a package requirements list, when a package name is found "
