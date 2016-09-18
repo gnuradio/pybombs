@@ -31,8 +31,8 @@ class DepManager(object):
     """
     Dependency manager.
     """
-    def __init__(self):
-        self.pm = package_manager.PackageManager()
+    def __init__(self, pm=None):
+        self.pm = pm or package_manager.PackageManager()
         self.cfg = config_manager.config_manager
         self.log = pb_logging.logger.getChild("DepManager")
 

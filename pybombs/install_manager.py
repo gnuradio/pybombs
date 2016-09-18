@@ -59,7 +59,7 @@ class InstallManager(object):
                     self.log.error("Package {0} is not installed. Aborting.".format(pkg))
                     return False
         ### Make install tree
-        install_tree = dep_manager.DepManager().make_dep_tree(
+        install_tree = dep_manager.DepManager(self.pm).make_dep_tree(
             packages,
             _check_if_pkg_goes_into_tree if not no_deps else lambda x: bool(x in packages)
         )
