@@ -114,7 +114,7 @@ class PBPackageRequirementScanner(object):
             self.log.obnoxious("Empty requirements string.")
             return
         lexer = shlex.shlex(req_string)
-        lexer.wordchars += '-<>=.&|/'
+        lexer.wordchars += '-<>=.&|/+'
         while True:
             token = lexer.get_token()
             if token == lexer.eof:
