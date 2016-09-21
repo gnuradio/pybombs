@@ -91,6 +91,14 @@ def md5sum(filename):
             hash_md5.update(buff)
     return hash_md5.hexdigest()
 
+def python_apt_import():
+    try:
+        import apt
+        return apt
+    except ImportError:
+        return None
+
+
 if __name__ == "__main__":
     print(dict_merge(
         {'a': 1, 'b': 2},
