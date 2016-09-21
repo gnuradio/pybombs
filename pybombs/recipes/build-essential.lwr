@@ -20,6 +20,6 @@
 inherit: empty
 category: baseline
 satisfy:
-  deb: build_essential || (make && (gcc || clang) && (g++ || clang))
+  deb: build-essential || (make && (gcc || clang) && (g++ || clang))
   rpm: make && (gcc || clang) && (gcc-c++ || clang)
   cmd: make --version && (gcc --version || clang --version) && (g++ --version || clang --version)
