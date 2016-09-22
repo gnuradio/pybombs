@@ -59,7 +59,7 @@ class ExternalApt(ExternPackager):
         Check which version is available.
         """
         if self.cache:
-            self.log.obnoxious("Checking apt for `{1}'".format(self.searchcmd, pkgname))
+            self.log.obnoxious("Checking apt for `{0}'".format(pkgname))
             (ver, is_installed) = self.check_cache(pkgname)
             if ver:
                 self.log.debug("Package {0} has version {1} in repositories".format(pkgname, ver))
