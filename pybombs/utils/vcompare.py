@@ -23,7 +23,10 @@ Version comparison functions
 """
 
 import operator
-from distutils.version import LooseVersion
+try:
+    from distutils.version import LooseVersion
+except ImportError:
+    from pybombs.utils.version import LooseVersion
 
 def vcompare(cmp_op, version_x, version_y):
     """
