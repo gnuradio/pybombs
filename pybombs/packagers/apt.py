@@ -46,7 +46,7 @@ class ExternalApt(ExternPackager):
         try:
             import apt
             self.cache = apt.Cache()
-        except ImportError or AttributeError:
+        except (ImportError, AttributeError):
             # ImportError is caused by apt being completely missing
             # AttributeError is caused by us importing ourselves (we have no
             #   Cache() method) because python-apt is missing and we got a
