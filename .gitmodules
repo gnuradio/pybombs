@@ -1,4 +1,0 @@
-[submodule "recipes"]
-	path = recipes
-	url = https://github.com/gnuradio/recipes.git
-    branch = master
