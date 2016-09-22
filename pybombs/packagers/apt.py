@@ -22,12 +22,13 @@
 Packager: apt
 """
 
+from __future__ import absolute_import
 import re
 import subprocess
 from pybombs.packagers.extern import ExternCmdPackagerBase, ExternPackager
 from pybombs.utils import subproc
 from pybombs.utils import sysutils
-from pybombs.utils import python_apt_import
+
 
 class ExternalApt(ExternPackager):
     """
@@ -42,11 +43,15 @@ class ExternalApt(ExternPackager):
             self.getcmd = 'apt'
             self.searchcmd = 'apt-cache'
 
-        sysapt = python_apt_import()
-        if sysapt:
-            self.cache = sysapt.Cache()
-        else:
-            self.log.warn("Install python-apt to speed up apt processing.")
+        try:
+            import apt
+            self.cache = apt.Cache()
+        except ImportError or AttributeError:
+            # ImportError is caused by apt being completely missing
+            # AttributeError is caused by us importing ourselves (we have no
+            #   Cache() method) because python-apt is missing and we got a
+            #   relative import instead
+            self.log.info("Install python-apt to speed up apt processing.")
             self.cache = None
 
     def get_available_version(self, pkgname):
@@ -84,7 +89,7 @@ class ExternalApt(ExternPackager):
         if self.cache:
             (ver, is_installed) = self.check_cache(pkgname)
             if is_installed:
-                self.log.debug("Package {} has version {} installed".format(pkgname, ver))
+                self.log.debug("Package {0} has version {1} installed".format(pkgname, ver))
             return ver if is_installed else False
         else:
             try:
@@ -96,7 +101,7 @@ class ExternalApt(ExternPackager):
                 if ver is None:
                     self.log.debug("Looks like dpkg -s can't find package {pkg}. This is most likely a bug.".format(pkg=pkgname))
                     return False
-                self.log.debug("Package {} has version {} installed".format(pkgname, ver))
+                self.log.debug("Package {0} has version {1} installed".format(pkgname, ver))
                 return ver
             except subprocess.CalledProcessError:
                 # This usually means the packet is not installed -- not a problem.
