@@ -4,6 +4,8 @@ Website: http://gnuradio.org/pybombs
 
 Minimum Python version: 2.7
 
+[![Build Status](https://travis-ci.org/gnuradio/pybombs.svg?branch=master)](https://travis-ci.org/gnuradio/pybombs)
+
 ## License
 
 Copyright 2015 Free Software Foundation, Inc.
