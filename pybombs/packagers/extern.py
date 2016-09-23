@@ -98,7 +98,7 @@ class ExternCmdPackagerBase(PackagerBase):
         return True.
         If not available, return None.
         """
-        self.log.obnoxious("exists({})".format(recipe.id))
+        self.log.obnoxious("exists({0})".format(recipe.id))
         return self._packager_run_tree(recipe, self._package_exists)
 
     def installed(self, recipe):
@@ -108,7 +108,7 @@ class ExternCmdPackagerBase(PackagerBase):
         May also return True if a version can't be determined, but the
         recipe is installed.
         """
-        self.log.obnoxious("Checking if recipe {} is installed".format(recipe.id))
+        self.log.obnoxious("Checking if recipe {0} is installed".format(recipe.id))
         return self._packager_run_tree(recipe, self._package_installed)
 
     def install(self, recipe, static=False):
@@ -119,7 +119,7 @@ class ExternCmdPackagerBase(PackagerBase):
         failed in a controlled manner (e.g. the package wasn't available
         by this package manager).
         """
-        self.log.obnoxious("install({}, static={})".format(recipe.id, static))
+        self.log.obnoxious("install({0}, static={1})".format(recipe.id, static))
         return self._packager_run_tree(recipe, self._package_install)
 
     def update(self, recipe):
@@ -129,7 +129,7 @@ class ExternCmdPackagerBase(PackagerBase):
         May also return True if a version can't be determined, but the
         recipe is installed.
         """
-        self.log.obnoxious("Checking if recipe {} is installed".format(recipe.id))
+        self.log.obnoxious("Checking if recipe {0} is installed".format(recipe.id))
         return self._packager_run_tree(recipe, self._package_installed)
 
     def verify(self, recipe):
@@ -155,7 +155,7 @@ class ExternCmdPackagerBase(PackagerBase):
         try:
             satisfy_rule = recipe.get_package_reqs(self.pkgtype)
         except KeyError:
-            self.log.debug("No satisfy rule for package type {}".format(self.pkgtype))
+            self.log.debug("No satisfy rule for package type {0}".format(self.pkgtype))
             return False
         if satisfy_rule is None:
             return None

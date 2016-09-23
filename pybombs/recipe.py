@@ -53,7 +53,7 @@ class PBPackageRequirement(object):
         return func(self.name, self.compare or ">=", self.version)
 
     def __str__(self, lvl=0):
-        return " "*lvl + "PackageRequirement({}, {}, {})".format(self.name, self.compare, self.version)
+        return " "*lvl + "PackageRequirement({0}, {1}, {2})".format(self.name, self.compare, self.version)
 
 
 class PBPackageRequirementPair(object):
@@ -74,7 +74,7 @@ class PBPackageRequirementPair(object):
             return self.first.ev(func) or self.second.ev(func)
 
     def __str__(self, lvl=0):
-        a = " "*lvl + "PBPackageRequirementPair: ({})\n".format(self.combiner)
+        a = " "*lvl + "PBPackageRequirementPair: ({0})\n".format(self.combiner)
         a = a + " "*lvl + self.first.__str__(1) + "\n"
         if(self.second):
             a = a + " "*lvl + self.second.__str__(1)
@@ -137,22 +137,22 @@ class PBPackageRequirementScanner(object):
     def pl_pkg(self, pkg_name):
         " Called in a package requirements list, when a package name is found "
         if self.preq is None:
-            self.log.obnoxious("Adding package with name {}".format(pkg_name))
+            self.log.obnoxious("Adding package with name {0}".format(pkg_name))
             self.preq = PBPackageRequirement(pkg_name)
         elif isinstance(self.preq, PBPackageRequirement):
             if self.preq.compare is None:
                 self.preq.name = " ".join((self.preq.name, pkg_name))
-                self.log.obnoxious("Extending package name {}".format(self.preq.name))
+                self.log.obnoxious("Extending package name {0}".format(self.preq.name))
             else:
                 raise PBException("Parsing Error. Did not expect package name here.")
         elif isinstance(self.preq, PBPackageRequirementPair):
             if self.preq.second is None:
-                self.log.obnoxious("Adding package with name {}".format(pkg_name))
+                self.log.obnoxious("Adding package with name {0}".format(pkg_name))
                 self.preq.second = PBPackageRequirement(pkg_name)
             else:
                 if self.preq.second.compare is None:
                     self.preq.second.name = " ".join((self.preq.second.name, pkg_name))
-                    self.log.obnoxious("Extending package name {}".format(self.preq.second.name))
+                    self.log.obnoxious("Extending package name {0}".format(self.preq.second.name))
                 else:
                     raise PBException("Parsing Error. Did not expect package name here ({0}).".format(self.preq.second))
         else:
@@ -174,7 +174,7 @@ class PBPackageRequirementScanner(object):
 
     def pl_cmp(self, cmpr):
         " Called in a package requirements list, when version comparator is found "
-        self.log.obnoxious("Adding version comparator {}".format(cmpr))
+        self.log.obnoxious("Adding version comparator {0}".format(cmpr))
         if isinstance(self.preq, PBPackageRequirement):
             self.preq.compare = cmpr
         else:
@@ -182,7 +182,7 @@ class PBPackageRequirementScanner(object):
 
     def pl_ver(self, ver):
         " Called in a package requirements list, when version number is found "
-        self.log.obnoxious("Adding version number {}".format(ver))
+        self.log.obnoxious("Adding version number {0}".format(ver))
         if isinstance(self.preq, PBPackageRequirement):
             self.preq.version = ver
         else:
@@ -190,7 +190,7 @@ class PBPackageRequirementScanner(object):
 
     def pl_cmb(self, cmb):
         " Called in a package requirements list, when a logical combiner (||, &&) is found "
-        self.log.obnoxious("Found package combiner {}".format(cmb))
+        self.log.obnoxious("Found package combiner {0}".format(cmb))
         if self.preq is None:
             raise PBException("Parsing Error. Did not expect combiner here.")
         self.preq = PBPackageRequirementPair(self.preq)
@@ -212,24 +212,24 @@ class Recipe(object):
     """
     def __init__(self, filename):
         self.id = os.path.splitext(os.path.basename(filename))[0]
-        self.log = pb_logging.logger.getChild("Recipe[{}]".format(self.id))
+        self.log = pb_logging.logger.getChild("Recipe[{0}]".format(self.id))
         self.inherit = 'empty'
         self._static = False
         # Load original recipe:
-        self.log.obnoxious("Loading recipe file: {}".format(filename))
+        self.log.obnoxious("Loading recipe file: {0}".format(filename))
         self._data = self._load_recipe_from_file(filename)
         # Recursively do the inheritance:
         while self._data.get('inherit', 'empty'):
             inherit_from = self._data.get('inherit', 'empty')
             try:
                 filename = recipe_manager.recipe_manager.get_template_filename(inherit_from)
-                self.log.obnoxious("Loading template file: {}".format(filename))
+                self.log.obnoxious("Loading template file: {0}".format(filename))
             except PBException as e:
-                self.log.warn("Recipe attempting to inherit from unknown template {}".format(
+                self.log.warn("Recipe attempting to inherit from unknown template {0}".format(
                     inherit_from
                 ))
                 break
-            self.log.obnoxious("Inheriting from file {}".format(filename))
+            self.log.obnoxious("Inheriting from file {0}".format(filename))
             parent_data = self._load_recipe_from_file(filename)
             self._data['depends'] = self._data['depends'] + parent_data['depends']
             self._data = dict_merge(parent_data, self._data)
@@ -242,7 +242,7 @@ class Recipe(object):
         for k, v in iteritems(self._data):
             if not hasattr(self, k):
                 setattr(self, k, v)
-        self.log.obnoxious("Loaded recipe - {}".format(self.id))
+        self.log.obnoxious("Loaded recipe - {0}".format(self.id))
 
     def __str__(self):
         import yaml
@@ -378,7 +378,7 @@ def get_recipe(pkgname, target='package', fail_easy=False):
     """
     cache_key = pkgname
     if cache_key in recipe_cache:
-        pb_logging.logger.getChild("get_recipe").obnoxious("Woohoo, this one's already cached ({})".format(pkgname))
+        pb_logging.logger.getChild("get_recipe").obnoxious("Woohoo, this one's already cached ({0})".format(pkgname))
         return recipe_cache[cache_key]
     try:
         r = Recipe(recipe_manager.recipe_manager.get_recipe_filename(pkgname))
@@ -408,6 +408,6 @@ if __name__ == "__main__":
     #pb_logging.logger.setLevel(1)
     #scanner = Recipe(recipe_filename)
     #for k, v in scanner.satisfy.iteritems():
-        #print "{}:".format(k)
+        #print "{0}:".format(k)
         #print str(v)
     #print scanner.lvars

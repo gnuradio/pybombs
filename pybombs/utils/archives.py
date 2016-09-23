@@ -40,14 +40,14 @@ def extract_to(filename, path):
         archive = zipfile.ZipFile(filename)
     else:
         raise RuntimeError("Cannot extract {}: Unknown archive type")
-    log.debug("Unpacking {}".format(filename))
+    log.debug("Unpacking {0}".format(filename))
     if len(archive.getnames()) == 1:
         prefix = os.path.split(archive.getnames()[0])[0]
     else:
         prefix = os.path.commonprefix(archive.getnames())
     if not prefix:
         prefix = '.'
-    log.debug("Common prefix: {}".format(prefix))
+    log.debug("Common prefix: {0}".format(prefix))
     if prefix == '.':
         if not os.path.isdir(path):
             os.mkdir(path)

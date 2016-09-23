@@ -75,13 +75,13 @@ class Fetch(CommandBase):
             self.log.debug("Loading all recipes!")
             self.args.packages = self.recipe_manager.list_all()
         try:
-            self.log.debug("Getting recipes for: {}".format(self.args.packages))
+            self.log.debug("Getting recipes for: {0}".format(self.args.packages))
             recipe_list = [ \
                 recipe.Recipe(self.recipe_manager.get_recipe_filename(x)) \
                 for x in self.args.packages if len(x) \
             ]
         except KeyError as e:
-            self.log.error("Package has no recipe: {}".format(e))
+            self.log.error("Package has no recipe: {0}".format(e))
             return 1
         for r in recipe_list:
             if (not hasattr(r,'source')) or (not len(r.source)):

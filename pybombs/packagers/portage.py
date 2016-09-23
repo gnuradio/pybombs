@@ -69,16 +69,16 @@ class ExternalPortage(ExternPackager):
                 versions += [self.portage.catpkgsplit(p, True)[2]]
             if len(versions) > 1:
                 ver_string = ", ".join(versions)
-                self.log.debug("Package {} has ".format(pkgname)+"versions "+ver_string.format(*versions)+" in portage")
+                self.log.debug("Package {0} has ".format(pkgname)+"versions "+ver_string.format(*versions)+" in portage")
                 ver = versions[-1]
             elif len(versions) == 1:
-                self.log.debug("Package {} has version {} in portage".format(pkgname, ver))
+                self.log.debug("Package {0} has version {1} in portage".format(pkgname, ver))
                 ver = versions[0]
             else:
-                self.log.debug("Package {} is not available in portage".format(pkgname))
+                self.log.debug("Package {0} is not available in portage".format(pkgname))
             return ver
         except Exception as ex:
-            self.log.error("Error: {}".format(ex))
+            self.log.error("Error: {0}".format(ex))
         return False
 
     def get_installed_version(self, pkgname):
@@ -99,12 +99,12 @@ class ExternalPortage(ExternPackager):
                 installed_package = ""
             if installed_package:
                 ver = self.portage.catpkgsplit(installed_package,True)[2]
-                self.log.debug("Package {} has version {}".format(pkgname, ver))
+                self.log.debug("Package {0} has version {1}".format(pkgname, ver))
             else:
                 ver = None
             return ver
         except Exception as ex:
-            self.log.error("Error: `{} ".format(ex))
+            self.log.error("Error: '{0}'".format(ex))
             self.log.obnoxious(str(ex))
             return False
 
@@ -130,7 +130,7 @@ class ExternalPortage(ExternPackager):
                 subproc.monitor_process(["emerge","--quiet-build","y","--ask","n",pkgname], elevate=True )
             return True
         except Exception as e:
-            self.log.error("Running `emerge {}` failed.".format(cmd))
+            self.log.error("Running `emerge {0}` failed.".format(cmd))
             self.log.obnoxious(str(e))
             return False
 

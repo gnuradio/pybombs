@@ -69,7 +69,7 @@ class Svn(FetcherBase):
         self.log.debug("Using url {0}".format(url))
         cwd = os.getcwd()
         src_dir = os.path.join(dest, dirname)
-        self.log.obnoxious("Switching cwd to: {}".format(src_dir))
+        self.log.obnoxious("Switching cwd to: {0}".format(src_dir))
         os.chdir(src_dir)
         svn_cmd = ['svn', 'up', '--force']
         if args.get('svnrev'):
@@ -86,16 +86,16 @@ class Svn(FetcherBase):
 
     #def get_version(self, recipe, url):
         #if not self.check_fetched(recipe, url):
-            #self.log.error("Can't return version for {}, not fetched!".format(recipe.id))
+            #self.log.error("Can't return version for {0}, not fetched!".format(recipe.id))
             #return None
 
         #repo_dir = os.path.join(self.src_dir, recipe.id)
-        #self.log.obnoxious("Switching cwd to: {}".format(repo_dir))
+        #self.log.obnoxious("Switching cwd to: {0}".format(repo_dir))
         #os.chdir(repo_dir)
         ## TODO run this process properly
-        #out1 = subprocess.check_output("svnversion {}".format(repo_dir), shell=True)
+        #out1 = subprocess.check_output("svnversion {0}".format(repo_dir), shell=True)
         #rm = re.search("\d*:*(\d+).*", out1)
         #self.version = rm.group(1)
-        #self.log.debug("Found version: {}".format(self.version))
-        #self.log.obnoxious("Switching cwd to: {}".format(cwd))
+        #self.log.debug("Found version: {0}".format(self.version))
+        #self.log.obnoxious("Switching cwd to: {0}".format(cwd))
         #return self.version
