@@ -42,21 +42,21 @@ class Dummy(PackagerBase):
         """
         We'll always return version 0.0 here.
         """
-        self.log.info("Pretending that package {} exists.".format(recipe.id))
+        self.log.info("Pretending that package {0} exists.".format(recipe.id))
         return "0.0"
 
     def install(self, recipe, static=False):
         """
         Pseudo-install package
         """
-        self.log.info("Pretending to install package {}.".format(recipe.id))
+        self.log.info("Pretending to install package {0}.".format(recipe.id))
         return True
 
     def update(self, recipe):
         """
         Pseudo-update package
         """
-        self.log.info("Pretending to update package {}.".format(recipe.id))
+        self.log.info("Pretending to update package {0}.".format(recipe.id))
         return True
 
     def installed(self, recipe):

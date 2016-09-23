@@ -34,7 +34,7 @@ class PackagerBase(object):
 
     def __init__(self):
         self.cfg = config_manager
-        self.log = pb_logging.logger.getChild("Packager.{}".format(self.name))
+        self.log = pb_logging.logger.getChild("Packager.{0}".format(self.name))
 
     def supported(self):
         """

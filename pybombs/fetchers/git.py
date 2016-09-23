@@ -62,7 +62,7 @@ class Git(FetcherBase):
         git clone
         """
         url, args = parse_git_url(url, args or {})
-        self.log.debug("Using url - {}".format(url))
+        self.log.debug("Using url - {0}".format(url))
         git_cmd = ['git', 'clone', url, dirname]
         if args.get('gitargs'):
             for arg in args.get('gitargs').split():
@@ -86,7 +86,7 @@ class Git(FetcherBase):
         if args.get('gitrev'):
             cwd = os.getcwd()
             src_dir = os.path.join(dest, dirname)
-            self.log.obnoxious("Switching cwd to: {}".format(src_dir))
+            self.log.obnoxious("Switching cwd to: {0}".format(src_dir))
             os.chdir(src_dir)
             git_co_cmd = ["git", "checkout", "--force", args.get('gitrev')]
             subproc.monitor_process(
@@ -94,7 +94,7 @@ class Git(FetcherBase):
                 o_proc=o_proc,
                 throw_ex=True,
             )
-            self.log.obnoxious("Switching cwd to: {}".format(cwd))
+            self.log.obnoxious("Switching cwd to: {0}".format(cwd))
             os.chdir(cwd)
         return True
 
@@ -106,7 +106,7 @@ class Git(FetcherBase):
         self.log.debug("Using url {0}".format(url))
         cwd = os.getcwd()
         src_dir = os.path.join(dest, dirname)
-        self.log.obnoxious("Switching cwd to: {}".format(src_dir))
+        self.log.obnoxious("Switching cwd to: {0}".format(src_dir))
         os.chdir(src_dir)
         if args.get('gitrev'):
             # If we have a rev or tag specified, fetch, then checkout.
@@ -145,16 +145,16 @@ class Git(FetcherBase):
 
     #def get_version(self, recipe, url):
         #if not self.check_fetched(recipe, url):
-            #self.log.error("Can't return version for {}, not fetched!".format(recipe.id))
+            #self.log.error("Can't return version for {0}, not fetched!".format(recipe.id))
             #return None
         #cwd = os.getcwd()
-        #self.log.obnoxious("Switching cwd to: {}".format(os.path.join(self.src_dir, recipe.id)))
+        #self.log.obnoxious("Switching cwd to: {0}".format(os.path.join(self.src_dir, recipe.id)))
         #os.chdir(os.path.join(self.src_dir, recipe.id))
         #out1 = subprocess.check_output("git rev-parse HEAD", shell=True)
         #rm = re.search("([0-9a-f]+).*", out1)
         #self.version = rm.group(1)
-        #self.log.debug("Found version: {}".format(self.version))
-        #self.log.obnoxious("Switching cwd to: {}".format(cwd))
+        #self.log.debug("Found version: {0}".format(self.version))
+        #self.log.obnoxious("Switching cwd to: {0}".format(cwd))
         #os.chdir(cwd)
         #return self.version
 

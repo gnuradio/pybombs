@@ -44,12 +44,12 @@ class File(FetcherBase):
         - args: Additional args to pass to the actual fetcher
         """
         if not os.path.isfile(url):
-            self.log.error("File not found: {}".format(url))
+            self.log.error("File not found: {0}".format(url))
             return False
         filename = os.path.split(url)[-1]
-        self.log.debug("Looking for file: {}".format(filename))
+        self.log.debug("Looking for file: {0}".format(filename))
         if os.path.isfile(filename):
-            self.log.info("File already exists in source dir: {}".format(filename))
+            self.log.info("File already exists in source dir: {0}".format(filename))
         else:
             self.log.debug("Symlinking file to source dir.")
             os.symlink(url, os.path.join(os.getcwd(), filename))
@@ -81,17 +81,17 @@ class File(FetcherBase):
 
     #def get_version(self, recipe, url):
         #if not self.check_fetched(recipe, url):
-            #self.log.error("Can't return version for {}, not fetched!".format(recipe.id))
+            #self.log.error("Can't return version for {0}, not fetched!".format(recipe.id))
             #return None
         #cwd = os.getcwd()
         #repo_dir = os.path.join(self.cfg.get_active_prefix().src_dir, recipe.id)
-        #self.log.obnoxious("Switching cwd to: {}".format(repo_dir))
+        #self.log.obnoxious("Switching cwd to: {0}".format(repo_dir))
         #os.chdir(repo_dir)
         ## TODO run this process properly
-        #out1 = subprocess.check_output("svnversion {}".format(repo_dir), shell=True)
+        #out1 = subprocess.check_output("svnversion {0}".format(repo_dir), shell=True)
         #rm = re.search("\d*:*(\d+).*", out1)
         #self.version = rm.group(1)
-        #self.log.debug("Found version: {}".format(self.version))
-        #self.log.obnoxious("Switching cwd to: {}".format(cwd))
+        #self.log.debug("Found version: {0}".format(self.version))
+        #self.log.obnoxious("Switching cwd to: {0}".format(cwd))
         #os.chdir(cwd)
         #return self.version

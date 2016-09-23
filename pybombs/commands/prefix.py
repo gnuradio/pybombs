@@ -125,12 +125,12 @@ class Prefix(CommandBase):
         """
         pybombs prefix info
         """
-        #self.log.info('Prefix dir: {}'.format(self.prefix.prefix_dir))
-        print("\x1b[32m[Default Prefix]: {} \033[0m".format(self.cfg.get('default_prefix')))
+        #self.log.info('Prefix dir: {0}'.format(self.prefix.prefix_dir))
+        print("\x1b[32m[Default Prefix]: {0} \033[0m".format(self.cfg.get('default_prefix')))
         self.active_prefix = self.cfg.get_active_prefix()
         print("Available Prefixes :")
         for key,value in iteritems(self.active_prefix.prefix_aliases):
-            print("{} - {}".format(key, value))
+            print("{0} - {1}".format(key, value))
 
 
     def _print_prefix_env(self):
@@ -139,7 +139,7 @@ class Prefix(CommandBase):
         """
         print('Prefix env:')
         for k, v in iteritems(self.prefix.env):
-            print("{}={}".format(k, v))
+            print("{0}={1}".format(k, v))
 
 
     def _run_installsdk(self):

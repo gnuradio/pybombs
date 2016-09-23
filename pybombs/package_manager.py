@@ -61,13 +61,13 @@ class PackageManager(object):
         requested_packagers = [x.strip() for x in self.cfg.get('packagers').split(',') if x]
         binary_pkgrs = []
         for pkgr in requested_packagers:
-            self.log.debug("Attempting to add binary package manager {}".format(pkgr))
+            self.log.debug("Attempting to add binary package manager {0}".format(pkgr))
             p = packagers.get_by_name(pkgr, packagers.__dict__.values())
             if p is None:
-                self.log.warn("This binary package manager can't be instantiated: {}".format(pkgr))
+                self.log.warn("This binary package manager can't be instantiated: {0}".format(pkgr))
                 continue
             if p.supported():
-                self.log.debug("{} is supported!".format(pkgr))
+                self.log.debug("{0} is supported!".format(pkgr))
                 binary_pkgrs.append(p)
         self._packagers = []
         for satisfy in self.cfg.get('satisfy_order').split(','):
@@ -78,8 +78,8 @@ class PackageManager(object):
             elif satisfy == 'native':
                 self._packagers += binary_pkgrs
             else:
-                raise PBException("Invalid satisfy_order value: {}".format(satisfy))
-        self.log.debug("Using packagers: {}".format([x.name for x in self._packagers]))
+                raise PBException("Invalid satisfy_order value: {0}".format(satisfy))
+        self.log.debug("Using packagers: {0}".format(str([x.name for x in self._packagers])))
         # Now we can use self.packagers, in order, for our commands.
 
     def check_package_flag(self, pkgname, flag):
@@ -119,7 +119,7 @@ class PackageManager(object):
             return True
         self.log.debug("Checking if package {0} is installable...".format(name))
         if self.check_package_flag(name, 'forceinstalled'):
-            self.log.debug("Package {} is forced to state 'installed'.".format(name))
+            self.log.debug("Package {0} is forced to state 'installed'.".format(name))
             return ['force-installed'] if return_pkgr_name else True
         r = recipe.get_recipe(name)
         pkgrs = []
@@ -151,7 +151,7 @@ class PackageManager(object):
             return True
         self.log.debug("Checking if package {0} is installed...".format(name))
         if self.check_package_flag(name, 'forceinstalled'):
-            self.log.debug("Package {} is forced to state 'installed'.".format(name))
+            self.log.debug("Package {0} is forced to state 'installed'.".format(name))
             # TODO maybe we can figure out a version string
             return ['force-installed'] if return_pkgr_name else True
         r = recipe.get_recipe(name)
@@ -175,9 +175,9 @@ class PackageManager(object):
         """
         Install the given package. Returns True if successful, False otherwise.
         """
-        self.log.debug("install({}, static={})".format(name, static))
+        self.log.debug("install({0}, static={1})".format(name, static))
         if self.check_package_flag(name, 'forceinstalled'):
-            self.log.debug("Package {} is assumed installed.".format(name))
+            self.log.debug("Package {0} is assumed installed.".format(name))
             # TODO maybe we can figure out a version string
             return True
         pkgrs = self.get_packagers(name)
@@ -231,7 +231,7 @@ class PackageManager(object):
         """
         rec = recipe.get_recipe(name)
         for pkgr in pkgrs:
-            self.log.debug("Using packager {}".format(pkgr.name))
+            self.log.debug("Using packager {0}".format(pkgr.name))
             try:
                 result = getattr(pkgr, operation)(rec, **kwargs)
                 if result:
@@ -241,7 +241,7 @@ class PackageManager(object):
                     return True
             except PBException as ex:
                 self.log.error(
-                    "Something went wrong while trying to {} {} using {}: {}".format(
+                    "Something went wrong while trying to {0} {1} using {2}: {3}".format(
                         operation, name, pkgr.name, str(ex).strip()
                     )
                 )

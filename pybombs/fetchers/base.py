@@ -36,7 +36,7 @@ class FetcherBase(Requirer):
     def __init__(self):
         Requirer.__init__(self)
         self.cfg = config_manager
-        self.log = pb_logging.logger.getChild("Fetcher.{}".format(self.url_type))
+        self.log = pb_logging.logger.getChild("Fetcher.{0}".format(self.url_type))
 
     def fetch_url(self, url, dest, dirname, args=None):
         """

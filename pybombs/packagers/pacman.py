@@ -48,7 +48,7 @@ class ExternalPacman(ExternPackager):
                 'ver'
             ) or False
             if ver:
-                self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.command))
+                self.log.debug("Package {0} has version {1} in {2}".format(pkgname, ver, self.command))
             return ver
         except subprocess.CalledProcessError as ex:
             # This usually means the package was not found, so don't worry
@@ -76,7 +76,7 @@ class ExternalPacman(ExternPackager):
             if ver is None:
                 self.log.debug("Looks like pacman -Qi can't find package {pkg}".format(pkg=pkgname))
                 return False
-            self.log.debug("Package {} has version {}".format(pkgname, ver))
+            self.log.debug("Package {0} has version {1}".format(pkgname, ver))
             return ver
         except subprocess.CalledProcessError:
             # This usually means the packet is not installed
@@ -106,7 +106,7 @@ class ExternalPacman(ExternPackager):
             subproc.monitor_process([self.command, "--noconfirm", cmd, pkgname], elevate=True)
             return True
         except Exception as ex:
-            self.log.error("Running `{} {}' failed.".format(self.command, cmd))
+            self.log.error("Running `{0} {1}' failed.".format(self.command, cmd))
             self.log.obnoxious(str(ex))
             return False
 

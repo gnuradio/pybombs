@@ -52,7 +52,7 @@ class ExternalYumDnf(ExternPackager):
             )
             if ver is None:
                 return False
-            self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.command))
+            self.log.debug("Package {0} has version {1} in {2}".format(pkgname, ver, self.command))
             return ver
         except subprocess.CalledProcessError as ex:
             # This usually means the package was not found, so don't worry
@@ -89,7 +89,7 @@ class ExternalYumDnf(ExternPackager):
                     if pkgarch is not None and mobj.group('arch') != pkgarch:
                         continue
                     ver = mobj.group('ver')
-                    self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.command))
+                    self.log.debug("Package {0} has version {1} in {2}".format(pkgname, ver, self.command))
                     return ver
             return False
         except subprocess.CalledProcessError:

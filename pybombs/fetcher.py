@@ -54,7 +54,7 @@ class Fetcher(object):
         fetcher = self.available.get(url_type)
         if not fetcher:
             raise PBException("No fetcher for type {t}".format(t=url_type))
-        self.log.debug("Using fetcher {}".format(fetcher))
+        self.log.debug("Using fetcher {0}".format(fetcher))
         return (fetcher, url)
 
     def fetch_url(self, src, dest, dirname, args=None):
@@ -141,10 +141,10 @@ class Fetcher(object):
         """
         dst_dir = os.path.join(self.src_dir, recipe.id)
         if os.path.isdir(dst_dir):
-            self.log.debug("refetch(): Found existing directory {}. Nuking that.".format(dst_dir))
+            self.log.debug("refetch(): Found existing directory {0}. Nuking that.".format(dst_dir))
             shutil.rmtree(dst_dir, ignore_errors=True)
             if os.path.isdir(dst_dir):
-                raise PBException("Can't nuke existing directory {}".format(dst_dir))
+                raise PBException("Can't nuke existing directory {0}".format(dst_dir))
         res = self.fetch(recipe)
         if res:
             # Fetch may not set state to fetched, but here we have to.
@@ -212,7 +212,7 @@ class Fetcher(object):
         """
         # FIXME TODO fix
         if not self.check_fetched(recipe):
-            self.log.error("Can't return version for {}, not fetched!".format(recipe.id))
+            self.log.error("Can't return version for {0}, not fetched!".format(recipe.id))
         return None
 
     def parse_uri(self, uri):
