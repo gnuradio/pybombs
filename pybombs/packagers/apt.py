@@ -22,10 +22,13 @@
 Packager: apt
 """
 
+from __future__ import absolute_import
+import re
 import subprocess
 from pybombs.packagers.extern import ExternCmdPackagerBase, ExternPackager
 from pybombs.utils import subproc
 from pybombs.utils import sysutils
+
 
 class ExternalApt(ExternPackager):
     """
@@ -40,48 +43,72 @@ class ExternalApt(ExternPackager):
             self.getcmd = 'apt'
             self.searchcmd = 'apt-cache'
 
+        try:
+            import apt
+            self.cache = apt.Cache()
+        except (ImportError, AttributeError):
+            # ImportError is caused by apt being completely missing
+            # AttributeError is caused by us importing ourselves (we have no
+            #   Cache() method) because python-apt is missing and we got a
+            #   relative import instead
+            self.log.info("Install python-apt to speed up apt processing.")
+            self.cache = None
+
     def get_available_version(self, pkgname):
         """
         Check which version is available.
         """
-        try:
-            self.log.obnoxious("Checking {0} for `{1}'".format(self.searchcmd, pkgname))
-            ver = subproc.match_output(
-                [self.searchcmd, "show", pkgname],
-                r'Version: (?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n',
-                'ver'
-            )
-            if ver is None:
-                return False
+        if self.cache:
+            self.log.obnoxious("Checking apt for `{0}'".format(pkgname))
+            (ver, is_installed) = self.check_cache(pkgname)
             if ver:
                 self.log.debug("Package {0} has version {1} in repositories".format(pkgname, ver))
             return ver
-        except subprocess.CalledProcessError:
-            self.log.error("Error running {0} show. This shouldn't happen. Probably a bug.")
+        else:
+            try:
+                self.log.obnoxious("Checking {0} for `{1}'".format(self.searchcmd, pkgname))
+                ver = subproc.match_output(
+                    [self.searchcmd, "show", pkgname],
+                    r'Version: (?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n',
+                    'ver'
+                )
+                if ver is None:
+                    return False
+                if ver:
+                    self.log.debug("Package {0} has version {1} in repositories".format(pkgname, ver))
+                return ver
+            except subprocess.CalledProcessError:
+                self.log.error("Error running {0} show. This shouldn't happen. Probably a bug.".format(pkgname))
         return False
 
     def get_installed_version(self, pkgname):
         """
-        Use dpkg to determine and return the currently installed version.
+        Use dpkg (or python-apt) to determine and return the currently installed version.
         If pkgname is not installed, return None.
         """
-        try:
-            ver = subproc.match_output(
-                ["dpkg", "-s", pkgname],
-                r'^Version: (?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+)',
-                'ver'
-            )
-            if ver is None:
-                self.log.debug("Looks like dpkg -s can't find package {pkg}. This is most likely a bug.".format(pkg=pkgname))
+        if self.cache:
+            (ver, is_installed) = self.check_cache(pkgname)
+            if is_installed:
+                self.log.debug("Package {0} has version {1} installed".format(pkgname, ver))
+            return ver if is_installed else False
+        else:
+            try:
+                ver = subproc.match_output(
+                    ["dpkg", "-s", pkgname],
+                    r'^Version: (?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+)',
+                    'ver'
+                )
+                if ver is None:
+                    self.log.debug("Looks like dpkg -s can't find package {pkg}. This is most likely a bug.".format(pkg=pkgname))
+                    return False
+                self.log.debug("Package {0} has version {1} installed".format(pkgname, ver))
+                return ver
+            except subprocess.CalledProcessError:
+                # This usually means the packet is not installed -- not a problem.
                 return False
-            self.log.debug("Package {} has version {} in dpkg".format(pkgname, ver))
-            return ver
-        except subprocess.CalledProcessError:
-            # This usually means the packet is not installed -- not a problem.
-            return False
-        except Exception as e:
-            self.log.error("Running dpkg -s failed.")
-            self.log.obnoxious(str(e))
+            except Exception as e:
+                self.log.error("Running dpkg -s failed.")
+                self.log.obnoxious(str(e))
         return False
 
     def install(self, pkgname):
@@ -95,6 +122,21 @@ class ExternalApt(ExternPackager):
             self.log.error("Running {0} install failed.".format(self.getcmd))
             self.log.obnoxious(str(ex))
             return False
+
+    def check_cache(self, pkgname):
+        try:
+            pkg = self.cache[pkgname]
+        except:
+            return (False, False)
+
+        vers = pkg.versions
+        first_ver = vers[0].version
+        ver = re.search(r'(?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+)', first_ver)
+        if ver is None:
+            return (False, pkg.is_installed)
+        ver = ver.group('ver')
+        return (ver, pkg.is_installed)
+
 
 
 class Apt(ExternCmdPackagerBase):
