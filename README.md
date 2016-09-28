@@ -264,46 +264,46 @@ The config.yml files are in YAML format. A typical file looks like this:
 # All configuration options:
 # (Run `pybombs config` to learn which options are recognized)
 config:
-	satisfy_order: native,src
-	default_prefix: default
-	# ... more options
+    satisfy_order: native,src
+    default_prefix: default
+    # ... more options
 
 # Prefix aliases:
 prefix_aliases:
-	default: /home/user/src/pb-prefix/
-	sys: /usr/local
+    default: /home/user/src/pb-prefix/
+    sys: /usr/local
 
 # Prefix configuration directories:
 prefix_config_dir:
-	sys: /home/user/pb-default/
-	# Typically, you don't need this, because the prefix configuration
-	# directory is in <PREFIX>/.pybombs
+    sys: /home/user/pb-default/
+    # Typically, you don't need this, because the prefix configuration
+    # directory is in <PREFIX>/.pybombs
 
 # Recipe locations:
 recipes:
-	myrecipes: /usr/local/share/recipes
-	morerecipes: /home/user/pb-recipes
-	remoterecipes: git+git://url/to/repo
+    myrecipes: /usr/local/share/recipes
+    morerecipes: /home/user/pb-recipes
+    remoterecipes: git+git://url/to/repo
 
 # Package flags:
 packages:
-	gnuradio:
-		forcebuild: True # This will skip any packagers for this package
-                                 # and use a source build
-                forceinstalled: False # 'True' will always assume this package is
-                                      # installed and skip installing it
-                # Any other option here will override whatever's in the
-                # corresponding recipe (in this case, gnuradio.lwr)
+    gnuradio:
+        forcebuild: True  # This will skip any packagers for this package
+                          # and use a source build
+        forceinstalled: False  # 'True' will always assume this package is
+                               # installed and skip installing it
+        # Any other option here will override whatever's in the
+        # corresponding recipe (in this case, gnuradio.lwr)
 
 # Like package flags, but applies flags to all packages
 # in a certain category. 'common' is all OOTs.
 categories:
-	common:
-		forcebuild: True # This would force source builds for any package in the
-                                 # `common` category
+    common:
+        forcebuild: True  # This would force source builds for any package in the
+                          # `common` category
 
 # Environment variables
 env:
-	LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:/path/to/more/libs
+    LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:/path/to/more/libs
 ```
 
