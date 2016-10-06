@@ -23,6 +23,7 @@ System Utils
 """
 
 from __future__ import print_function
+import re
 import os
 import os.path as op
 from pybombs.pb_exception import PBException
@@ -109,7 +110,16 @@ def write_file_in_subdir(base_path, file_path, content):
         raise PBException("Attempting write to file outside base_path")
     open(abs_file_path, 'w').write(content)
 
+def is_virtualenv(path):
+    " Returns True if path is actually a Python virtualenv (False if not) "
+    venv_test_file = op.join(path, 'bin', 'activate')
+    if not op.isfile(venv_test_file):
+        return False
+    try:
+        is_venv = re.search("VIRTUAL_ENV", open(venv_test_file).read()) is not None
+        return is_venv
+    except IOError:
+        return False
 
 if __name__ == "__main__":
     print(which("vim"))
-

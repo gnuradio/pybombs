@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -97,6 +97,7 @@ class PrefixInfo(object):
         self.recipe_dir = None
         self.target_dir = None
         self.env = os.environ
+        self.is_virtualenv = False
         self._cfg_info = self.default_config_info
         if select_prefix is not None:
             args.prefix = select_prefix
@@ -121,6 +122,9 @@ class PrefixInfo(object):
             self.log.debug("Choosing default prefix config dir: {0}".format(self.prefix_cfg_dir))
         if not os.path.isdir(self.prefix_cfg_dir):
             self.log.debug("Config dir does not yet exist.")
+        self.is_virtualenv = sysutils.is_virtualenv(self.prefix_dir)
+        if self.is_virtualenv:
+            self.log.info("Prefix is a Python virtualenv.")
         # 3) Find the config file
         self.cfg_file = npath(os.path.join(self.prefix_cfg_dir, ConfigManager.cfg_file_name))
         config_section = {}
