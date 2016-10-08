@@ -4,3 +4,6 @@ echo "Running static code analysis (PyLint)..."
 pylint -E pybombs \
 	--disable=maybe-no-member \
 	--disable=no-member
+
+echo "Building source distribution package (sdist)..."
+python setup.py sdist
