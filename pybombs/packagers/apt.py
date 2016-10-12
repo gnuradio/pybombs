@@ -117,6 +117,8 @@ class ExternalApt(ExternPackager):
         """
         try:
             subproc.monitor_process([self.getcmd, "-y", "install", pkgname], elevate=True, throw=True)
+            if self.cache:
+                self.cache.open()
             return True
         except Exception as ex:
             self.log.error("Running {0} install failed.".format(self.getcmd))
