@@ -20,6 +20,7 @@
 #
 """ Handles installing multiple packets """
 
+from __future__ import print_function
 from pybombs import pb_logging
 from pybombs import package_manager
 from pybombs import dep_manager
@@ -32,10 +33,11 @@ class InstallManager(object):
         self.pm = package_manager.PackageManager()
         self.log = pb_logging.logger.getChild("install_manager")
 
-    def install(self,
+    def install(
+            self,
             packages,
             mode, # install / update
-            fail_if_not_exists=False,
+            fail_if_not_exists=False, # Fail if any package in `packages' is not already installed
             update_if_exists=False,
             quiet=False,
             print_tree=False,
@@ -43,6 +45,7 @@ class InstallManager(object):
             no_deps=False,
             verify=False,
             static=False,
+            install_type=None
         ):
         """
         Install packages.
@@ -51,17 +54,42 @@ class InstallManager(object):
             " Return True if pkg has a legitimate right to be in the tree. "
             if fail_if_not_exists:
                 return bool(self.pm.installed(pkg))
-            return update_if_exists or not self.pm.installed(pkg)
+            if no_deps and pkg not in packages:
+                return False
+            if not self.pm.installed(pkg):
+                # If it's not installed, we'll try a binary install...
+                self.log.debug("Testing binary install for package {pkg}.".format(pkg=pkg))
+                if self.pm.install(pkg, install_type="binary",
+                                   static=static, verify=verify,
+                                   fail_silently=True):
+                    # ...and if that worked, it doesn't have to go into the tree.
+                    return False
+                # Now it's still not installed, so it has to go into the tree:
+                return True
+            else:
+                # If a package is already installed, but not flagged for
+                # updating, it does not go into the tree:
+                if not update_if_exists or not pkg in packages:
+                    return False
+                # OK, so it needs updating. But only if it's a source package:
+                if self.pm.installed(pkg, install_type="source"):
+                    return True
+                # Otherwise, we should give it a shot:
+                self.pm.update(pkg, install_type="binary")
+            assert False # Should never reach this line
+        ####### install() starts here #########
         ### Sanity checks
         if fail_if_not_exists:
             for pkg in packages:
                 if not self.pm.installed(pkg):
                     self.log.error("Package {0} is not installed. Aborting.".format(pkg))
                     return False
-        ### Make install tree
+        extra_info_logger = self.log.info if not quiet else self.log.debug
+        ### Make install tree and install binary packages
+        extra_info_logger("Phase 1: Creating install tree and installing binary packages:")
         install_tree = dep_manager.DepManager(self.pm).make_dep_tree(
             packages,
-            _check_if_pkg_goes_into_tree if not no_deps else lambda x: bool(x in packages)
+            _check_if_pkg_goes_into_tree
         )
         if len(install_tree) == 0 and not quiet:
             self.log.info("No packages to install.")
@@ -69,7 +97,11 @@ class InstallManager(object):
         if (self.log.getEffectiveLevel() <= 20 or print_tree) and not quiet:
             print("Install tree:")
             install_tree.pretty_print()
-        ### Recursively install/update, starting at the leaf nodes
+        if len(install_tree) > 0 and install_type == "binary":
+            self.log.error("Install method was `binary', but source packages are left over!")
+            return False
+        ### Recursively install/update source packages, starting at the leaf nodes
+        extra_info_logger("Phase 2: Recursively installing source packages to prefix:")
         for pkg in install_tree.serialize():
             if mode == 'install' and deps_only and pkg in packages:
                 self.log.debug("Skipping `{0}' because only deps are requested.")

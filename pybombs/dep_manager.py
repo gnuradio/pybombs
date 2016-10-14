@@ -75,7 +75,7 @@ class DepManager(object):
         for dep in deps:
             if not self.pm.exists(pkg):
                 self.log.error(
-                    "Package has no install path: {0} (declared as dependency for package {1})".format(
+                    "Package has no install method: {0} (declared as dependency for package {1})".format(
                         dep, pkg
                     )
                 )

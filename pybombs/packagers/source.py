@@ -49,9 +49,9 @@ class Source(PackagerBase):
 
     def supported(self):
         """
-        We can always build source packages unless disabled in the config.
+        We can always build source packages if there's a prefix
         """
-        return 'src' in self.cfg.get('satisfy_order')
+        return self.prefix.prefix_dir is not None
 
     def exists(self, recipe):
         """

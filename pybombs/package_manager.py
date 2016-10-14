@@ -34,7 +34,14 @@ class PackageManagerCache(object):
         self.known_installable = set()
         self.known_installed = set()
 
-package_manager_cache = PackageManagerCache()
+PACKAGE_MANAGER_CACHE = PackageManagerCache()
+
+def _get_valid_install_type(install_type):
+    " The return value is a valid install type. "
+    if install_type is None:
+        return "any"
+    assert install_type in ("any", "source", "binary")
+    return install_type
 
 class PackageManager(object):
     """
@@ -48,7 +55,7 @@ class PackageManager(object):
         # Set up logger:
         self.log = pb_logging.logger.getChild("PackageManager")
         self.cfg = config_manager
-        self.pmc = package_manager_cache
+        self.pmc = PACKAGE_MANAGER_CACHE
         self.prefix_available = self.cfg.get_active_prefix().prefix_dir is not None
         # Create a source package manager
         if self.prefix_available:
@@ -59,7 +66,7 @@ class PackageManager(object):
             self.src = None
         # Create sorted list of binary package managers
         requested_packagers = [x.strip() for x in self.cfg.get('packagers').split(',') if x]
-        binary_pkgrs = []
+        self.binary_pkgrs = []
         for pkgr in requested_packagers:
             self.log.debug("Attempting to add binary package manager {0}".format(pkgr))
             p = packagers.get_by_name(pkgr, packagers.__dict__.values())
@@ -68,18 +75,8 @@ class PackageManager(object):
                 continue
             if p.supported():
                 self.log.debug("{0} is supported!".format(pkgr))
-                binary_pkgrs.append(p)
-        self._packagers = []
-        for satisfy in self.cfg.get('satisfy_order').split(','):
-            satisfy = satisfy.strip()
-            if satisfy == 'src':
-                if self.prefix_available:
-                    self._packagers += [self.src,]
-            elif satisfy == 'native':
-                self._packagers += binary_pkgrs
-            else:
-                raise PBException("Invalid satisfy_order value: {0}".format(satisfy))
-        self.log.debug("Using packagers: {0}".format(str([x.name for x in self._packagers])))
+                self.binary_pkgrs.append(p)
+        self.log.debug("Using binary packagers: {0}".format(str([x.name for x in self.binary_pkgrs])))
         # Now we can use self.packagers, in order, for our commands.
 
     def check_package_flag(self, pkgname, flag):
@@ -94,20 +91,25 @@ class PackageManager(object):
             ).get(flag)
         )
 
-    def get_packagers(self, pkgname):
+    def get_packagers(self, pkgname, install_type=None):
         """
         Return a valid list of packagers for a given package.
         This will take care of cases where e.g. a source packager is
         required (and then only return that).
         """
-        # Check if the package flags aren't forcing a source build:
-        if self.check_package_flag(pkgname, 'forcebuild'):
+        install_type = _get_valid_install_type(install_type)
+        force_build = self.check_package_flag(pkgname, 'forcebuild')
+        if force_build:
             self.log.debug("Package {pkg} is requesting a source build.".format(pkg=pkgname))
-            if self.src is not None:
-                return [self.src,]
-            else:
+        if install_type == "source" or (install_type == "any" and force_build):
+            return [self.src,]
+        if install_type == "binary" or self.src is None:
+            if force_build:
+                self.log.debug("Returning no packagers -- package is requesting source build, but binary build is requested.")
                 return []
-        return self._packagers
+            return self.binary_pkgrs
+        # if install_type == "any":
+        return [self.src,] + self.binary_pkgrs
 
     def exists(self, name, return_pkgr_name=False):
         """
@@ -138,7 +140,7 @@ class PackageManager(object):
         self.log.debug("Package {0} is not installable.".format(name))
         return False
 
-    def installed(self, name, return_pkgr_name=False):
+    def installed(self, name, return_pkgr_name=False, install_type=None):
         """
         Check to see if this recipe is installed (identified by its name).
 
@@ -146,6 +148,7 @@ class PackageManager(object):
         and is either a list of packager name that installed it, or a version
         string (if the version string can't be determined, returns True instead).
         """
+        install_type = _get_valid_install_type(install_type)
         if not return_pkgr_name and name in self.pmc.known_installed:
             self.log.obnoxious("{0} is cached and known to be installed.".format(name))
             return True
@@ -156,7 +159,7 @@ class PackageManager(object):
             return ['force-installed'] if return_pkgr_name else True
         r = recipe.get_recipe(name)
         pkgrs = []
-        for pkgr in self.get_packagers(name):
+        for pkgr in self.get_packagers(name, install_type):
             pkg_version = pkgr.installed(r)
             if pkg_version is None or not pkg_version:
                 continue
@@ -171,17 +174,40 @@ class PackageManager(object):
         self.log.debug("Package {0} is not installed.".format(name))
         return False
 
-    def install(self, name, static=False, verify=False):
+    def install(
+            self,
+            name,
+            install_type=None,
+            static=False,
+            verify=False,
+            fail_silently=False
+        ):
         """
         Install the given package. Returns True if successful, False otherwise.
+        - install_type: Either "binary", "source" or "any" (default).
+        - static: If True, will require a source build.
+                  The 'static' option is then set for the package
+        - verify: If True, a verification test is run after installation
+                  (e.g. run unit tests, exact behaviour depends on recipe)
+        - fail_silently: If True, no error is produced when a package can't
+                         be installed (will still return False though)
         """
-        self.log.debug("install({0}, static={1})".format(name, static))
+        install_type = _get_valid_install_type(install_type)
+        self.log.debug("install({0}, install_type={1}, static={2})".format(name, install_type, static))
         if self.check_package_flag(name, 'forceinstalled'):
             self.log.debug("Package {0} is assumed installed.".format(name))
             # TODO maybe we can figure out a version string
             return True
-        pkgrs = self.get_packagers(name)
+        if static and install_type == "binary":
+            if not fail_silently:
+                self.log.error('Binary packager for static build was requested.')
+            return False
+        if static and install_type == "any":
+            install_type = "source"
+        pkgrs = self.get_packagers(name, install_type)
         if len(pkgrs) == 0:
+            if fail_silently:
+                return False
             self.log.error("Can't find any packagers to install {0}".format(name))
             raise PBException("No packager available for package {0}".format(name))
         if static:
@@ -199,18 +225,20 @@ class PackageManager(object):
             static=static,
         )
         if not install_result and pkg_optional:
-            self.log.warn("Optional package {0} failed to install.".format(name))
+            if install_type == "binary":
+                return False
+            self.log.warn("Optional package {0} failed to install. Will pretend as if it had worked.".format(name))
             return True
         return install_result
 
-    def update(self, name, verify=False):
+    def update(self, name, verify=False, install_type=None):
         """
         Update the given package. Returns True if successful, False otherwise.
         """
         return self._std_package_operation(
             name,
             'update',
-            self.get_packagers(name),
+            self.get_packagers(name, install_type),
             verify=verify,
         )
 
