@@ -150,7 +150,8 @@ class Apt(ExternCmdPackagerBase):
 
     def __init__(self):
         ExternCmdPackagerBase.__init__(self)
-        self.packager = ExternalApt(self.log)
+        if self.supported():
+            self.packager = ExternalApt(self.log)
 
     def supported(self):
         """
