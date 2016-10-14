@@ -302,10 +302,6 @@ class ConfigManager(object):
     # Default values + Help text:
     defaults = {
         'default_prefix': ('', 'Default Prefix'),
-        'satisfy_order': (
-            'native, src',
-            'Order in which to attempt installations when available, options are: src, native'
-        ),
         'cmakebuildtype': (
             'RelWithDebInfo',
             'CMAKE_BUILD_TYPE args to pass to cmake projects, options are: Debug, Release, RelWithDebInfo, MinSizeRel'
@@ -652,12 +648,12 @@ class ConfigManager(object):
         return parser
 
 
-# This is what you want to use
+# This is what you want to use. Don't instantiate ConfigManager() yourself.
 config_manager = ConfigManager()
 
 # Some test code:
 if __name__ == "__main__":
-    print(config_manager.get_help("satisfy_order"))
-    print(config_manager.get("satisfy_order"))
-    config_manager.set("satisfy_order", "foo, bar")
-    print(config_manager.get("satisfy_order"))
+    print(config_manager.get_help("makewidth"))
+    print(config_manager.get("makewidth"))
+    config_manager.set("makewidth", "8")
+    print(config_manager.get("makewidth"))

@@ -6,4 +6,4 @@ pylint -E pybombs \
 	--disable=no-member
 
 echo "Building source distribution package (sdist)..."
-python setup.py sdist
+python setup.py -q sdist
