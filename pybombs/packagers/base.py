@@ -32,6 +32,10 @@ class PackagerBase(object):
     name = None
     pkgtype = None
 
+    IS_INSTALLED = True
+    NOT_INSTALLED = False
+    DEFINITELY_NOT_INSTALLED = "DEFINITELY_NOT_INSTALLED"
+
     def __init__(self):
         self.cfg = config_manager
         self.log = pb_logging.logger.getChild("Packager.{0}".format(self.name))

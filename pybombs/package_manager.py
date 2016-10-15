@@ -161,7 +161,9 @@ class PackageManager(object):
         pkgrs = []
         for pkgr in self.get_packagers(name, install_type):
             pkg_version = pkgr.installed(r)
-            if pkg_version is None or not pkg_version:
+            if not return_pkgr_name  and pkg_version is pkgr.DEFINITELY_NOT_INSTALLED:
+                return False
+            if pkg_version is None or pkg_version is pkgr.NOT_INSTALLED:
                 continue
             else:
                 self.pmc.known_installed.add(name)

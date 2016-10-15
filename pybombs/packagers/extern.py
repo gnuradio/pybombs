@@ -224,8 +224,8 @@ class ExternCmdPackagerBase(PackagerBase):
         Return type same as 'installed()'.
         """
         installed_version = self.packager.get_installed_version(pkg_name)
-        if not installed_version:
-            return False
+        if installed_version is not PackagerBase.IS_INSTALLED:
+            return installed_version
         if required_version is None:
             return True
         try:
