@@ -33,8 +33,9 @@ class ExternalPip(ExternPackager):
     """
     Wrapper for pip
     """
-    def __init__(self, logger):
+    def __init__(self, logger, is_virtualenv):
         ExternPackager.__init__(self, logger)
+        self.is_virtualenv = is_virtualenv
 
     def get_available_version(self, pkgname):
         """
@@ -61,7 +62,10 @@ class ExternalPip(ExternPackager):
         global PIP_INSTALLED_CACHE
         if PIP_INSTALLED_CACHE is None:
             self.load_install_cache()
-        return PIP_INSTALLED_CACHE.get(pkgname)
+        installed_version = PIP_INSTALLED_CACHE.get(pkgname)
+        if self.is_virtualenv and not installed_version:
+            return ExternPackager.DEFINITELY_NOT_INSTALLED
+        return installed_version
 
     def load_install_cache(self):
         """
@@ -124,7 +128,7 @@ class Pip(ExternCmdPackagerBase):
 
     def __init__(self):
         ExternCmdPackagerBase.__init__(self)
-        self.packager = ExternalPip(self.log)
+        self.packager = ExternalPip(self.log, bool(self.cfg.prefix.is_virtualenv))
 
     def supported(self):
         """
