@@ -119,7 +119,6 @@ def run_with_output_processing(p, o_proc, event, cleanup=None):
     o_proc.process_final()
     return p.returncode
 
-ELEVATE_PRE_ARGS = ['sudo', '-H']
 def _process_thread(event, args, kwargs):
     """
     This actually runs the process.
