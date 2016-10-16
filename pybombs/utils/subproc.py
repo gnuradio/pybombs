@@ -135,10 +135,15 @@ def _process_thread(event, args, kwargs):
     if kwargs.get('shell', False) and isinstance(args, list):
         args = ' '.join(args)
     if kwargs.get('elevate'):
+        elevate_pre_args = config_manager.get('elevate_pre_args')
+        if isinstance(elevate_pre_args, str):
+            elevate_pre_args = [elevate_pre_args,]
+        if len(elevate_pre_args[0].strip()) == 0:
+            elevate_pre_args = []
         if kwargs.get('shell', False) and isinstance(args, str):
-            args = ' '.join(config_manager.get('elevate_pre_args')) + args
+            args = ' '.join(elevate_pre_args) + args
         else:
-            args = config_manager.get('elevate_pre_args') + args
+            args = elevate_pre_args + args
     log = logger.getChild("_process_thread()")
     log.debug("Executing command `{cmd}'".format(cmd=str(args).strip()))
     proc = subprocess.Popen(
