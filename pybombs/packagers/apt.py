@@ -36,11 +36,12 @@ class ExternalApt(ExternPackager):
     """
     def __init__(self, logger):
         ExternPackager.__init__(self, logger)
-        if sysutils.which('apt') is not None:
+        # if sysutils.which('apt') is not None:
+        if False: # To re-enable apt, replace this line with the one above (also need to change something further down)
             self.getcmd = 'apt'
             self.searchcmd = 'apt'
         else:
-            self.getcmd = 'apt'
+            self.getcmd = 'apt-get'
             self.searchcmd = 'apt-cache'
 
         try:
@@ -159,7 +160,8 @@ class Apt(ExternCmdPackagerBase):
         Return True if so.
         """
         has_dpkg = sysutils.which('dpkg') is not None
-        has_apt = sysutils.which('apt') is not None or \
+        # has_apt = sysutils.which('apt') is not None or \
+        has_apt = False or \ # Replace this line with the one above to re-enable apt (also need to change something above)
             (sysutils.which('apt-cache') is not None \
             and sysutils.which('apt-get') is not None)
         return has_dpkg and has_apt
