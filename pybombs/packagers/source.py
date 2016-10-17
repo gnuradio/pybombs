@@ -36,7 +36,6 @@ class Source(PackagerBase):
     Source package manager.
     """
     name = "source"
-    host_sys_deps = ['build-essential',]
 
     def __init__(self):
         PackagerBase.__init__(self)

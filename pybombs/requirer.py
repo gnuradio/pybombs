@@ -75,7 +75,7 @@ class Requirer(object):
         else:
             from pybombs import pb_logging
             logger = pb_logging.logger.getChild("Requirer")
-        if self.host_sys_deps:
+        if requirements:
             logger.debug("Requiring packages on host system: {deps}".format(deps=self.host_sys_deps))
             require_hostsys_dependencies(requirements)
             logger.debug("Requirements met.")
