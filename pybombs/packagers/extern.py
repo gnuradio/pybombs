@@ -214,6 +214,7 @@ class ExternCmdPackagerBase(PackagerBase):
             return False
         installed_version = self.packager.get_installed_version(pkg_name)
         if installed_version is False \
+                or installed_version is None \
                 or (required_version is not None and not vcompare(comparator, installed_version, required_version)):
             return False
         return True
