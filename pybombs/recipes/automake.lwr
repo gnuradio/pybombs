@@ -32,5 +32,6 @@ satisfy:
   rpm: automake >= 1.14
   pacman: automake >= 1.14
   port: automake >= 1.14
+  portage: sys-devel/automake >= 1.14
   cmd: automake --version >= 1.14
 source: wget+http://ftp.gnu.org/gnu/automake/automake-1.15.tar.gz
