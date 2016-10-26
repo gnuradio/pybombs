@@ -31,3 +31,4 @@ from .source import Source
 from .port import Port
 from .portage import Portage
 from .brew import Homebrew
+from .zypper import Zypper
