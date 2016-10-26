@@ -180,7 +180,10 @@ class Prefix(CommandBase):
             return -1
         # Make sure the directory is writable
         path = op.abspath(op.normpath(self.args.path))
-        if not sysutils.mkdir_writable(path, self.log):
+        try:
+            if not sysutils.mkdir_writable(path, self.log):
+                raise PBException("Could not create writable directory.")
+        except PBException:
             self.log.error("Cannot write to prefix path `{0}'.".format(path))
             return -1
         # Make sure that a pybombs directory doesn't already exist
