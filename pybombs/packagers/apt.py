@@ -79,7 +79,10 @@ class ExternalApt(ExternPackager):
                     self.log.debug("Package {0} has version {1} in repositories".format(pkgname, ver))
                 return ver
             except subprocess.CalledProcessError:
-                self.log.error("Error running {0} show. This shouldn't happen. Probably a bug.".format(pkgname))
+                # Could be an issue, but most likely it means the package doesn't exist.
+                self.log.debug(
+                    "{cmd} show {pkg} failed.".format(cmd=self.searchcmd, pkg=pkgname)
+                )
         return False
 
     def get_installed_version(self, pkgname):
