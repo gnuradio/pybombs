@@ -71,7 +71,7 @@ class ExternalPip(ExternPackager):
         self.log.debug("Loading pip install cache.")
         PIP_INSTALLED_CACHE = {}
         try:
-            installed_packages = str(subproc.check_output(["pip", "list", "--format=legacy"])).strip().split("\n")
+            installed_packages = str(subproc.check_output(["pip", "list"])).strip().split("\n")
             for pkg in installed_packages:
                 mobj = re.match(r'(?P<pkg>\S+)\s+\((?P<ver>[^)]+)\)', str(pkg))
                 if mobj is None:
