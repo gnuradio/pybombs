@@ -31,8 +31,10 @@ from pybombs import packagers
 class PackageManagerCache(object):
     " Remember what's installed and installable "
     def __init__(self):
-        self.known_installable = set()
-        self.known_installed = set()
+        # Dict: key == package name, value == boolean install status
+        # If key doesn't exist, we don't know the install/installable status
+        self.known_installable = dict()
+        self.known_installed = dict()
 
 PACKAGE_MANAGER_CACHE = PackageManagerCache()
 
@@ -105,7 +107,9 @@ class PackageManager(object):
             return [self.src,]
         if install_type == "binary" or self.src is None:
             if force_build:
-                self.log.debug("Returning no packagers -- package is requesting source build, but binary build is requested.")
+                self.log.debug(
+                    "Returning no packagers -- package is requesting source build, but binary build is requested."
+                )
                 return []
             return self.binary_pkgrs
         # if install_type == "any":
@@ -115,9 +119,13 @@ class PackageManager(object):
         """
         Check to see if this package is available on this platform.
         Returns True or a version string if yes, False if not.
+        If return_pkgr_name is True, it'll return a list of packagers that
+        can install this package.
         """
         if not return_pkgr_name and name in self.pmc.known_installable:
-            self.log.obnoxious("{0} is cached and known to be installable.".format(name))
+            self.log.obnoxious("{0} has cached installable-status: {1}".format(
+                name, self.pmc.known_installable.get(name)
+            ))
             return True
         self.log.debug("Checking if package {0} is installable...".format(name))
         if self.check_package_flag(name, 'forceinstalled'):
@@ -130,14 +138,16 @@ class PackageManager(object):
             if pkg_version is None or not pkg_version:
                 continue
             else:
-                self.pmc.known_installable.add(name)
+                self.pmc.known_installable[name] = True
                 if return_pkgr_name:
                     pkgrs.append(pkgr.name)
                 else:
                     return pkg_version
         if return_pkgr_name and len(pkgrs):
+            self.pmc.known_installable[name] = True
             return pkgrs
         self.log.debug("Package {0} is not installable.".format(name))
+        self.pmc.known_installable[name] = False
         return False
 
     def installed(self, name, return_pkgr_name=False, install_type=None):
@@ -150,8 +160,10 @@ class PackageManager(object):
         """
         install_type = _get_valid_install_type(install_type)
         if not return_pkgr_name and name in self.pmc.known_installed:
-            self.log.obnoxious("{0} is cached and known to be installed.".format(name))
-            return True
+            self.log.obnoxious("{0} has cached installed-status: {1}".format(
+                name, self.pmc.known_installed.get(name)
+            ))
+            return self.pmc.known_installed.get(name)
         self.log.debug("Checking if package {0} is installed...".format(name))
         if self.check_package_flag(name, 'forceinstalled'):
             self.log.debug("Package {0} is forced to state 'installed'.".format(name))
@@ -164,13 +176,14 @@ class PackageManager(object):
             if pkg_version is None or not pkg_version:
                 continue
             else:
-                self.pmc.known_installed.add(name)
+                self.pmc.known_installed[name] = True
                 if return_pkgr_name:
                     pkgrs.append(pkgr.name)
                 else:
                     return pkg_version
         if return_pkgr_name and len(pkgrs):
             return pkgrs
+        self.pmc.known_installed[name] = False
         self.log.debug("Package {0} is not installed.".format(name))
         return False
 
@@ -228,7 +241,9 @@ class PackageManager(object):
             if install_type == "binary":
                 return False
             self.log.warn("Optional package {0} failed to install. Will pretend as if it had worked.".format(name))
+            self.pmc.known_installed[name] = True
             return True
+        self.pmc.known_installed[name] = bool(install_result)
         return install_result
 
     def update(self, name, verify=False, install_type=None):
