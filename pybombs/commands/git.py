@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2016 Free Software Foundation, Inc.
+# Copyright 2016 Free Software Foundation, Inc.
 #
 # This file is part of GNU Radio
 #
@@ -22,13 +22,11 @@
 
 from __future__ import print_function
 import os
-from six import iteritems
 from pybombs.pb_exception import PBException
 from pybombs import recipe
 from pybombs import fetcher
-from pybombs.utils import sysutils
-from pybombs.utils import subproc
 from pybombs.commands import SubCommandBase
+from pybombs.gitcache_manager import GitCacheManager
 
 #############################################################################
 # Subcommand arg parsers
@@ -124,43 +122,13 @@ class Git(SubCommandBase):
                 except PBException:
                     pass
             return git_sources
-        def _chdir_to_repo(path):
-            " Will always chdir to the repo, even if it has to be created. "
-            if not sysutils.dir_is_writable(path):
-                sysutils.mkdir_writable(path)
-                os.chdir(path)
-                subproc.check_output(['git', 'init', '--bare'])
-            else:
-                os.chdir(path)
-            return
-        def _get_existing_remotes():
-            " Return dict remotename->url from current git repo "
-            return {
-                remote.strip(): subproc.check_output(['git', 'remote', 'get-url', remote.strip()]).strip()
-                for remote in subproc.check_output(['git', 'remote']).split()
-            }
-        def _add_git_remotes(git_sources, existing_remotes):
-            " Add dict remotename->url safely into current git repo "
-            for remote, url in iteritems(git_sources):
-                while remote in existing_remotes:
-                    remote += '_'
-                existing_remotes.add(remote)
-                cmd = ['git', 'remote', 'add', remote, url]
-                self.log.debug("Adding remote: {0}".format(" ".join(cmd)))
-                subproc.check_output(cmd)
         # Go, go, go!
         packages = _get_packages(args)
         self.log.debug("Packages to add to git ref: {0}".format(packages))
         gitcachedir = _get_repo_path(None)
+        gcm = GitCacheManager(gitcachedir)
+        self.log.debug("Using git cache in: {0}".format(gcm.path))
         git_sources = _get_git_remotes(packages)
-        _chdir_to_repo(gitcachedir)
-        existing_remotes = _get_existing_remotes()
-        print(existing_remotes)
-        git_sources = {remote: url for remote, url in iteritems(git_sources)
-                       if url not in existing_remotes.values()}
-        print(git_sources)
-        _add_git_remotes(git_sources, set(existing_remotes.keys()))
-        self.log.debug("Updating remotes")
-        subproc.check_output(['git', 'fetch', '--all', '--prune'])
+        gcm.add_remotes(git_sources, True)
         self.cfg.update_cfg_file({'config': {'git-cache': gitcachedir}})
 
