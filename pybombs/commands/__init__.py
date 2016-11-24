@@ -25,6 +25,7 @@ from .config import Config
 from .deploy import Deploy
 from .digraph import Digraph
 from .fetch import Fetch
+from .git import Git
 from .install import Install, Doge
 from .inv import Inv
 from .lint import Lint
