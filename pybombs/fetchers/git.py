@@ -68,6 +68,10 @@ class Git(FetcherBase):
             for arg in args.get('gitargs').split():
                 git_cmd.append(arg)
         if self.cfg.get("git-cache", False):
+            from pybombs import gitcache_manager
+            gcm = gitcache_manager.GitCacheManager(self.cfg.get("git-cache"))
+            self.log.debug("Adding remote into git ref")
+            gcm.add_remote(dirname, url, True)
             git_cmd.append('--reference')
             git_cmd.append(self.cfg.get("git-cache"))
         if args.get('gitbranch'):
@@ -76,12 +80,14 @@ class Git(FetcherBase):
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG:
             o_proc = output_proc.OutputProcessorMake(preamble="Cloning:     ")
+        print("clone start")
         subproc.monitor_process(
             args=git_cmd,
             o_proc=o_proc,
             throw_ex=True,
             throw=True,
         )
+        print("clone stop")
         # If we have a specific revision, checkout that
         if args.get('gitrev'):
             cwd = os.getcwd()
