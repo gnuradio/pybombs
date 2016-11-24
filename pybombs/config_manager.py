@@ -206,6 +206,7 @@ class PrefixInfo(object):
                 self.alias = args.prefix
                 args.prefix = self._cfg_info['prefix_aliases'][args.prefix]
             if not os.path.isdir(npath(args.prefix)):
+                self.log.error("Not a prefix: {0}".format(args.prefix))
                 raise PBException("Can't open prefix: {0}".format(args.prefix))
             self.prefix_dir = npath(args.prefix)
             self.prefix_src = 'cli'
