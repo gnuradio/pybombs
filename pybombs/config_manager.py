@@ -96,7 +96,7 @@ class PrefixInfo(object):
         self.inventory = None
         self.recipe_dir = None
         self.target_dir = None
-        self.env = os.environ
+        self.env = os.environ.copy()
         self.is_virtualenv = False
         self._cfg_info = self.default_config_info
         if select_prefix is not None:
@@ -161,11 +161,12 @@ class PrefixInfo(object):
         # Set env vars that we always need
         self.env[self.env_prefix_var] = self.prefix_dir
         self.env[self.env_srcdir_var] = self.src_dir
-        # Update os.environ so we can use os.path.expandvars
-        os.environ = self.env
         # env: sections are always respected:
+        OLD_ENV = os.environ  # Bit of an ugly hack to allow use of
+        os.environ = self.env # os.path.expandvars() on self.env
         for k, v in iteritems(self._cfg_info['env']):
             self.env[k.upper()] = os.path.expandvars(v.strip())
+        os.environ = OLD_ENV
         # 8) Keep relevant config sections as attributes
         self._set_attrs()
 
