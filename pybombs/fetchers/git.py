@@ -80,14 +80,12 @@ class Git(FetcherBase):
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG:
             o_proc = output_proc.OutputProcessorMake(preamble="Cloning:     ")
-        print("clone start")
         subproc.monitor_process(
             args=git_cmd,
             o_proc=o_proc,
             throw_ex=True,
             throw=True,
         )
-        print("clone stop")
         # If we have a specific revision, checkout that
         if args.get('gitrev'):
             cwd = os.getcwd()
