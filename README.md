@@ -232,7 +232,7 @@ In this case, the environment from the calling shell session is *not* inherited.
 
 When you run a command such as
 
-   $ pybombs install gnuradio
+    $ pybombs install gnuradio
 
 PyBOMBS will initiate an installation procedure for the package. Since PyBOMBS
 can interact both with the system's package manager (e.g., apt, dnf, brew...)
@@ -453,4 +453,9 @@ clones, and configure your PyBOMBS accordingly. See
     $ pybombs git make-ref --help
 
 for more use cases.
+
+If you already have a reference repository elsewhere, simply point PyBOMBS to
+it:
+
+    $ pybombs config git-cache /path/to/ref
 
