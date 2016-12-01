@@ -157,7 +157,9 @@ to initialize a directory to be a full PyBOMBS prefix:
     $ pybombs prefix init /path/to/prefix [-a alias]
 
 This is similar to `git init`. The optional alias allows you to access the
-prefix with the alias instead of the full path.
+prefix with the alias instead of the full path. A typical value for the default
+prefix is `~/prefix/default`, and then other prefixes also reside in `~/prefix`
+alongside the default prefix.
 
 After initializing a prefix, you can start to install to this prefix using the
 install command:
@@ -175,9 +177,23 @@ the `-R` switch on the command line:
 
 #### Setting environment variables directly:
 
-In any config file that is read, a `env:` section can be added. This
-will set environment variables for any command  (configure, build, make...)
-that is run within PyBOMBS.
+For a quick setup of environment variables, you can use the `pybombs config`
+command:
+
+    $ pybombs config --env CC clang
+    $ pybombs prefix env
+    # ...lots of output...
+    CC=clang
+    # ...lots of output...
+
+This will, by default, set an environment variable for *all* prefixes. You
+might want to set it for a specific one, in that case, specify the prefix:
+
+    $ pybombs -p default config --env CC clang
+
+You can also edit the config files directly.  In any config file that is read,
+a `env:` section can be added. This will set environment variables for any
+command  (configure, build, make...) that is run within PyBOMBS.
 
 Note that this will still use the regular system environment as well, but
 it will overwrite existing variables. Variable expansion can be used, so
@@ -194,6 +210,9 @@ colon (:), not an equals sign, as you would in a shell script.
 In all cases, the environment variable `PYBOMBS_PREFIX` is set to the
 current prefix, and `PYBOMBS_PREFIX_SRC` is set to the source directory.
 
+Use `pybombs prefix env` to show all environment variables as they would appear
+when commands are run inside the prefix.
+
 #### Using an external script to set the environment
 
 Inside the config section, a shell script can be defined that sets up an
@@ -206,6 +225,8 @@ config:
     # Other vars
     setup_env: /path/to/environment-setup-armv7ahf-vfp-neon-oe-linux-gnueabi
 ```
+
+In this case, the environment from the calling shell session is *not* inherited.
 
 ## Installing packages
 
@@ -254,8 +275,41 @@ Important keys in the recipe files include:
 
 - `inherit`: This will load the values from a template file (`*.lwt`) before
   using the values from the recipe, to set up suitable defaults.
-- `category`: Can technically be anything, but certain categories
-  carry certain meanings
+- `category`: Can technically be anything, but certain categories carry certain
+  meanings. In most cases, choose 'common'.
+
+Example:
+
+
+```{.yml}
+# This means the build/install works like any other cmake project:
+inherit: cmake
+# These dependencies are only for source builds:
+depends:
+- boost
+- fftw
+- cppunit
+# There's more dependencies in the real repo, skipping for this example
+description: Free and open source toolkit for software defined radio
+category: common
+# Its good practice to add one of these for all the installers we have:
+satisfy:
+  deb: gnuradio-dev
+  pacman: gnuradio
+  port: gnuradio
+  portage: net-wireless/gnuradio
+source: git+https://github.com/gnuradio/gnuradio.git
+# master is the default branch, but you can choose a different branch here
+gitbranch: master
+# Only when cloning the source code is this used, in that case, these args are
+# appended to the git command that does the clone:
+gitargs: --recursive
+# Variables defined here can be used in various places in this recipe:
+vars:
+  config_opt: " -DENABLE_DOXYGEN=$builddocs "
+# For static builds, we need to override the defaults from the cmake.lwt recipe:
+configure_static: cmake .. -DCMAKE_BUILD_TYPE=$cmakebuildtype -DCMAKE_INSTALL_PREFIX=$prefix -DENABLE_STATIC_LIBS=True $config_opt
+```
 
 ### Recipe Management
 
@@ -263,7 +317,8 @@ Recipes can be stored in multiple locations, which easily allows to store
 separate recipe lists for specific projects.
 
 If the same recipe can be found in more than one location, it will be
-chosen from the most specific. The precise order is:
+chosen from the most specific. The precise order is (from more to less
+specific):
 - Recipe locations specified on the command line (Using the `-r` switch)
 - From the environment variable `PYBOMBS_RECIPE_DIR`
 - The current prefix (if available)
@@ -273,7 +328,8 @@ The command
 
     $ pybombs recipes list-repos
 
-will show the recipe locations in the order they're used.
+will show the recipe locations in the order they're used (it will pick a recipe
+from the top line before it'll pick it from the bottom line).
 
 This mechanism can be used to override recipes for certain prefixes. For
 example, the `gnuradio.lwr` file could be copied and adapted to use a
@@ -325,6 +381,7 @@ The config.yml files are in YAML format. A typical file looks like this:
 ```{.yml}
 # All configuration options:
 # (Run `pybombs config` to learn which options are recognized)
+# You can edit these with `pybombs config` too
 config:
     default_prefix: default
     makewidth: 8 # Run on 8 cores
@@ -334,6 +391,7 @@ config:
 prefix_aliases:
     default: /home/user/src/pb-prefix/
     sys: /usr/local
+    # pybombs prefix init -a <alias> will add one automatically here
 
 # Prefix configuration directories:
 prefix_config_dir:
@@ -346,6 +404,8 @@ recipes:
     myrecipes: /usr/local/share/recipes
     morerecipes: /home/user/pb-recipes
     remoterecipes: git+git://url/to/repo
+    # You wouldn't usually hand-edit this section, but use 'pybombs recipes' to
+    # manipulate it
 
 # Package flags:
 packages:
@@ -356,6 +416,7 @@ packages:
                                # installed and skip installing it
         # Any other option here will override whatever's in the
         # corresponding recipe (in this case, gnuradio.lwr)
+        # You can set these with pybombs config --package gnuradio forcebuild False
 
 # Like package flags, but applies flags to all packages
 # in a certain category. 'common' is all OOTs.
@@ -363,9 +424,33 @@ categories:
     common:
         forcebuild: True  # This would force source builds for any package in the
                           # `common` category
+        # Still works via pybombs config --category common forcebuild True
 
 # Environment variables
 env:
     LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:/path/to/more/libs
+    # You can also do pybombs config --env CC clang
 ```
+
+## git
+
+Many packages specify git source repositories. Because there's a lot of git
+interaction, pybombs has some tools to make your life working with git easier.
+
+### git cache (reference repository)
+
+If you use PyBOMBS a lot, and have many prefixes with similar content, you'll
+be cloning the same repos over and over again. You can set up a git cache, or
+reference repository, to locally store objects and hence reduce clone times.
+
+The simplest way to set this up is to run
+
+    $ pybombs git make-ref
+
+It will create the reference repository (which will then be used in subsequent)
+clones, and configure your PyBOMBS accordingly. See
+
+    $ pybombs git make-ref --help
+
+for more use cases.
 
