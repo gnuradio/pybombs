@@ -20,10 +20,10 @@
 inherit: autoconf
 category: baseline
 satisfy:
-  deb: (cmake >= 2.8.3) && (cmake-data >= 2.8.3)
-  rpm: (cmake >= 2.8.3)
-  pacman: cmake >= 2.8.3
-  port: cmake >= 2.8.3
-  portage: dev-util/cmake >= 2.8.3
-  cmd: cmake --version >= 2.8.3
+  deb: (cmake >= 2.8.11) && (cmake-data >= 2.8.11)
+  rpm: (cmake >= 2.8.11)
+  pacman: cmake >= 2.8.11
+  port: cmake >= 2.8.11
+  portage: dev-util/cmake >= 2.8.11
+  cmd: cmake --version >= 2.8.11
 source: wget+http://cmake.org/files/v3.7/cmake-3.7.0.tar.gz
