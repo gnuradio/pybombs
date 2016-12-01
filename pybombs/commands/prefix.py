@@ -155,10 +155,18 @@ class Prefix(SubCommandBase):
         """
         pybombs prefix init
         """
+        try:
+            prefix_recipe = get_prefix_recipe(self.args.recipe)
+        except PBException as ex:
+            self.log.error(str(ex))
+            return -1
+        if prefix_recipe is None:
+            self.log.error("Could not find recipe for `{0}'".format(recipe_name))
+            return -1
         if not self._init_prefix(
                 self.args.path,
                 self.args.alias,
-                self.args.recipe,
+                prefix_recipe,
                 self.args.sdkname,
                 self.args.virtualenv
         ):
@@ -210,15 +218,28 @@ class Prefix(SubCommandBase):
         return True
 
 
-    def _init_prefix(self, path, alias, recipe_name, sdkname, virtualenv=False):
+    def _init_prefix(self, path, alias, prefix_recipe, sdkname, virtualenv=False):
         """
         pybombs prefix init
         """
+        def check_path_is_valid(path):
+            " Returns True if we can use path to init our prefix "
+            try:
+                if not sysutils.mkdir_writable(path, self.log):
+                    raise PBException("Could not create writable directory.")
+            except PBException:
+                self.log.error("Cannot write to prefix path `{0}'.".format(path))
+                return False
+            from pybombs import config_manager
+            if op.exists(op.join(path, config_manager.PrefixInfo.prefix_conf_dir)):
+                self.log.warn("There already is a prefix in `{0}'.".format(path))
+                if not confirm("Continue using this path?"):
+                    self.log.error("Aborting. A prefix already exists in `{0}'".format(path))
+                    return False
+            return True
         def create_subdirs_and_files(path, dirs, files):
             " Create subdirs and files "
             sysutils.require_subdirs(path, [k for k, v in dirs.items() if v])
-            self.cfg.load(select_prefix=path)
-            self.prefix = self.cfg.get_active_prefix()
             for fname, content in files.items():
                 sysutils.write_file_in_subdir(path, fname, prefix_recipe.var_replace_all(content))
         def register_alias(alias, path):
@@ -264,31 +285,14 @@ class Prefix(SubCommandBase):
                     print_tree=True,
                 )
         # Go, go, go!
-        try:
-            prefix_recipe = get_prefix_recipe(recipe_name)
-        except PBException as ex:
-            self.log.error(str(ex))
-            return False
-        if prefix_recipe is None:
-            self.log.error("Could not find recipe for `{0}'".format(recipe_name))
-            return False
-        # Make sure the directory is writable
         path = op.abspath(op.normpath(path))
-        try:
-            if not sysutils.mkdir_writable(path, self.log):
-                raise PBException("Could not create writable directory.")
-        except PBException:
-            self.log.error("Cannot write to prefix path `{0}'.".format(path))
-            return False
-        # Make sure that a pybombs directory doesn't already exist
-        from pybombs import config_manager
-        if op.exists(op.join(path, config_manager.PrefixInfo.prefix_conf_dir)):
-            self.log.error("Ignoring. A prefix already exists in `{0}'".format(path))
+        if not check_path_is_valid(path):
             return False
         create_subdirs_and_files(path, prefix_recipe.dirs, prefix_recipe.files)
+        self.cfg.load(select_prefix=path)
+        self.prefix = self.cfg.get_active_prefix()
         if alias is not None:
             register_alias(alias, path)
-        # If there is no default prefix, make this the default
         if len(self.cfg.get('default_prefix')) == 0:
             self.cfg.update_cfg_file({'config': {'default_prefix': alias or path}})
         if virtualenv:
