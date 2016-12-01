@@ -161,7 +161,7 @@ class Prefix(SubCommandBase):
             self.log.error(str(ex))
             return -1
         if prefix_recipe is None:
-            self.log.error("Could not find recipe for `{0}'".format(recipe_name))
+            self.log.error("Could not find recipe for `{0}'".format(self.args.recipe))
             return -1
         if not self._init_prefix(
                 self.args.path,
