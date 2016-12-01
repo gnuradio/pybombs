@@ -120,11 +120,12 @@ class OutputProcessorMake(OutputProcessor):
 
     def _make_percentage_line(self):
         preamble = self.preamble
-        # 2 for '[*]', 7 for '(xxx%) '
-        progress_bar_len = get_console_width() - len(preamble) - 2 - 7
+        # Number of characters between the []. We snip off one character at the end to
+        # avoid accidental wrapping.
+        progress_bar_len = get_console_width() - len(preamble) - len('[]') - len('(100%) ') - 1
         # subtract 1 to account for the rotation animation
         chars_left  = int((progress_bar_len-1) * .01 * self.percentage)
-        chars_right = progress_bar_len - chars_left - 2
+        chars_right = progress_bar_len - chars_left - 1
         self.status_line = '\r{0}({1:>3}%) [{2}{3}{4}]\r'.format(
                 preamble,
                 self.percentage,
