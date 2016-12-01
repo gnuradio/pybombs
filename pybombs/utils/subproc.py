@@ -145,7 +145,13 @@ def _process_thread(event, args, kwargs):
         else:
             args = elevate_pre_args + args
     log = logger.getChild("_process_thread()")
-    log.debug("Executing command `{cmd}'".format(cmd=str(args).strip()))
+    if isinstance(args, list):
+        log.debug("Executing command `{cmd}'".format(cmd=' '.join(args)))
+    else:
+        log.debug("Executing command `{sh}{cmd}'".format(
+            sh="$ " if kwargs.get('shell', False) else "",
+            cmd=args.strip()
+        ))
     proc = subprocess.Popen(
         args,
         shell=kwargs.get('shell', False),
