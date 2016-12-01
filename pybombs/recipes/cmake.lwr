@@ -22,6 +22,8 @@ category: baseline
 satisfy:
   deb: (cmake >= 2.8.3) && (cmake-data >= 2.8.3)
   rpm: (cmake >= 2.8.3)
+  pacman: cmake >= 2.8.3
+  port: cmake >= 2.8.3
+  portage: dev-util/cmake >= 2.8.3
   cmd: cmake --version >= 2.8.3
-  port: (cmake >= 2.8.3)
-source: wget+http://www.cmake.org/files/v2.8/cmake-2.8.6.tar.gz
+source: wget+http://cmake.org/files/v3.7/cmake-3.7.0.tar.gz
