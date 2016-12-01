@@ -155,86 +155,15 @@ class Prefix(SubCommandBase):
         """
         pybombs prefix init
         """
-        def register_alias(alias, path):
-            " Write the prefix alias to the config file "
-            if alias is not None:
-                if self.prefix is not None and \
-                        self.prefix.prefix_aliases.get(alias) is not None \
-                        and not confirm("Alias `{0}' already exists, overwrite?".format(alias)):
-                    self.log.warn('Aborting.')
-                    raise PBException("Could not create alias.")
-                self.cfg.update_cfg_file({'prefix_aliases': {self.args.alias: path}})
-        # Go, go, go!
-        try:
-            prefix_recipe = get_prefix_recipe(self.args.recipe)
-        except PBException as ex:
-            self.log.error(str(ex))
+        if not self._init_prefix(
+                self.args.path,
+                self.args.alias,
+                self.args.recipe,
+                self.args.sdkname,
+                self.args.virtualenv
+        ):
             return -1
-        if prefix_recipe is None:
-            self.log.error("Could not find recipe for `{0}'".format(self.args.recipe))
-            return -1
-        # Make sure the directory is writable
-        path = op.abspath(op.normpath(self.args.path))
-        try:
-            if not sysutils.mkdir_writable(path, self.log):
-                raise PBException("Could not create writable directory.")
-        except PBException:
-            self.log.error("Cannot write to prefix path `{0}'.".format(path))
-            return -1
-        # Make sure that a pybombs directory doesn't already exist
-        from pybombs import config_manager
-        if op.exists(op.join(path, config_manager.PrefixInfo.prefix_conf_dir)):
-            self.log.error("Ignoring. A prefix already exists in `{0}'".format(path))
-            return -1
-        # Add subdirs
-        sysutils.require_subdirs(path, [k for k, v in prefix_recipe.dirs.items() if v])
-        self.cfg.load(select_prefix=path)
-        self.prefix = self.cfg.get_active_prefix()
-        # Create files
-        for fname, content in prefix_recipe.files.items():
-            sysutils.write_file_in_subdir(path, fname, prefix_recipe.var_replace_all(content))
-        # Register alias
-        if self.args.alias is not None:
-            register_alias(self.args.alias, path)
-        # If there is no default prefix, make this the default
-        if len(self.cfg.get('default_prefix')) == 0:
-            if self.args.alias is not None:
-                new_default_prefix = self.args.alias
-            else:
-                new_default_prefix = path
-            self.cfg.update_cfg_file({'config': {'default_prefix': new_default_prefix}})
-        # Create virtualenv if so desired
-        if self.args.virtualenv:
-            self.log.info("Creating Python virtualenv in prefix...")
-            venv_args = ['virtualenv']
-            venv_args.append(path)
-            subproc.monitor_process(args=venv_args)
-        # Install SDK if so desired
-        sdk = self.args.sdkname or prefix_recipe.sdk
-        if sdk is not None:
-            self.log.info("Installing SDK recipe {0}.".format(sdk))
-            self.log.info("Reloading configuration...")
-            self.cfg.load(select_prefix=path)
-            self.prefix = self.cfg.get_active_prefix()
-            self.inventory = self.prefix.inventory
-            self._install_sdk_to_prefix(sdk)
-        # Update config section
-        if len(prefix_recipe.config):
-            self.cfg.update_cfg_file(prefix_recipe.config, self.prefix.cfg_file)
-            self.cfg.load(select_prefix=path)
-            self.prefix = self.cfg.get_active_prefix()
-        # Install dependencies
-        if len(prefix_recipe.depends):
-            self.log.info("Installing default packages for prefix...")
-            self.log.info("".join(["\n  - {0}".format(x) for x in prefix_recipe.depends]))
-            from pybombs import install_manager
-            install_manager.InstallManager().install(
-                prefix_recipe.depends,
-                'install', # install / update
-                fail_if_not_exists=False,
-                update_if_exists=False,
-                print_tree=True,
-            )
+
 
     def run_print_prefix_env(self):
         """
@@ -279,6 +208,94 @@ class Prefix(SubCommandBase):
         except (PBException, OSError, IOError):
             return False
         return True
+
+
+    def _init_prefix(self, path, alias, recipe_name, sdkname, virtualenv=False):
+        """
+        pybombs prefix init
+        """
+        def create_subdirs_and_files(path, dirs, files):
+            " Create subdirs and files "
+            sysutils.require_subdirs(path, [k for k, v in dirs.items() if v])
+            self.cfg.load(select_prefix=path)
+            self.prefix = self.cfg.get_active_prefix()
+            for fname, content in files.items():
+                sysutils.write_file_in_subdir(path, fname, prefix_recipe.var_replace_all(content))
+        def register_alias(alias, path):
+            " Write the prefix alias to the config file "
+            if self.prefix is not None and \
+                    self.prefix.prefix_aliases.get(alias) is not None \
+                    and not confirm("Alias `{0}' already exists, overwrite?".format(alias)):
+                self.log.warn('Aborting.')
+                raise PBException("Could not create alias.")
+            self.cfg.update_cfg_file({'prefix_aliases': {alias: path}})
+        def create_virtualenv(path):
+            " Create a Python virtualenv "
+            self.log.info("Creating Python virtualenv in prefix...")
+            venv_args = ['virtualenv']
+            venv_args.append(path)
+            subproc.monitor_process(args=venv_args)
+        def install_sdk_to_new_prefix(sdk):
+            " See if we need to install an SDK to the prefix and call the appropriate functions "
+            if sdk is not None:
+                self.log.info("Installing SDK recipe {0}.".format(sdk))
+                self.log.info("Reloading configuration...")
+                self.cfg.load(select_prefix=path)
+                self.prefix = self.cfg.get_active_prefix()
+                self.inventory = self.prefix.inventory
+                self._install_sdk_to_prefix(sdk)
+        def update_config_section(new_config_data):
+            " Update the config file with new config data "
+            if len(new_config_data):
+                self.cfg.update_cfg_file(new_config_data, self.prefix.cfg_file)
+                self.cfg.load(select_prefix=path)
+                self.prefix = self.cfg.get_active_prefix()
+        def install_dependencies(deps):
+            " Install dependencies "
+            if len(prefix_recipe.depends):
+                self.log.info("Installing default packages for prefix...")
+                self.log.info("".join(["\n  - {0}".format(x) for x in deps]))
+                from pybombs import install_manager
+                install_manager.InstallManager().install(
+                    deps,
+                    'install', # install / update
+                    fail_if_not_exists=False,
+                    update_if_exists=False,
+                    print_tree=True,
+                )
+        # Go, go, go!
+        try:
+            prefix_recipe = get_prefix_recipe(recipe_name)
+        except PBException as ex:
+            self.log.error(str(ex))
+            return False
+        if prefix_recipe is None:
+            self.log.error("Could not find recipe for `{0}'".format(recipe_name))
+            return False
+        # Make sure the directory is writable
+        path = op.abspath(op.normpath(path))
+        try:
+            if not sysutils.mkdir_writable(path, self.log):
+                raise PBException("Could not create writable directory.")
+        except PBException:
+            self.log.error("Cannot write to prefix path `{0}'.".format(path))
+            return False
+        # Make sure that a pybombs directory doesn't already exist
+        from pybombs import config_manager
+        if op.exists(op.join(path, config_manager.PrefixInfo.prefix_conf_dir)):
+            self.log.error("Ignoring. A prefix already exists in `{0}'".format(path))
+            return False
+        create_subdirs_and_files(path, prefix_recipe.dirs, prefix_recipe.files)
+        if alias is not None:
+            register_alias(alias, path)
+        # If there is no default prefix, make this the default
+        if len(self.cfg.get('default_prefix')) == 0:
+            self.cfg.update_cfg_file({'config': {'default_prefix': alias or path}})
+        if virtualenv:
+            create_virtualenv(path)
+        install_sdk_to_new_prefix(sdkname or prefix_recipe.sdk)
+        update_config_section(prefix_recipe.config)
+        install_dependencies(prefix_recipe.depends)
 
     def _copy_prefix_template(self, path):
         """
