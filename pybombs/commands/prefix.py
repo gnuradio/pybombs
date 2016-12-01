@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -20,12 +20,13 @@
 #
 """ PyBOMBS command: prefix """
 
+from __future__ import print_function
 import os
 import os.path as op
 import shutil
 from six import iteritems
 
-from pybombs.commands import CommandBase
+from pybombs.commands import SubCommandBase
 from pybombs.config_file import PBConfigFile
 from pybombs.utils import dict_merge
 from pybombs.utils import subproc
@@ -37,7 +38,8 @@ from pybombs import fetcher
 #############################################################################
 # Sub-command sub-parsers
 #############################################################################
-def setup_subsubparser_initsdk(parser):
+def setup_subsubparser_installsdk(parser):
+    " Parser for pybombs prefix install-sdk "
     parser.add_argument(
         'sdkname',
         help="SDK Package Name",
@@ -45,6 +47,7 @@ def setup_subsubparser_initsdk(parser):
     )
 
 def setup_subsubparser_init(parser):
+    " Parser for pybombs prefix init "
     parser.add_argument(
         'path',
         help="Path to the new prefix (defaults to CWD).",
@@ -69,10 +72,6 @@ def setup_subsubparser_init(parser):
         help="Use this recipe to set up the prefix",
     )
 
-
-def setup_subsubparser_write_env(parser):
-    pass
-
 #############################################################################
 # Helpers
 #############################################################################
@@ -84,12 +83,39 @@ def get_prefix_recipe(recipe_name):
 #############################################################################
 # Class definition
 #############################################################################
-class Prefix(CommandBase):
+class Prefix(SubCommandBase):
     """
     Prefix operations
     """
     cmds = {
         'prefix': 'Prefix commands',
+    }
+    subcommands = {
+        'info': {
+            'help': 'Display information on the currently used prefix.',
+            'subparser': lambda p: None,
+            'run': lambda x: x.run_print_prefix_info,
+        },
+        'init': {
+            'help': 'Create and initialize a prefix.',
+            'subparser': setup_subsubparser_init,
+            'run': lambda x: x.run_init,
+        },
+        'env': {
+            'help': 'Print the environment variables used in this prefix.',
+            'subparser': lambda p: None,
+            'run': lambda x: x.run_print_prefix_env,
+        },
+        'write-env': {
+            'help': 'Write "setup_env.sh" into the prefix.',
+            'subparser': lambda p: None,
+            'run': lambda x: x.run_write_env,
+        },
+        'install-sdk': {
+            'help': 'Install an SDK into the prefix.',
+            'subparser': setup_subsubparser_installsdk,
+            'run': lambda x: x.run_installsdk,
+        },
     }
 
     @staticmethod
@@ -97,71 +123,40 @@ class Prefix(CommandBase):
         """
         Set up a subparser for a specific command
         """
-        ###### Start of setup_subparser()
-        subparsers = parser.add_subparsers(
-                help="Prefix Commands:",
-                dest='prefix_command',
+        return SubCommandBase.setup_subcommandparser(
+            parser,
+            'Prefix Commands:',
+            Prefix.subcommands
         )
-        for cmd_name, cmd_info in iteritems(Prefix.prefix_cmd_name_list):
-            subparser = subparsers.add_parser(
-                    cmd_name,
-                    help=cmd_info['help']
-            )
-            cmd_info['parser'](subparser)
-        return parser
 
     def __init__(self, cmd, args):
-        CommandBase.__init__(self,
-                cmd, args,
-                load_recipes=True,
-                require_prefix=(args.prefix_command != 'init'),
+        SubCommandBase.__init__(
+            self,
+            cmd, args,
+            load_recipes=True,
+            require_prefix=(args.sub_command != 'init'),
         )
 
-    def run(self):
-        """ Go, go, go! """
-        return self.prefix_cmd_name_list[self.args.prefix_command]['run'](self)
-
-    def _print_prefix_info(self):
+    #########################################################################
+    # Subcommands
+    #########################################################################
+    def run_print_prefix_info(self):
         """
         pybombs prefix info
         """
         #self.log.info('Prefix dir: {0}'.format(self.prefix.prefix_dir))
         print("\x1b[32m[Default Prefix]: {0} \033[0m".format(self.cfg.get('default_prefix')))
-        self.active_prefix = self.cfg.get_active_prefix()
+        active_prefix = self.cfg.get_active_prefix()
         print("Available Prefixes :")
-        for key,value in iteritems(self.active_prefix.prefix_aliases):
+        for key, value in iteritems(active_prefix.prefix_aliases):
             print("{0} - {1}".format(key, value))
 
-
-    def _print_prefix_env(self):
-        """
-        pybombs prefix env
-        """
-        print('Prefix env:')
-        for k, v in iteritems(self.prefix.env):
-            print("{0}={1}".format(k, v))
-
-
-    def _run_installsdk(self):
-        """
-        pybombs prefix install-sdk
-        """
-        self._install_sdk_to_prefix(
-            self.args.sdkname[0],
-        )
-
-    def _run_write_env(self):
-        """
-        pybombs "setup_env.sh" generator
-        """
-        if not self._write_env_file():
-            return -1
-
-    def _run_init(self):
+    def run_init(self):
         """
         pybombs prefix init
         """
-        def register_alias(alias):
+        def register_alias(alias, path):
+            " Write the prefix alias to the config file "
             if alias is not None:
                 if self.prefix is not None and \
                         self.prefix.prefix_aliases.get(alias) is not None \
@@ -200,7 +195,7 @@ class Prefix(CommandBase):
             sysutils.write_file_in_subdir(path, fname, prefix_recipe.var_replace_all(content))
         # Register alias
         if self.args.alias is not None:
-            register_alias(self.args.alias)
+            register_alias(self.args.alias, path)
         # If there is no default prefix, make this the default
         if len(self.cfg.get('default_prefix')) == 0:
             if self.args.alias is not None:
@@ -234,13 +229,40 @@ class Prefix(CommandBase):
             self.log.info("".join(["\n  - {0}".format(x) for x in prefix_recipe.depends]))
             from pybombs import install_manager
             install_manager.InstallManager().install(
-                    prefix_recipe.depends,
-                    'install', # install / update
-                    fail_if_not_exists=False,
-                    update_if_exists=False,
-                    print_tree=True,
+                prefix_recipe.depends,
+                'install', # install / update
+                fail_if_not_exists=False,
+                update_if_exists=False,
+                print_tree=True,
             )
 
+    def run_print_prefix_env(self):
+        """
+        pybombs prefix env
+        """
+        print('Prefix env:')
+        for k, v in iteritems(self.prefix.env):
+            print("{0}={1}".format(k, v))
+
+    def run_write_env(self):
+        """
+        pybombs "setup_env.sh" generator
+        """
+        if not self._write_env_file():
+            return -1
+
+
+    def run_installsdk(self):
+        """
+        pybombs prefix install-sdk
+        """
+        self._install_sdk_to_prefix(
+            self.args.sdkname[0],
+        )
+
+    #########################################################################
+    # Helpers
+    #########################################################################
     def _write_env_file(self):
         """
         Create a setup_env.sh file in the prefix
@@ -256,7 +278,7 @@ class Prefix(CommandBase):
         try:
             for fname, content in prefix_recipe.files.items():
                 sysutils.write_file_in_subdir(path, fname, prefix_recipe.var_replace_all(content))
-        except (PBException, OSError, IOError) as ex:
+        except (PBException, OSError, IOError):
             return False
         return True
 
@@ -342,33 +364,3 @@ class Prefix(CommandBase):
         self.log.debug("Writing updated prefix config to `{0}'".format(cfg_file))
         PBConfigFile(cfg_file).save(cfg_data)
 
-    #########################################################################
-    # Sub-commands:
-    prefix_cmd_name_list = {
-        'info': {
-            'help': 'Display information on the currently used prefix.',
-            'parser': lambda p: None,
-            'run': _print_prefix_info,
-        },
-        'init': {
-            'help': 'Create and initialize a prefix.',
-            'parser': setup_subsubparser_init,
-            'run': _run_init,
-        },
-        'env': {
-            'help': 'Print the environment variables used in this prefix.',
-            'parser': lambda p: None,
-            'run': _print_prefix_env,
-        },
-        'write-env': {
-            'help': 'Write "setup_env.sh" into the prefix.',
-            'parser': setup_subsubparser_write_env,
-            'run': _run_write_env,
-        },
-        'install-sdk': {
-            'help': 'Install an SDK into the prefix.',
-            'parser': setup_subsubparser_initsdk,
-            'run': _run_installsdk,
-        },
-    }
-    #########################################################################
