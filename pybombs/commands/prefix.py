@@ -251,14 +251,12 @@ class Prefix(SubCommandBase):
         if not self._write_env_file():
             return -1
 
-
     def run_installsdk(self):
         """
         pybombs prefix install-sdk
         """
-        self._install_sdk_to_prefix(
-            self.args.sdkname[0],
-        )
+        if not self._install_sdk_to_prefix(self.args.sdkname[0]):
+            return -1
 
     #########################################################################
     # Helpers
@@ -321,7 +319,7 @@ class Prefix(SubCommandBase):
             os.chdir(src_dir)
         except:
             self.log.error("Source dir required to install SDK.")
-            return -1
+            return False
         ### Install the actual SDK file
         self.log.debug("Fetching SDK `{sdk}'".format(sdk=sdkname))
         fetcher.Fetcher().fetch(r)
@@ -332,7 +330,7 @@ class Prefix(SubCommandBase):
             self.log.debug("Installation successful")
         else:
             self.log.error("Error installing SDK. Aborting.")
-            return -1
+            return False
         # Clean up
         files_to_delete = [op.normpath(op.join(src_dir, r.var_replace_all(x))) for x in r.clean]
         if len(files_to_delete):
@@ -348,7 +346,7 @@ class Prefix(SubCommandBase):
                 os.remove(ftd)
             else:
                 self.log.error("Not sure what this is: {ftd}".format(ftd=ftd))
-                return -1
+                return False
         ### Update the prefix-local config file
         self.log.debug("Updating config file with SDK recipe info.")
         try:
@@ -363,4 +361,5 @@ class Prefix(SubCommandBase):
         cfg_data = dict_merge(old_cfg_data, sdk_cfg_data)
         self.log.debug("Writing updated prefix config to `{0}'".format(cfg_file))
         PBConfigFile(cfg_file).save(cfg_data)
+        return True
 
