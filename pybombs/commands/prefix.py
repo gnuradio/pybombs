@@ -288,9 +288,9 @@ class Prefix(SubCommandBase):
         path = op.abspath(op.normpath(path))
         if not check_path_is_valid(path):
             return False
-        create_subdirs_and_files(path, prefix_recipe.dirs, prefix_recipe.files)
         self.cfg.load(select_prefix=path)
         self.prefix = self.cfg.get_active_prefix()
+        create_subdirs_and_files(path, prefix_recipe.dirs, prefix_recipe.files)
         if alias is not None:
             register_alias(alias, path)
         if len(self.cfg.get('default_prefix')) == 0:
