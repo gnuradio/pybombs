@@ -192,6 +192,8 @@ def monitor_process(args, **kwargs):
     - o_proc: An output processor
     - cleanup: A callback to clean up artifacts if the process is killed
     - elevate: Run with elevated privileges (e.g., 'sudo <command>')
+
+    Returns the process's return value.
     """
     log = logger.getChild("monitor_process()")
     if kwargs.get('elevate'):
