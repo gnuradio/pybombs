@@ -24,6 +24,7 @@ from __future__ import print_function
 from pybombs import pb_logging
 from pybombs import package_manager
 from pybombs import dep_manager
+from pybombs.pb_exception import PBException
 
 class InstallManager(object):
     """
@@ -64,6 +65,9 @@ class InstallManager(object):
                 self.log.obnoxious("Not installing, because it's not in the list.")
                 _checker_cache[pkg] = False
                 return False
+            if not self.pm.exists(pkg):
+                self.log.error("Package has no install method: {0}".format(pkg))
+                raise PBException("Unresolved install path.")
             if not self.pm.installed(pkg):
                 # If it's not installed, we'll try a binary install...
                 self.log.debug("Testing binary install for package {pkg}.".format(pkg=pkg))
@@ -81,7 +85,7 @@ class InstallManager(object):
             else:
                 # If a package is already installed, but not flagged for
                 # updating, it does not go into the tree:
-                if not update_if_exists or not pkg in packages:
+                if not update_if_exists or pkg not in packages:
                     self.log.obnoxious("Installed, but no update requested. Does not go into tree.")
                     _checker_cache[pkg] = False
                     return False
@@ -106,7 +110,7 @@ class InstallManager(object):
         extra_info_logger = self.log.info if not quiet else self.log.debug
         ### Make install tree and install binary packages
         extra_info_logger("Phase 1: Creating install tree and installing binary packages:")
-        install_tree = dep_manager.DepManager(self.pm).make_dep_tree(
+        install_tree = dep_manager.DepManager().make_dep_tree(
             packages,
             _check_if_pkg_goes_into_tree
         )

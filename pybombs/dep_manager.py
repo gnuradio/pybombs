@@ -20,6 +20,7 @@
 #
 """ PyBOMBS dependency manager """
 
+import copy
 from pybombs.tree_node import TreeNode
 from pybombs import package_manager
 from pybombs import config_manager
@@ -31,8 +32,7 @@ class DepManager(object):
     """
     Dependency manager.
     """
-    def __init__(self, pm=None):
-        self.pm = pm or package_manager.PackageManager()
+    def __init__(self):
         self.cfg = config_manager.config_manager
         self.log = pb_logging.logger.getChild("DepManager")
 
@@ -50,8 +50,8 @@ class DepManager(object):
         #   - for every element q of P\p:
         #     - if q is in T, then P <- P\q and del(D[q]) if exists
         # - merge all elements of D into T' and return that
-        pkg_set = set(filter(filter_callback, pkg_list))
-        new_pkg_set = set(filter(filter_callback, pkg_list))
+        pkg_set = set([pkg for pkg in pkg_list if filter_callback(pkg)])
+        new_pkg_set = copy.copy(pkg_set)
         dep_trees = {}
         for pkg in pkg_set:
             dep_trees[pkg] = self.make_tree_recursive(pkg, filter_callback)
@@ -66,24 +66,16 @@ class DepManager(object):
 
     def make_tree_recursive(self, pkg, filter_callback):
         """
-        Make a dependency tree for one package
+        Make a dependency tree for one package.
+
+        Assumption is that pkg actually needs to go into the tree, it will
+        not get checked by filter_callback again.
         """
-        if not filter_callback(pkg):
-            return None
+        assert pkg is not None
         tree = TreeNode(pkg)
-        deps = recipe.get_recipe(pkg).depends or []
-        for dep in deps:
-            if not self.pm.exists(pkg):
-                self.log.error(
-                    "Package has no install method: {0} (declared as dependency for package {1})".format(
-                        dep, pkg
-                    )
-                )
-                raise PBException("Unresolved dependency.")
-        deps_to_install = set([dep for dep in deps if filter_callback(dep)])
+        all_deps = recipe.get_recipe(pkg).depends or []
+        deps_to_install = set([dep for dep in all_deps if filter_callback(dep)])
         for dep in deps_to_install:
-            subtree = self.make_tree_recursive(dep, filter_callback)
-            if subtree is not None:
-                tree.add_child(subtree)
+            tree.add_child(self.make_tree_recursive(dep, filter_callback))
         return tree
 
