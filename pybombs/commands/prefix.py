@@ -300,6 +300,7 @@ class Prefix(SubCommandBase):
         install_sdk_to_new_prefix(sdkname or prefix_recipe.sdk)
         update_config_section(prefix_recipe.config)
         install_dependencies(prefix_recipe.depends)
+        return True
 
     def _copy_prefix_template(self, path):
         """
