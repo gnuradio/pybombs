@@ -264,7 +264,8 @@ class Prefix(SubCommandBase):
                 self.cfg.load(select_prefix=path)
                 self.prefix = self.cfg.get_active_prefix()
                 self.inventory = self.prefix.inventory
-                self._install_sdk_to_prefix(sdk)
+                return self._install_sdk_to_prefix(sdk)
+            return True
         def update_config_section(new_config_data):
             " Update the config file with new config data "
             if len(new_config_data):
@@ -277,13 +278,14 @@ class Prefix(SubCommandBase):
                 self.log.info("Installing default packages for prefix...")
                 self.log.info("".join(["\n  - {0}".format(x) for x in deps]))
                 from pybombs import install_manager
-                install_manager.InstallManager().install(
+                return install_manager.InstallManager().install(
                     deps,
                     'install', # install / update
                     fail_if_not_exists=False,
                     update_if_exists=False,
                     print_tree=True,
                 )
+            return True
         # Go, go, go!
         path = op.abspath(op.normpath(path))
         if not check_path_is_valid(path):
@@ -297,33 +299,10 @@ class Prefix(SubCommandBase):
             self.cfg.update_cfg_file({'config': {'default_prefix': alias or path}})
         if virtualenv:
             create_virtualenv(path)
-        install_sdk_to_new_prefix(sdkname or prefix_recipe.sdk)
+        if not install_sdk_to_new_prefix(sdkname or prefix_recipe.sdk):
+            return False
         update_config_section(prefix_recipe.config)
-        install_dependencies(prefix_recipe.depends)
-        return True
-
-    def _copy_prefix_template(self, path):
-        """
-        Create all the files and directories
-        """
-        # TODO: I'm not too happy about this, all the hard coded stuff. Needs
-        # cleaning up, for sure. Especially that setup_env.sh stuff at the end.
-        # Ideally, we could switch prefix templates.
-        self.log.info("Initializing PyBOMBS prefix in `{0}'...".format(path))
-        skel_dir = op.join(self.cfg.module_dir, 'skel')
-        for p in os.listdir(skel_dir):
-            if op.exists(op.join(path, p)):
-                self.log.obnoxious("Skipping {0}".format(p))
-                continue
-            self.log.obnoxious("Copying {0}".format(p))
-            p_full = op.join(skel_dir, p)
-            if op.isdir(p_full):
-                shutil.copytree(
-                    p_full, op.join(path, p),
-                    ignore=shutil.ignore_patterns('.ignore')
-                )
-            else:
-                shutil.copy(p_full, path)
+        return install_dependencies(prefix_recipe.depends)
 
     def _install_sdk_to_prefix(self, sdkname):
         """
