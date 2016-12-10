@@ -51,19 +51,14 @@ class InstallManager(object):
         """
         Install packages.
         """
-        _checker_cache = {}
         def _check_if_pkg_goes_into_tree(pkg):
             " Return True if pkg has a legitimate right to be in the tree. "
             self.log.obnoxious("Checking if package `{pkg}' goes into tree...".format(pkg=pkg))
-            if pkg in _checker_cache:
-                return _checker_cache[pkg]
             if fail_if_not_exists and not bool(self.pm.installed(pkg)):
                 self.log.obnoxious("Only installed packages need to into tree, and this one is not.")
-                _checker_cache[pkg] = False
                 return False
             if no_deps and pkg not in packages:
                 self.log.obnoxious("Not installing, because it's not in the list.")
-                _checker_cache[pkg] = False
                 return False
             if not self.pm.exists(pkg):
                 self.log.error("Package has no install method: {0}".format(pkg))
@@ -76,30 +71,32 @@ class InstallManager(object):
                                    fail_silently=True):
                     self.log.obnoxious("Binary install successful, so we don't put it into tree.")
                     # ...and if that worked, it doesn't have to go into the tree.
-                    _checker_cache[pkg] = False
                     return False
                 self.log.obnoxious("Not installed: It goes into tree.")
                 # Now it's still not installed, so it has to go into the tree:
-                _checker_cache[pkg] = True
                 return True
             else:
                 # If a package is already installed, but not flagged for
                 # updating, it does not go into the tree:
                 if not update_if_exists or pkg not in packages:
                     self.log.obnoxious("Installed, but no update requested. Does not go into tree.")
-                    _checker_cache[pkg] = False
                     return False
                 # OK, so it needs updating. But only if it's a source package:
                 if self.pm.installed(pkg, install_type="source"):
                     self.log.obnoxious("Package was source-installed, and needs update.")
-                    _checker_cache[pkg] = True
                     return True
                 # Otherwise, we should give it a shot:
                 self.log.obnoxious("Doesn't go into tree, but we'll try a packager update.")
                 self.pm.update(pkg, install_type="binary")
-                _checker_cache[pkg] = False
                 return False
             assert False # Should never reach this line
+        _checker_cache = {}
+        def _cached_check_if_pkg_goes_into_tree(pkg, check_callback):
+            if pkg in _checker_cache:
+                return _checker_cache[pkg]
+            ret_val = check_callback(pkg)
+            _checker_cache[pkg] = ret_val
+            return ret_val
         ####### install() starts here #########
         ### Sanity checks
         if fail_if_not_exists:
@@ -112,7 +109,7 @@ class InstallManager(object):
         extra_info_logger("Phase 1: Creating install tree and installing binary packages:")
         install_tree = dep_manager.DepManager().make_dep_tree(
             packages,
-            _check_if_pkg_goes_into_tree
+            lambda pkg: _cached_check_if_pkg_goes_into_tree(pkg, _check_if_pkg_goes_into_tree)
         )
         if len(install_tree) == 0 and not quiet:
             self.log.info("No packages to install.")
