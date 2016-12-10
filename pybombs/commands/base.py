@@ -94,7 +94,7 @@ class SubCommandBase(CommandBase):
                 dest='sub_command',
         )
         for cmd, cmd_info in iteritems(subcommands):
-            subparser = subparsers.add_parser(cmd, help=cmd_info['help'])
+            subparser = subparsers.add_parser(cmd, description=cmd_info['help'])
             if cmd_info['subparser'] is None:
                 continue
             if isinstance(cmd_info['subparser'], tuple) or isinstance(cmd_info['subparser'], list):
