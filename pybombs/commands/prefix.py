@@ -227,6 +227,15 @@ class Prefix(SubCommandBase):
     #########################################################################
     # Helpers
     #########################################################################
+    def _update_config_section(self, new_config_data, path):
+        """
+        used by multiple helpers to update the config file with new config data
+        """
+        if len(new_config_data):
+            self.cfg.update_cfg_file(new_config_data, self.prefix.cfg_file)
+            self.cfg.load(select_prefix=path)
+            self.prefix = self.cfg.get_active_prefix()
+
     def _write_env_file(self):
         """
         Create a setup_env.sh file in the prefix
@@ -295,12 +304,6 @@ class Prefix(SubCommandBase):
                 self.inventory = self.prefix.inventory
                 return self._install_sdk_to_prefix(sdk)
             return True
-        def update_config_section(new_config_data):
-            " Update the config file with new config data "
-            if len(new_config_data):
-                self.cfg.update_cfg_file(new_config_data, self.prefix.cfg_file)
-                self.cfg.load(select_prefix=path)
-                self.prefix = self.cfg.get_active_prefix()
         def install_dependencies(deps):
             " Install dependencies "
             if len(prefix_recipe.depends):
@@ -330,20 +333,16 @@ class Prefix(SubCommandBase):
             create_virtualenv(path)
         if not install_sdk_to_new_prefix(sdkname or prefix_recipe.sdk):
             return False
-        update_config_section(prefix_recipe.config)
+        self._update_config_section(prefix_recipe.config, path)
         return install_dependencies(prefix_recipe.depends)
 
     def _update_prefix(self, prefix_recipe):
-        def update_config_section(new_config_data):
-            " Update the config file with new config data "
-            if len(new_config_data):
-                self.cfg.update_cfg_file(new_config_data, self.prefix.cfg_file)
-                self.cfg.load(select_prefix=path)
-                self.prefix = self.cfg.get_active_prefix()
-        # Go, go, go!
+        """
+        update the current prefix config file with a given prefix_recipe
+        """
         path = self.prefix.prefix_dir
         self.cfg.load(select_prefix=path)
-        update_config_section(prefix_recipe.config)
+        self._update_config_section(prefix_recipe.config, path)
         return True
 
     def _install_sdk_to_prefix(self, sdkname):
