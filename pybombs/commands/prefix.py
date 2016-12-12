@@ -46,6 +46,13 @@ def setup_subsubparser_installsdk(parser):
         nargs=1,
     )
 
+def setup_subsubparser_update(parser):
+    parser.add_argument(
+        '-R', '--recipe', default="default_prefix",
+        help="Use this recipe to update the prefix",
+    )
+
+
 def setup_subsubparser_init(parser):
     " Parser for pybombs prefix init "
     parser.add_argument(
@@ -115,6 +122,11 @@ class Prefix(SubCommandBase):
             'help': 'Install an SDK into the prefix.',
             'subparser': setup_subsubparser_installsdk,
             'run': lambda x: x.run_installsdk,
+        },
+        'update': {
+            'help': 'Update the prefix config from recipe.',
+            'subparser': setup_subsubparser_update,
+            'run': lambda x: x.run_update_prefix_config,
         },
     }
 
@@ -195,6 +207,23 @@ class Prefix(SubCommandBase):
         if not self._install_sdk_to_prefix(self.args.sdkname[0]):
             return -1
 
+    def run_update_prefix_config(self):
+        """
+        pybombs prefix update
+        """
+        try:
+            prefix_recipe = get_prefix_recipe(self.args.recipe)
+        except PBException as ex:
+            self.log.error(str(ex))
+            return -1
+        if prefix_recipe is None:
+            self.log.error("Could not find recipe for `{0}'".format(self.args.recipe))
+            return -1
+        if not self._update_prefix(
+                prefix_recipe,
+
+        ):
+            return -1
     #########################################################################
     # Helpers
     #########################################################################
@@ -304,6 +333,19 @@ class Prefix(SubCommandBase):
         update_config_section(prefix_recipe.config)
         return install_dependencies(prefix_recipe.depends)
 
+    def _update_prefix(self, prefix_recipe):
+        def update_config_section(new_config_data):
+            " Update the config file with new config data "
+            if len(new_config_data):
+                self.cfg.update_cfg_file(new_config_data, self.prefix.cfg_file)
+                self.cfg.load(select_prefix=path)
+                self.prefix = self.cfg.get_active_prefix()
+        # Go, go, go!
+        path = self.prefix.prefix_dir
+        self.cfg.load(select_prefix=path)
+        update_config_section(prefix_recipe.config)
+        return True
+
     def _install_sdk_to_prefix(self, sdkname):
         """
         Read recipe for sdkname, and install the SDK to the prefix.
@@ -363,4 +405,3 @@ class Prefix(SubCommandBase):
         self.log.debug("Writing updated prefix config to `{0}'".format(cfg_file))
         PBConfigFile(cfg_file).save(cfg_data)
         return True
-
