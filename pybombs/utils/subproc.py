@@ -237,23 +237,19 @@ def check_output(*args, **kwargs):
     """
     return subprocess.check_output(*args, **kwargs).decode('utf-8')
 
-def match_output(command, pattern, match_key=None):
+def match_output(command, pattern, match_key=None, **kwargs):
     """
     Runs `command', and matches it against regex `pattern'.
     If there was a match, returns that, as a string.
     `match_key` is used to identify the match group key.
 
+    **kwargs are passed straight to check_output().
+
     Note: This uses re.search(), not re.match()!
     """
-    if match_key is None:
-        match_key = 0
-    out = check_output(command, stderr=subprocess.STDOUT)
-    if len(out) > 0:
-        # Get the versions
-        ver = re.search(pattern, out, re.MULTILINE)
-        if ver is None:
-            return False
-        ver = ver.group(match_key)
-        return ver
-    return False
+    out = check_output(command, stderr=subprocess.STDOUT, **kwargs)
+    try:
+        return re.search(pattern, out, re.MULTILINE).group(match_key or 0)
+    except AttributeError:
+        return False
 
