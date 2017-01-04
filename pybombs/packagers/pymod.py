@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2016 Free Software Foundation, Inc.
+# Copyright 2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -18,28 +18,21 @@
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
 #
-"""
-Packager: python module
-"""
+" Packager: python module "
 
 import importlib
 from pybombs.packagers.extern import ExternCmdPackagerBase, ExternReadOnlyPackager
 
-import subprocess
-from pybombs.utils import sysutils
-from pybombs.utils import subproc
-
 class ExternalPythonModule(ExternReadOnlyPackager):
-    """
-    Wrapper around pkg-config
-    """
+    " Wrapper around importlib "
     def __init__(self, logger):
         ExternReadOnlyPackager.__init__(self, logger)
 
     def get_installed_version(self, pkgname):
         """
-        Use pkg-config to determine and return the currently installed version.
+        Use importlib to determine and return the currently installed version.
         If pkgname is not installed, return None.
+        If we can import, but not determine a version, retur True.
         """
         pkgname = pkgname.split('.', 1)
         if len(pkgname) == 2:
