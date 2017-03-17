@@ -60,6 +60,10 @@ class Config(CommandBase):
             '-C', '--category',
             help="If specified, set options for this category instead of the global configs",
         )
+        parser.add_argument(
+            '-E', '--env', action='store_true', default=None,
+            help="If specified, set an environment variable instead of the global configs",
+        )
 
     def __init__(self, cmd, args):
         CommandBase.__init__(self,
@@ -80,12 +84,12 @@ class Config(CommandBase):
         " Go, go, go! "
         if self.args.package is not None or self.args.category is not None:
             return self._run_pkg_or_cat()
+        if self.args.env is not None:
+            return self._run_env()
         return self._run_config()
 
     def _run_config(self):
-        """
-        Handle `pybombs config'
-        """
+        " Handle `pybombs config' "
         if self.args.config_only:
             cfg_data = extract_cfg_items(self.cfg_file, 'config', False)
         else:
@@ -103,10 +107,26 @@ class Config(CommandBase):
             print("{key}: {value}".format(key=key, value=cfg_data.get(key, "")))
             print("  - {help}".format(help=self.cfg.get_help(key) or " Undocumented config option"))
 
+    def _run_env(self):
+        " Handle `pybombs config --env` "
+        cfg_file = PBConfigFile(self.cfg_file)
+        keys = [self.args.key]
+        verb = "Getting"
+        config_target = 'env'
+        if self.args.key is None:
+            keys = cfg_file.data.get(config_target, {}).keys()
+        elif self.args.value is not None:
+            cfg_file.update({config_target: {self.args.key: self.args.value}})
+            verb = "Setting"
+        print("{verb} environment variables:".format(verb=verb))
+        for key in keys:
+            print("{key}: {value}".format(
+                key=key,
+                value=cfg_file.data.get(config_target, {}).get(key))
+            )
+
     def _run_pkg_or_cat(self):
-        """
-        Handle `pybombs config --package or --category'
-        """
+        " Handle `pybombs config --package or --category' "
         if self.args.package is not None and self.args.category is not None:
             self.log.error("Cannot provide both --package and --category!")
             return -1

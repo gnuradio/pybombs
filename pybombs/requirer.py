@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -19,7 +19,7 @@
 # Boston, MA 02110-1301, USA.
 #
 """
-A requirer is a class that has requirements.
+A requirer is a class that itself has dependencies on packages.
 """
 
 import argparse
@@ -39,9 +39,6 @@ def require_hostsys_dependencies(deps):
         return
     from pybombs import install_manager
     from pybombs.config_manager import config_manager
-    s_order = config_manager.get('satisfy_order')
-    # These are host system dependencies, so disallow source package manager
-    config_manager.set('satisfy_order', 'native')
     REQUIRER_CHECKED_CACHE += deps_to_check
     install_manager.InstallManager().install(
             deps_to_check,
@@ -50,9 +47,8 @@ def require_hostsys_dependencies(deps):
             update_if_exists=False,
             quiet=True,
             print_tree=False,
+            install_type="binary", # Requirers may not request source packages
     )
-    # Restore previous settings
-    config_manager.set('satisfy_order', s_order)
 
 class Requirer(object):
     """
@@ -62,6 +58,9 @@ class Requirer(object):
     host_sys_deps = []
 
     def __init__(self):
+        # There's a pretty good reason assert_requirements() is not called
+        # here, in fact, it used to be, but I can't remember why not. Probably
+        # to avoid infinite loops.
         pass
 
     def assert_requirements(self, requirements=None):
@@ -76,7 +75,7 @@ class Requirer(object):
         else:
             from pybombs import pb_logging
             logger = pb_logging.logger.getChild("Requirer")
-        if self.host_sys_deps:
+        if requirements:
             logger.debug("Requiring packages on host system: {deps}".format(deps=self.host_sys_deps))
             require_hostsys_dependencies(requirements)
             logger.debug("Requirements met.")

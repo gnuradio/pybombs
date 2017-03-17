@@ -1,6 +1,5 @@
-#!/usr/bin/env python2
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -49,7 +48,7 @@ class RecipeListManager(object):
         self._template_list = {}
         self._locations = []
         for recipe_loc in self.cfg.get_recipe_locations():
-            self.log.debug("Adding recipe location: {}".format(recipe_loc))
+            self.log.debug("Adding recipe location: {0}".format(recipe_loc))
             self._append_location(recipe_loc)
 
     def get_recipe_filename(self, name):
@@ -83,7 +82,7 @@ class RecipeListManager(object):
         """
         dirname = os.path.expanduser(dirname)
         if dirname in self._locations:
-            self.log.debug("Duplicate recipe location: {}".format(dirname))
+            self.log.debug("Duplicate recipe location: {0}".format(dirname))
             return
         self._locations.append(dirname)
         if not os.path.isdir(dirname):
@@ -109,7 +108,7 @@ class RecipeListManager(object):
             abs_filename = os.path.join(template_dir, f)
             if template not in self._template_list.keys():
                 self._template_list[template] = abs_filename
-                self.log.obnoxious("Adding template {}".format(abs_filename))
+                self.log.obnoxious("Adding template {0}".format(abs_filename))
 
 recipe_manager = RecipeListManager()
 

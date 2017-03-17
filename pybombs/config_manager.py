@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -96,7 +96,8 @@ class PrefixInfo(object):
         self.inventory = None
         self.recipe_dir = None
         self.target_dir = None
-        self.env = os.environ
+        self.env = os.environ.copy()
+        self.is_virtualenv = False
         self._cfg_info = self.default_config_info
         if select_prefix is not None:
             args.prefix = select_prefix
@@ -112,56 +113,60 @@ class PrefixInfo(object):
         assert self.prefix_dir is not None
         if self.alias is not None and self.alias in self._cfg_info['prefix_config_dir']:
             self.prefix_cfg_dir = npath(self._cfg_info['prefix_config_dir'][self.alias])
-            self.log.debug("Choosing prefix config dir from alias: {}".format(self.prefix_cfg_dir))
+            self.log.debug("Choosing prefix config dir from alias: {0}".format(self.prefix_cfg_dir))
         elif self.prefix_dir in self._cfg_info['prefix_config_dir']:
             self.prefix_cfg_dir = npath(self._cfg_info['prefix_config_dir'][self.prefix_dir])
-            self.log.debug("Choosing prefix config dir from path lookup in prefix_config_dir: {}".format(self.prefix_cfg_dir))
+            self.log.debug("Choosing prefix config dir from path lookup in prefix_config_dir: {0}".format(self.prefix_cfg_dir))
         else:
             self.prefix_cfg_dir = npath(os.path.join(self.prefix_dir, self.prefix_conf_dir))
-            self.log.debug("Choosing default prefix config dir: {}".format(self.prefix_cfg_dir))
+            self.log.debug("Choosing default prefix config dir: {0}".format(self.prefix_cfg_dir))
         if not os.path.isdir(self.prefix_cfg_dir):
             self.log.debug("Config dir does not yet exist.")
+        self.is_virtualenv = sysutils.is_virtualenv(self.prefix_dir)
+        if self.is_virtualenv:
+            self.log.info("Prefix is a Python virtualenv.")
         # 3) Find the config file
         self.cfg_file = npath(os.path.join(self.prefix_cfg_dir, ConfigManager.cfg_file_name))
         config_section = {}
         if not os.path.isfile(self.cfg_file):
-            self.log.debug("Prefix configuration file not found: {}, assuming empty.".format(self.cfg_file))
+            self.log.debug("Prefix configuration file not found: {0}, assuming empty.".format(self.cfg_file))
         else:
             config_section = extract_cfg_items(self.cfg_file, 'config', False)
             self._cfg_info = self._merge_config_info_from_file(self.cfg_file, self._cfg_info)
         # 4) Find the src dir
         self.src_dir = npath(config_section.get('srcdir', os.path.join(self.prefix_dir, self.src_dir_name)))
-        self.log.debug("Prefix source dir is: {}".format(self.src_dir))
+        self.log.debug("Prefix source dir is: {0}".format(self.src_dir))
         if not os.path.isdir(self.src_dir):
             self.log.debug("Source dir does not exist.")
         # 5) Find the inventory file
         self.inv_file = npath(os.path.join(self.prefix_cfg_dir, self.inv_file_name))
         if not os.path.isfile(self.inv_file):
-            self.log.debug("Prefix inventory file not found: {}".format(self.inv_file))
+            self.log.debug("Prefix inventory file not found: {0}".format(self.inv_file))
         self.inventory = inventory.Inventory(inventory_file=self.inv_file)
         # 6) Prefix-specific recipes. There's two places for these:
         # - A 'recipes/' subdirectory
         # - Anything declared in the config.yml file inside the prefix
         self.recipe_dir = npath(config_section.get('recipes', os.path.join(self.prefix_cfg_dir, 'recipes')))
         if os.path.isdir(self.recipe_dir):
-            self.log.debug("Prefix-local recipe dir is: {}".format(self.recipe_dir))
+            self.log.debug("Prefix-local recipe dir is: {0}".format(self.recipe_dir))
         else:
             self.recipe_dir = None
         # 7) Load environment
         # If there's a setup_env option in the current config file, we use that
         if self.setup_env_key in config_section:
-            self.log.debug('Loading environment from shell script: {}'.format(config_section[self.setup_env_key]))
+            self.log.debug('Loading environment from shell script: {0}'.format(config_section[self.setup_env_key]))
             self.env = self._load_environ_from_script(config_section[self.setup_env_key])
         else:
             self.env = self._load_default_env(self.env)
         # Set env vars that we always need
         self.env[self.env_prefix_var] = self.prefix_dir
         self.env[self.env_srcdir_var] = self.src_dir
-        # Update os.environ so we can use os.path.expandvars
-        os.environ = self.env
         # env: sections are always respected:
+        OLD_ENV = os.environ  # Bit of an ugly hack to allow use of
+        os.environ = self.env # os.path.expandvars() on self.env
         for k, v in iteritems(self._cfg_info['env']):
             self.env[k.upper()] = os.path.expandvars(v.strip())
+        os.environ = OLD_ENV
         # 8) Keep relevant config sections as attributes
         self._set_attrs()
 
@@ -178,7 +183,7 @@ class PrefixInfo(object):
         Return the result.
         """
         try:
-            self.log.debug('Inspecting config file: {}'.format(cfg_file))
+            self.log.debug('Inspecting config file: {0}'.format(cfg_file))
             cfg_data_new = PBConfigFile(cfg_file).get()
         except Exception:
             self.log.debug('Well, looks like that failed.')
@@ -198,33 +203,34 @@ class PrefixInfo(object):
         """
         if args.prefix is not None:
             if args.prefix in self._cfg_info['prefix_aliases']:
-                self.log.debug("Resolving prefix alias {}.".format(args.prefix))
+                self.log.debug("Resolving prefix alias {0}.".format(args.prefix))
                 self.alias = args.prefix
                 args.prefix = self._cfg_info['prefix_aliases'][args.prefix]
             if not os.path.isdir(npath(args.prefix)):
-                raise PBException("Can't open prefix: {}".format(args.prefix))
+                self.log.error("Not a prefix: {0}".format(args.prefix))
+                raise PBException("Can't open prefix: {0}".format(args.prefix))
             self.prefix_dir = npath(args.prefix)
             self.prefix_src = 'cli'
-            self.log.debug("Choosing prefix dir from command line: {}".format(self.prefix_dir))
+            self.log.debug("Choosing prefix dir from command line: {0}".format(self.prefix_dir))
             return
         if self.env_prefix_var in os.environ and os.path.isdir(os.environ[self.env_prefix_var]):
             self.prefix_dir = npath(os.environ[self.env_prefix_var])
             self.prefix_src = 'env'
-            self.log.debug('Using environment variable {} as prefix ({})'.format(self.env_prefix_var, self.prefix_dir))
+            self.log.debug('Using environment variable {0} as prefix ({1})'.format(self.env_prefix_var, self.prefix_dir))
             return
         if os.getcwd() != os.path.expanduser('~') and os.path.isdir(os.path.join('.', self.prefix_conf_dir)):
             self.prefix_dir = os.getcwd()
             self.prefix_src = 'cwd'
-            self.log.debug('Using CWD as prefix ({})'.format(self.prefix_dir))
+            self.log.debug('Using CWD as prefix ({0})'.format(self.prefix_dir))
             return
         if self._cfg_info.get('config', {}).get('default_prefix'):
             default_prefix = self._cfg_info['config']['default_prefix']
             if default_prefix in self._cfg_info['prefix_aliases']:
-                self.log.debug("Resolving prefix alias `{}'.".format(default_prefix))
+                self.log.debug("Resolving prefix alias `{0}'.".format(default_prefix))
                 self.prefix_dir = npath(self._cfg_info['prefix_aliases'][default_prefix])
             else:
                 self.prefix_dir = npath(default_prefix)
-            self.log.debug('Using default_prefix as prefix ({})'.format(self.prefix_dir))
+            self.log.debug('Using default_prefix as prefix ({0})'.format(self.prefix_dir))
             self.prefix_src = 'default'
             return
         self.prefix_src = None
@@ -235,7 +241,7 @@ class PrefixInfo(object):
         Run setup_env_file, return the new env
         FIXME make this portable!
         """
-        self.log.debug('Loading environment from shell script: {}'.format(setup_env_file))
+        self.log.debug('Loading environment from shell script: {0}'.format(setup_env_file))
         # It would be nice if we could do os.path.expandvars() with a custom
         # env, wouldn't it
         setup_env_file = setup_env_file.replace('${0}'.format(self.env_prefix_var), self.prefix_dir)
@@ -298,20 +304,15 @@ class ConfigManager(object):
     # Default values + Help text:
     defaults = {
         'default_prefix': ('', 'Default Prefix'),
-        'satisfy_order': (
-            'native, src',
-            'Order in which to attempt installations when available, options are: src, native'
-        ),
         'cmakebuildtype': (
             'RelWithDebInfo',
             'CMAKE_BUILD_TYPE args to pass to cmake projects, options are: Debug, Release, RelWithDebInfo, MinSizeRel'
         ),
         'builddocs': ('OFF', 'Build doxygen while compiling packages? options are: ON, OFF'),
-        'cc': ('', 'C Compiler Executable [gcc, clang, icc, etc]'),
-        'cxx': ('', 'C++ Compiler Executable [g++, clang++, icpc, etc]'),
         'makewidth': ('4', 'Concurrent make threads [1,2,4,8...]'),
-        'packagers': ('pip,apt,yumdnf,port,brew,pacman,portage,pkgconfig,cmd', 'Priority of non-source package managers'),
+        'packagers': ('pip,apt,yumdnf,port,brew,pacman,portage,pymod,pkgconfig,cmd', 'Priority of non-source package managers'),
         'keep_builddir': ('', 'When rebuilding, default to keeping the build directory'),
+        'elevate_pre_args': (['sudo', '-H'], 'For commands that need elevated privileges, prepend this'),
     }
     LAYER_DEFAULT = 0
     LAYER_GLOBALS = 1
@@ -387,7 +388,7 @@ class ConfigManager(object):
         assert len(self.cfg_cascade) == self.LAYER_VOLATILE + 1
         # Find recipe templates:
         self._template_dir = os.path.join(self.module_dir, 'templates')
-        self.log.debug("Template directory: {}".format(self._template_dir))
+        self.log.debug("Template directory: {0}".format(self._template_dir))
         ## Init prefix:
         self._prefix_info = PrefixInfo(args, cfg_files, select_prefix)
         # Add the prefix config file (if it exists)
@@ -428,8 +429,8 @@ class ConfigManager(object):
                 self._named_recipe_cfg_files[name] = cfg_file
         # Internal recipe list:
         self._recipe_locations.append(os.path.join(self.module_dir, 'recipes'))
-        self.log.debug("Full list of recipe locations: {}".format(self._recipe_locations))
-        self.log.debug("Named recipe locations: {}".format(self._named_recipe_sources))
+        self.log.debug("Full list of recipe locations: {0}".format(self._recipe_locations))
+        self.log.debug("Named recipe locations: {0}".format(self._named_recipe_sources))
 
     def _append_cfg_from_file(self, cfg_filename, index=None):
         """
@@ -470,7 +471,7 @@ class ConfigManager(object):
                 return set_of_vals[key]
         if default is not None:
             return default
-        raise PBException("Invalid configuration key: {}".format(key))
+        raise PBException("Invalid configuration key: {0}".format(key))
 
     def keys(self):
         """ Return all currently active config keys """
@@ -647,12 +648,12 @@ class ConfigManager(object):
         return parser
 
 
-# This is what you want to use
+# This is what you want to use. Don't instantiate ConfigManager() yourself.
 config_manager = ConfigManager()
 
 # Some test code:
 if __name__ == "__main__":
-    print(config_manager.get_help("satisfy_order"))
-    print(config_manager.get("satisfy_order"))
-    config_manager.set("satisfy_order", "foo, bar")
-    print(config_manager.get("satisfy_order"))
+    print(config_manager.get_help("makewidth"))
+    print(config_manager.get("makewidth"))
+    config_manager.set("makewidth", "8")
+    print(config_manager.get("makewidth"))

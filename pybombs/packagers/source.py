@@ -36,7 +36,6 @@ class Source(PackagerBase):
     Source package manager.
     """
     name = "source"
-    host_sys_deps = ['build-essential',]
 
     def __init__(self):
         PackagerBase.__init__(self)
@@ -49,9 +48,9 @@ class Source(PackagerBase):
 
     def supported(self):
         """
-        We can always build source packages unless disabled in the config.
+        We can always build source packages if there's a prefix
         """
-        return 'src' in self.cfg.get('satisfy_order')
+        return self.prefix.prefix_dir is not None
 
     def exists(self, recipe):
         """
@@ -101,7 +100,7 @@ class Source(PackagerBase):
             if not update and get_state() < self.inventory.STATE_FETCHED:
                 Fetcher().fetch(recipe)
             else:
-                self.log.debug("Package {} is already fetched.".format(recipe.id))
+                self.log.debug("Package {0} is already fetched.".format(recipe.id))
             # If we know the package is fetched, we can attempt to build:
             self.run_build(
                 recipe,
@@ -111,7 +110,7 @@ class Source(PackagerBase):
             )
         except PBException as err:
             os.chdir(cwd)
-            self.log.error("Problem occurred while building package {}:\n{}".format(recipe.id, str(err).strip()))
+            self.log.error("Problem occurred while building package {0}:\n{1}".format(recipe.id, str(err).strip()))
             return False
         ### Housekeeping
         os.chdir(cwd)
@@ -227,7 +226,7 @@ class Source(PackagerBase):
                     shutil.rmtree(builddir)
                     os.mkdir(builddir)
                 elif warn_if_builddir_exists:
-                    self.log.warn("Build dir already exists: {}".format(builddir))
+                    self.log.warn("Build dir already exists: {0}".format(builddir))
             else:
                 if fail_if_builddir_missing:
                     raise PBException("Can't update package {0}, build directory seems to be missing.".format(recipe.id))
@@ -239,19 +238,19 @@ class Source(PackagerBase):
             self.configure(recipe)
             set_state(self.inventory.STATE_CONFIGURED)
         else:
-            self.log.debug("Package {} is already configured.".format(recipe.id))
+            self.log.debug("Package {0} is already configured.".format(recipe.id))
         if get_state() < self.inventory.STATE_BUILT:
             if make_clean:
                 self.make_clean(recipe)
             self.make(recipe)
             set_state(self.inventory.STATE_BUILT)
         else:
-            self.log.debug("Package {} is already built.".format(recipe.id))
+            self.log.debug("Package {0} is already built.".format(recipe.id))
         if get_state() < self.inventory.STATE_INSTALLED:
             self.make_install(recipe)
             set_state(self.inventory.STATE_INSTALLED)
         else:
-            self.log.debug("Package {} is already installed.".format(recipe.id))
+            self.log.debug("Package {0} is already installed.".format(recipe.id))
 
     #########################################################################
     # Build methods: All of these must raise a PBException when something
@@ -263,9 +262,9 @@ class Source(PackagerBase):
         If try_again is set, it will assume the configuration failed before
         and we're trying to run it again.
         """
-        self.log.debug("Configuring recipe {}".format(recipe.id))
-        self.log.debug("Using vars - {}".format(recipe.vars))
-        self.log.debug("In cwd - {}".format(os.getcwd()))
+        self.log.debug("Configuring recipe {0}".format(recipe.id))
+        self.log.debug("Using vars - {0}".format(recipe.vars))
+        self.log.debug("In cwd - {0}".format(os.getcwd()))
         pre_cmd = recipe.var_replace_all(self.get_command('configure', recipe))
         cmd = self.filter_cmd(pre_cmd, recipe, 'config_filter')
         o_proc = None
@@ -286,8 +285,8 @@ class Source(PackagerBase):
         """
         Run 'make clean' or whatever clears a build before recompiling
         """
-        self.log.debug("Uninstalling from recipe {}".format(recipe.id))
-        self.log.debug("In cwd - {}".format(os.getcwd()))
+        self.log.debug("Uninstalling from recipe {0}".format(recipe.id))
+        self.log.debug("In cwd - {0}".format(os.getcwd()))
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
             o_proc = output_proc.OutputProcessorMake(preamble="Uninstalling: ")
@@ -311,8 +310,8 @@ class Source(PackagerBase):
         and we're trying to run it again. In this case, reduce the
         makewidth to 1 and show the build output.
         """
-        self.log.debug("Building recipe {}".format(recipe.id))
-        self.log.debug("In cwd - {}".format(os.getcwd()))
+        self.log.debug("Building recipe {0}".format(recipe.id))
+        self.log.debug("In cwd - {0}".format(os.getcwd()))
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again and not recipe.make_interactive:
             o_proc = output_proc.OutputProcessorMake(preamble="Building:    ")
@@ -333,8 +332,8 @@ class Source(PackagerBase):
         """
         Run 'make test' or whatever checks a build was successful
         """
-        self.log.debug("Verifying package {}".format(recipe.id))
-        self.log.debug("In cwd - {}".format(os.getcwd()))
+        self.log.debug("Verifying package {0}".format(recipe.id))
+        self.log.debug("In cwd - {0}".format(os.getcwd()))
         o_proc = None
         if self.log.getEffectiveLevel() >= pb_logging.DEBUG and not try_again:
             o_proc = output_proc.OutputProcessorMake(preamble="Verifying: ")
@@ -356,8 +355,8 @@ class Source(PackagerBase):
         """
         Run 'make install' or whatever copies the files to the right place.
         """
-        self.log.debug("Installing package {}".format(recipe.id))
-        self.log.debug("In cwd - {}".format(os.getcwd()))
+        self.log.debug("Installing package {0}".format(recipe.id))
+        self.log.debug("In cwd - {0}".format(os.getcwd()))
         pre_cmd = recipe.var_replace_all(self.get_command('install', recipe))
         cmd = self.filter_cmd(pre_cmd, recipe, 'install_filter')
         o_proc = None

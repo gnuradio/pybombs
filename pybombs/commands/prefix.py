@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -20,12 +20,13 @@
 #
 """ PyBOMBS command: prefix """
 
+from __future__ import print_function
 import os
 import os.path as op
 import shutil
 from six import iteritems
 
-from pybombs.commands import CommandBase
+from pybombs.commands import SubCommandBase
 from pybombs.config_file import PBConfigFile
 from pybombs.utils import dict_merge
 from pybombs.utils import subproc
@@ -37,14 +38,23 @@ from pybombs import fetcher
 #############################################################################
 # Sub-command sub-parsers
 #############################################################################
-def setup_subsubparser_initsdk(parser):
+def setup_subsubparser_installsdk(parser):
+    " Parser for pybombs prefix install-sdk "
     parser.add_argument(
         'sdkname',
         help="SDK Package Name",
         nargs=1,
     )
 
+def setup_subsubparser_update(parser):
+    parser.add_argument(
+        '-R', '--recipe', default="default_prefix",
+        help="Use this recipe to update the prefix",
+    )
+
+
 def setup_subsubparser_init(parser):
+    " Parser for pybombs prefix init "
     parser.add_argument(
         'path',
         help="Path to the new prefix (defaults to CWD).",
@@ -69,10 +79,6 @@ def setup_subsubparser_init(parser):
         help="Use this recipe to set up the prefix",
     )
 
-
-def setup_subsubparser_write_env(parser):
-    pass
-
 #############################################################################
 # Helpers
 #############################################################################
@@ -84,12 +90,44 @@ def get_prefix_recipe(recipe_name):
 #############################################################################
 # Class definition
 #############################################################################
-class Prefix(CommandBase):
+class Prefix(SubCommandBase):
     """
     Prefix operations
     """
     cmds = {
         'prefix': 'Prefix commands',
+    }
+    subcommands = {
+        'info': {
+            'help': 'Display information on the currently used prefix.',
+            'subparser': lambda p: None,
+            'run': lambda x: x.run_print_prefix_info,
+        },
+        'init': {
+            'help': 'Create and initialize a prefix.',
+            'subparser': setup_subsubparser_init,
+            'run': lambda x: x.run_init,
+        },
+        'env': {
+            'help': 'Print the environment variables used in this prefix.',
+            'subparser': lambda p: None,
+            'run': lambda x: x.run_print_prefix_env,
+        },
+        'write-env': {
+            'help': 'Write "setup_env.sh" into the prefix.',
+            'subparser': lambda p: None,
+            'run': lambda x: x.run_write_env,
+        },
+        'install-sdk': {
+            'help': 'Install an SDK into the prefix.',
+            'subparser': setup_subsubparser_installsdk,
+            'run': lambda x: x.run_installsdk,
+        },
+        'update': {
+            'help': 'Update the prefix config from recipe.',
+            'subparser': setup_subsubparser_update,
+            'run': lambda x: x.run_update_prefix_config,
+        },
     }
 
     @staticmethod
@@ -97,79 +135,38 @@ class Prefix(CommandBase):
         """
         Set up a subparser for a specific command
         """
-        ###### Start of setup_subparser()
-        subparsers = parser.add_subparsers(
-                help="Prefix Commands:",
-                dest='prefix_command',
+        return SubCommandBase.setup_subcommandparser(
+            parser,
+            'Prefix Commands:',
+            Prefix.subcommands
         )
-        for cmd_name, cmd_info in iteritems(Prefix.prefix_cmd_name_list):
-            subparser = subparsers.add_parser(
-                    cmd_name,
-                    help=cmd_info['help']
-            )
-            cmd_info['parser'](subparser)
-        return parser
 
     def __init__(self, cmd, args):
-        CommandBase.__init__(self,
-                cmd, args,
-                load_recipes=True,
-                require_prefix=(args.prefix_command != 'init'),
+        SubCommandBase.__init__(
+            self,
+            cmd, args,
+            load_recipes=True,
+            require_prefix=(args.sub_command != 'init'),
         )
 
-    def run(self):
-        """ Go, go, go! """
-        return self.prefix_cmd_name_list[self.args.prefix_command]['run'](self)
-
-    def _print_prefix_info(self):
+    #########################################################################
+    # Subcommands
+    #########################################################################
+    def run_print_prefix_info(self):
         """
         pybombs prefix info
         """
-        #self.log.info('Prefix dir: {}'.format(self.prefix.prefix_dir))
-        print("\x1b[32m[Default Prefix]: {} \033[0m".format(self.cfg.get('default_prefix')))
-        self.active_prefix = self.cfg.get_active_prefix()
+        #self.log.info('Prefix dir: {0}'.format(self.prefix.prefix_dir))
+        print("\x1b[32m[Default Prefix]: {0} \033[0m".format(self.cfg.get('default_prefix')))
+        active_prefix = self.cfg.get_active_prefix()
         print("Available Prefixes :")
-        for key,value in iteritems(self.active_prefix.prefix_aliases):
-            print("{} - {}".format(key, value))
+        for key, value in iteritems(active_prefix.prefix_aliases):
+            print("{0} - {1}".format(key, value))
 
-
-    def _print_prefix_env(self):
-        """
-        pybombs prefix env
-        """
-        print('Prefix env:')
-        for k, v in iteritems(self.prefix.env):
-            print("{}={}".format(k, v))
-
-
-    def _run_installsdk(self):
-        """
-        pybombs prefix install-sdk
-        """
-        self._install_sdk_to_prefix(
-            self.args.sdkname[0],
-        )
-
-    def _run_write_env(self):
-        """
-        pybombs "setup_env.sh" generator
-        """
-        if not self._write_env_file():
-            return -1
-
-    def _run_init(self):
+    def run_init(self):
         """
         pybombs prefix init
         """
-        def register_alias(alias):
-            if alias is not None:
-                if self.prefix is not None and \
-                        self.prefix.prefix_aliases.get(alias) is not None \
-                        and not confirm("Alias `{0}' already exists, overwrite?".format(alias)):
-                    self.log.warn('Aborting.')
-                    raise PBException("Could not create alias.")
-                self.cfg.update_cfg_file({'prefix_aliases': {self.args.alias: path}})
-        # Go, go, go!
         try:
             prefix_recipe = get_prefix_recipe(self.args.recipe)
         except PBException as ex:
@@ -178,65 +175,66 @@ class Prefix(CommandBase):
         if prefix_recipe is None:
             self.log.error("Could not find recipe for `{0}'".format(self.args.recipe))
             return -1
-        # Make sure the directory is writable
-        path = op.abspath(op.normpath(self.args.path))
-        if not sysutils.mkdir_writable(path, self.log):
-            self.log.error("Cannot write to prefix path `{0}'.".format(path))
+        if not self._init_prefix(
+                self.args.path,
+                self.args.alias,
+                prefix_recipe,
+                self.args.sdkname,
+                self.args.virtualenv
+        ):
             return -1
-        # Make sure that a pybombs directory doesn't already exist
-        from pybombs import config_manager
-        if op.exists(op.join(path, config_manager.PrefixInfo.prefix_conf_dir)):
-            self.log.error("Ignoring. A prefix already exists in `{0}'".format(path))
+
+
+    def run_print_prefix_env(self):
+        """
+        pybombs prefix env
+        """
+        print('Prefix env:')
+        for k, v in iteritems(self.prefix.env):
+            print("{0}={1}".format(k, v))
+
+    def run_write_env(self):
+        """
+        pybombs "setup_env.sh" generator
+        """
+        if not self._write_env_file():
             return -1
-        # Add subdirs
-        sysutils.require_subdirs(path, [k for k, v in prefix_recipe.dirs.items() if v])
-        self.cfg.load(select_prefix=path)
-        self.prefix = self.cfg.get_active_prefix()
-        # Create files
-        for fname, content in prefix_recipe.files.items():
-            sysutils.write_file_in_subdir(path, fname, prefix_recipe.var_replace_all(content))
-        # Register alias
-        if self.args.alias is not None:
-            register_alias(self.args.alias)
-        # If there is no default prefix, make this the default
-        if len(self.cfg.get('default_prefix')) == 0:
-            if self.args.alias is not None:
-                new_default_prefix = self.args.alias
-            else:
-                new_default_prefix = path
-            self.cfg.update_cfg_file({'config': {'default_prefix': new_default_prefix}})
-        # Create virtualenv if so desired
-        if self.args.virtualenv:
-            self.log.info("Creating Python virtualenv in prefix...")
-            venv_args = ['virtualenv']
-            venv_args.append(path)
-            subproc.monitor_process(args=venv_args)
-        # Install SDK if so desired
-        sdk = self.args.sdkname or prefix_recipe.sdk
-        if sdk is not None:
-            self.log.info("Installing SDK recipe {0}.".format(sdk))
-            self.log.info("Reloading configuration...")
+
+    def run_installsdk(self):
+        """
+        pybombs prefix install-sdk
+        """
+        if not self._install_sdk_to_prefix(self.args.sdkname[0]):
+            return -1
+
+    def run_update_prefix_config(self):
+        """
+        pybombs prefix update
+        """
+        try:
+            prefix_recipe = get_prefix_recipe(self.args.recipe)
+        except PBException as ex:
+            self.log.error(str(ex))
+            return -1
+        if prefix_recipe is None:
+            self.log.error("Could not find recipe for `{0}'".format(self.args.recipe))
+            return -1
+        if not self._update_prefix(
+                prefix_recipe,
+
+        ):
+            return -1
+    #########################################################################
+    # Helpers
+    #########################################################################
+    def _update_config_section(self, new_config_data, path):
+        """
+        used by multiple helpers to update the config file with new config data
+        """
+        if len(new_config_data):
+            self.cfg.update_cfg_file(new_config_data, self.prefix.cfg_file)
             self.cfg.load(select_prefix=path)
             self.prefix = self.cfg.get_active_prefix()
-            self.inventory = self.prefix.inventory
-            self._install_sdk_to_prefix(sdk)
-        # Update config section
-        if len(prefix_recipe.config):
-            self.cfg.update_cfg_file(prefix_recipe.config, self.prefix.cfg_file)
-            self.cfg.load(select_prefix=path)
-            self.prefix = self.cfg.get_active_prefix()
-        # Install dependencies
-        if len(prefix_recipe.depends):
-            self.log.info("Installing default packages for prefix...")
-            self.log.info("".join(["\n  - {0}".format(x) for x in prefix_recipe.depends]))
-            from pybombs import install_manager
-            install_manager.InstallManager().install(
-                    prefix_recipe.depends,
-                    'install', # install / update
-                    fail_if_not_exists=False,
-                    update_if_exists=False,
-                    print_tree=True,
-            )
 
     def _write_env_file(self):
         """
@@ -253,32 +251,99 @@ class Prefix(CommandBase):
         try:
             for fname, content in prefix_recipe.files.items():
                 sysutils.write_file_in_subdir(path, fname, prefix_recipe.var_replace_all(content))
-        except (PBException, OSError, IOError) as ex:
+        except (PBException, OSError, IOError):
             return False
         return True
 
-    def _copy_prefix_template(self, path):
+
+    def _init_prefix(self, path, alias, prefix_recipe, sdkname, virtualenv=False):
         """
-        Create all the files and directories
+        pybombs prefix init
         """
-        # TODO: I'm not too happy about this, all the hard coded stuff. Needs
-        # cleaning up, for sure. Especially that setup_env.sh stuff at the end.
-        # Ideally, we could switch prefix templates.
-        self.log.info("Initializing PyBOMBS prefix in `{0}'...".format(path))
-        skel_dir = op.join(self.cfg.module_dir, 'skel')
-        for p in os.listdir(skel_dir):
-            if op.exists(op.join(path, p)):
-                self.log.obnoxious("Skipping {0}".format(p))
-                continue
-            self.log.obnoxious("Copying {0}".format(p))
-            p_full = op.join(skel_dir, p)
-            if op.isdir(p_full):
-                shutil.copytree(
-                    p_full, op.join(path, p),
-                    ignore=shutil.ignore_patterns('.ignore')
+        def check_path_is_valid(path):
+            " Returns True if we can use path to init our prefix "
+            try:
+                if not sysutils.mkdir_writable(path, self.log):
+                    raise PBException("Could not create writable directory.")
+            except PBException:
+                self.log.error("Cannot write to prefix path `{0}'.".format(path))
+                return False
+            from pybombs import config_manager
+            if op.exists(op.join(path, config_manager.PrefixInfo.prefix_conf_dir)):
+                self.log.warn("There already is a prefix in `{0}'.".format(path))
+                if not confirm("Continue using this path?"):
+                    self.log.error("Aborting. A prefix already exists in `{0}'".format(path))
+                    return False
+            return True
+        def create_subdirs_and_files(path, dirs, files):
+            " Create subdirs and files "
+            sysutils.require_subdirs(path, [k for k, v in dirs.items() if v])
+            for fname, content in files.items():
+                sysutils.write_file_in_subdir(path, fname, prefix_recipe.var_replace_all(content))
+        def register_alias(alias, path):
+            " Write the prefix alias to the config file "
+            if self.prefix is not None and \
+                    self.prefix.prefix_aliases.get(alias) is not None \
+                    and not confirm("Alias `{0}' already exists, overwrite?".format(alias)):
+                self.log.warn('Aborting.')
+                raise PBException("Could not create alias.")
+            self.cfg.update_cfg_file({'prefix_aliases': {alias: path}})
+        def create_virtualenv(path):
+            " Create a Python virtualenv "
+            self.log.info("Creating Python virtualenv in prefix...")
+            venv_args = ['virtualenv']
+            venv_args.append(path)
+            subproc.monitor_process(args=venv_args)
+        def install_sdk_to_new_prefix(sdk):
+            " See if we need to install an SDK to the prefix and call the appropriate functions "
+            if sdk is not None:
+                self.log.info("Installing SDK recipe {0}.".format(sdk))
+                self.log.info("Reloading configuration...")
+                self.cfg.load(select_prefix=path)
+                self.prefix = self.cfg.get_active_prefix()
+                self.inventory = self.prefix.inventory
+                return self._install_sdk_to_prefix(sdk)
+            return True
+        def install_dependencies(deps):
+            " Install dependencies "
+            if len(prefix_recipe.depends):
+                self.log.info("Installing default packages for prefix...")
+                self.log.info("".join(["\n  - {0}".format(x) for x in deps]))
+                from pybombs import install_manager
+                return install_manager.InstallManager().install(
+                    deps,
+                    'install', # install / update
+                    fail_if_not_exists=False,
+                    update_if_exists=False,
+                    print_tree=True,
                 )
-            else:
-                shutil.copy(p_full, path)
+            return True
+        # Go, go, go!
+        path = op.abspath(op.normpath(path))
+        if not check_path_is_valid(path):
+            return False
+        self.cfg.load(select_prefix=path)
+        self.prefix = self.cfg.get_active_prefix()
+        create_subdirs_and_files(path, prefix_recipe.dirs, prefix_recipe.files)
+        if alias is not None:
+            register_alias(alias, path)
+        if len(self.cfg.get('default_prefix')) == 0:
+            self.cfg.update_cfg_file({'config': {'default_prefix': alias or path}})
+        if virtualenv:
+            create_virtualenv(path)
+        if not install_sdk_to_new_prefix(sdkname or prefix_recipe.sdk):
+            return False
+        self._update_config_section(prefix_recipe.config, path)
+        return install_dependencies(prefix_recipe.depends)
+
+    def _update_prefix(self, prefix_recipe):
+        """
+        update the current prefix config file with a given prefix_recipe
+        """
+        path = self.prefix.prefix_dir
+        self.cfg.load(select_prefix=path)
+        self._update_config_section(prefix_recipe.config, path)
+        return True
 
     def _install_sdk_to_prefix(self, sdkname):
         """
@@ -296,7 +361,7 @@ class Prefix(CommandBase):
             os.chdir(src_dir)
         except:
             self.log.error("Source dir required to install SDK.")
-            return -1
+            return False
         ### Install the actual SDK file
         self.log.debug("Fetching SDK `{sdk}'".format(sdk=sdkname))
         fetcher.Fetcher().fetch(r)
@@ -307,7 +372,7 @@ class Prefix(CommandBase):
             self.log.debug("Installation successful")
         else:
             self.log.error("Error installing SDK. Aborting.")
-            return -1
+            return False
         # Clean up
         files_to_delete = [op.normpath(op.join(src_dir, r.var_replace_all(x))) for x in r.clean]
         if len(files_to_delete):
@@ -323,7 +388,7 @@ class Prefix(CommandBase):
                 os.remove(ftd)
             else:
                 self.log.error("Not sure what this is: {ftd}".format(ftd=ftd))
-                return -1
+                return False
         ### Update the prefix-local config file
         self.log.debug("Updating config file with SDK recipe info.")
         try:
@@ -338,34 +403,4 @@ class Prefix(CommandBase):
         cfg_data = dict_merge(old_cfg_data, sdk_cfg_data)
         self.log.debug("Writing updated prefix config to `{0}'".format(cfg_file))
         PBConfigFile(cfg_file).save(cfg_data)
-
-    #########################################################################
-    # Sub-commands:
-    prefix_cmd_name_list = {
-        'info': {
-            'help': 'Display information on the currently used prefix.',
-            'parser': lambda p: None,
-            'run': _print_prefix_info,
-        },
-        'init': {
-            'help': 'Create and initialize a prefix.',
-            'parser': setup_subsubparser_init,
-            'run': _run_init,
-        },
-        'env': {
-            'help': 'Print the environment variables used in this prefix.',
-            'parser': lambda p: None,
-            'run': _print_prefix_env,
-        },
-        'write-env': {
-            'help': 'Write "setup_env.sh" into the prefix.',
-            'parser': setup_subsubparser_write_env,
-            'run': _run_write_env,
-        },
-        'install-sdk': {
-            'help': 'Install an SDK into the prefix.',
-            'parser': setup_subsubparser_initsdk,
-            'run': _run_installsdk,
-        },
-    }
-    #########################################################################
+        return True

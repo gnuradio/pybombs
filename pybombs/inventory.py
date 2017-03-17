@@ -1,6 +1,5 @@
-#!/usr/bin/env python2
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -65,7 +64,7 @@ class Inventory(object):
         with an empty dictionary.
         This will override any internal state.
         """
-        self.log.debug("Trying to load inventory file {}...".format(self._filename))
+        self.log.debug("Trying to load inventory file {0}...".format(self._filename))
         self._invfile = PBConfigFile(self._filename)
 
     def save(self):
@@ -75,7 +74,7 @@ class Inventory(object):
         and without warning. If the file didn't exist, it will be
         created.
         """
-        self.log.debug("Saving inventory to file {}...".format(self._filename))
+        self.log.debug("Saving inventory to file {0}...".format(self._filename))
         if not os.path.isdir(os.path.split(self._filename)[0]):
             os.mkdir(os.path.split(self._filename)[0])
         self._invfile.save()
@@ -119,10 +118,10 @@ class Inventory(object):
                 except ValueError:
                     pass
         if not state in self.get_valid_states():
-            raise ValueError("Invalid state: {}".format(state))
+            raise ValueError("Invalid state: {0}".format(state))
         if not self.has(pkg):
             self._invfile.data[pkg] = {}
-        self.log.debug("Setting state to `{}'".format(self._state_names[state]))
+        self.log.debug("Setting state to `{0}'".format(self._state_names[state]))
         self._invfile.update({pkg: {'state': state}})
 
     def get_version(self, pkg, default_version=None):
@@ -132,7 +131,7 @@ class Inventory(object):
         If no version was set, return default_version (defaults to None).
         """
         if not self.has(pkg):
-            raise PBException("Cannot get version for package {} if it's not in the inventory!".format(pkg))
+            raise PBException("Cannot get version for package {0} if it's not in the inventory!".format(pkg))
         try:
             return self._invfile.data[pkg]["version"]
         except KeyError:
@@ -144,8 +143,8 @@ class Inventory(object):
         This throws a PBException if the package doesn't exist.
         """
         if not self.has(pkg):
-            raise PBException("Cannot set version for package {} if it's not in the inventory!".format(pkg))
-        self.log.debug("Setting version to {}".format(version))
+            raise PBException("Cannot set version for package {0} if it's not in the inventory!".format(pkg))
+        self.log.debug("Setting version to {0}".format(version))
         self._invfile.data[pkg]["version"] = version
 
     def set_key(self, pkg, key, value):

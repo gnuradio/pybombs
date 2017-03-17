@@ -119,7 +119,6 @@ def run_with_output_processing(p, o_proc, event, cleanup=None):
     o_proc.process_final()
     return p.returncode
 
-ELEVATE_PRE_ARGS = ['sudo', '-H']
 def _process_thread(event, args, kwargs):
     """
     This actually runs the process.
@@ -136,12 +135,23 @@ def _process_thread(event, args, kwargs):
     if kwargs.get('shell', False) and isinstance(args, list):
         args = ' '.join(args)
     if kwargs.get('elevate'):
+        elevate_pre_args = config_manager.get('elevate_pre_args')
+        if isinstance(elevate_pre_args, str):
+            elevate_pre_args = [elevate_pre_args,]
+        if len(elevate_pre_args[0].strip()) == 0:
+            elevate_pre_args = []
         if kwargs.get('shell', False) and isinstance(args, str):
-            args = ' '.join(ELEVATE_PRE_ARGS) + args
+            args = ' '.join(elevate_pre_args) + args
         else:
-            args = ELEVATE_PRE_ARGS + args
+            args = elevate_pre_args + args
     log = logger.getChild("_process_thread()")
-    log.debug("Executing command `{cmd}'".format(cmd=str(args).strip()))
+    if isinstance(args, list):
+        log.debug("Executing command `{cmd}'".format(cmd=' '.join(args)))
+    else:
+        log.debug("Executing command `{sh}{cmd}'".format(
+            sh="$ " if kwargs.get('shell', False) else "",
+            cmd=args.strip()
+        ))
     proc = subprocess.Popen(
         args,
         shell=kwargs.get('shell', False),
@@ -182,6 +192,8 @@ def monitor_process(args, **kwargs):
     - o_proc: An output processor
     - cleanup: A callback to clean up artifacts if the process is killed
     - elevate: Run with elevated privileges (e.g., 'sudo <command>')
+
+    Returns the process's return value.
     """
     log = logger.getChild("monitor_process()")
     if kwargs.get('elevate'):
@@ -225,23 +237,19 @@ def check_output(*args, **kwargs):
     """
     return subprocess.check_output(*args, **kwargs).decode('utf-8')
 
-def match_output(command, pattern, match_key=None):
+def match_output(command, pattern, match_key=None, **kwargs):
     """
     Runs `command', and matches it against regex `pattern'.
     If there was a match, returns that, as a string.
     `match_key` is used to identify the match group key.
 
+    **kwargs are passed straight to check_output().
+
     Note: This uses re.search(), not re.match()!
     """
-    if match_key is None:
-        match_key = 0
-    out = check_output(command, stderr=subprocess.STDOUT)
-    if len(out) > 0:
-        # Get the versions
-        ver = re.search(pattern, out, re.MULTILINE)
-        if ver is None:
-            return False
-        ver = ver.group(match_key)
-        return ver
-    return False
+    out = check_output(command, stderr=subprocess.STDOUT, **kwargs)
+    try:
+        return re.search(pattern, out, re.MULTILINE).group(match_key or 0)
+    except AttributeError:
+        return False
 

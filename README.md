@@ -4,6 +4,8 @@ Website: http://gnuradio.org/pybombs
 
 Minimum Python version: 2.7
 
+[![Build Status](https://travis-ci.org/gnuradio/pybombs.svg?branch=master)](https://travis-ci.org/gnuradio/pybombs)
+
 ## License
 
 Copyright 2015 Free Software Foundation, Inc.
@@ -63,7 +65,7 @@ pip also provides a `-e` switch for installing PyBOMBS in 'editable' mode.
 
 ### Install it all manually
 
-If you want to install yourself, you need to make sure the `pybombs` module is in the PYTHONPATH. To run PyBOMBS in this case, execute `main.py`. You can symlink or alias that to `pybombs` (e.g. `ln -s /path/to/pybombs/main.py ~/bin/pybombs`). If you don't know what any of this means, please use one of the methods explained further up.
+If you want to install PyBOMBS yourself, you need to make sure the `pybombs` module is in the PYTHONPATH. To run PyBOMBS in this case, execute `main.py`. You can symlink or alias that to `pybombs` (e.g. `ln -s /path/to/pybombs/main.py ~/bin/pybombs`). If you don't know what any of this means, please use one of the methods explained further up.
 
 ## Quickstart
 
@@ -75,40 +77,47 @@ For the impatient:
         $ pybombs recipes add gr-recipes git+https://github.com/gnuradio/gr-recipes.git  
         $ pybombs recipes add gr-etcetera git+https://github.com/gnuradio/gr-etcetera.git
 
-3. Install GNU Radio, gr-osmosdr and some other goodies into the directory `/path/to/prefix`:
+3. Install GNU Radio, gr-osmosdr and some other goodies into your home directory `~/prefix`:
 
-        $ pybombs prefix init /path/to/prefix -a myprefix -R gnuradio-default
+        $ pybombs prefix init ~/prefix -a myprefix -R gnuradio-default
 
    All commands after this will use `myprefix` as the default prefix. You can change the
    default prefix later by running `pybombs config default_prefix NEWPREFIX`
 
 4. Run GNU Radio Companion from your new prefix:
 
-        $ cd /path/to/prefix
-        $ . ./setup_env.sh
+        $ source ~/prefix/setup_env.sh
         $ gnuradio-companion
+
+   or execute it without changing the current environment:
+
+        $ pybombs run gnuradio-companion
 
 ## Prefixes
 
 A prefix is a directory into which packages are installed.
-The prefix may be `/usr/local/` for system-wide installation
-of packages, or something like `~/src/prefix` if you want to
-have a user-level, local installation path. The latter is
-highly recommended for local development, as it allows
-compilation and installation without root access.
+
+The prefix may be `~/prefix` as in the example above, and typically, the
+prefix resides inside your home directory so you can modify or delete prefixes
+easily without admin access. This is the recommended way of running PyBOMBS.
+It can also be `/usr/local/` for system-wide installation of packages.
 Any directory may be a prefix, but it is highly recommended
 to choose a dedicated directory for this purpose.
 
+Many developers have multiple prefixes. Instead if installing to `~/prefix`, a
+common way is to have multiple prefixes, e.g., `~/prefix/default_prefix`,
+`~/prefix/dev_prefix`, etc.
+
 Prefixes require a configuration directory to function properly.
-Typically, it is called .pybombs/ and is a subdirectory of the prefix.
-So, if your prefix is `~/src/prefix`, there will be a directory called
-`~/src/prefix/.pybombs/` containing special files. The two most important
+Typically, it is called `.pybombs/` and is a subdirectory of the prefix.
+So, if your prefix is `~/prefix`, there will be a directory called
+`~/prefix/.pybombs/` containing special files. The two most important
 files are the inventory file (inventory.yml) and the prefix-local
 configuration file (config.yml), but it can also contain recipe files
 that are specific to this prefix.
 
 There is no limit to the number of prefixes. Indeed, it may make sense
-to have multiple prefixes, e.g. one for system-wide installation, one for
+to have many prefixes, e.g. one for system-wide installation, one for
 a user-specific installation, and one for cross-compiling to a different
 platform.
 
@@ -118,17 +127,6 @@ You can set a default prefix with the following command:
     $ pybombs config default_prefix PREFIXNAME
 
 The first time you run `pybombs prefix init`, it will set this value for you.
-
-### Initializing Prefixes
-
-Any directory can function as a prefix, and PyBOMBS will make sure all the
-required files and directories are created. However, PyBOMBS provides a way
-to initialize a directory to be a full PyBOMBS prefix:
-
-    $ pybombs prefix init /path/to/prefix [-a alias]
-
-This is similar to `git init`. The optional alias allows you to access the
-prefix with the alias instead of the full path.
 
 ### Aliases
 
@@ -147,15 +145,55 @@ Prefixes are selected by the following rules, in this order:
 3. The default prefix as defined by the `default_prefix` config switch
 
 If no prefix can be found, most PyBOMBS operations will not be possible,
-but some will still work.
+but some will still work (for example, you can install all dependencies for a
+package from binary sources).
+
+### Initializing Prefixes
+
+Any directory can function as a prefix, and PyBOMBS will make sure all the
+required files and directories are created. However, PyBOMBS provides a way
+to initialize a directory to be a full PyBOMBS prefix:
+
+    $ pybombs prefix init /path/to/prefix [-a alias]
+
+This is similar to `git init`. The optional alias allows you to access the
+prefix with the alias instead of the full path. A typical value for the default
+prefix is `~/prefix/default`, and then other prefixes also reside in `~/prefix`
+alongside the default prefix.
+
+After initializing a prefix, you can start to install to this prefix using the
+install command:
+
+    $ pybombs -p <alias> install <package>
+
+PyBOMBS provides a way to not only initialize a raw prefix, but also configure
+it and install packages through a *prefix recipe*. These are selected using
+the `-R` switch on the command line:
+
+    $ pybombs prefix init /path/to/prefix [-a alias] [-R prefix-recipe]
+
 
 ### Configuring a prefix' environment (e.g. for cross-compiling)
 
 #### Setting environment variables directly:
 
-In any config file that is read, a `env:` section can be added. This
-will set environment variables for any command  (configure, build, make...)
-that is run within PyBOMBS.
+For a quick setup of environment variables, you can use the `pybombs config`
+command:
+
+    $ pybombs config --env CC clang
+    $ pybombs prefix env
+    # ...lots of output...
+    CC=clang
+    # ...lots of output...
+
+This will, by default, set an environment variable for *all* prefixes. You
+might want to set it for a specific one, in that case, specify the prefix:
+
+    $ pybombs -p default config --env CC clang
+
+You can also edit the config files directly.  In any config file that is read,
+a `env:` section can be added. This will set environment variables for any
+command  (configure, build, make...) that is run within PyBOMBS.
 
 Note that this will still use the regular system environment as well, but
 it will overwrite existing variables. Variable expansion can be used, so
@@ -172,6 +210,9 @@ colon (:), not an equals sign, as you would in a shell script.
 In all cases, the environment variable `PYBOMBS_PREFIX` is set to the
 current prefix, and `PYBOMBS_PREFIX_SRC` is set to the source directory.
 
+Use `pybombs prefix env` to show all environment variables as they would appear
+when commands are run inside the prefix.
+
 #### Using an external script to set the environment
 
 Inside the config section, a shell script can be defined that sets up an
@@ -185,6 +226,44 @@ config:
     setup_env: /path/to/environment-setup-armv7ahf-vfp-neon-oe-linux-gnueabi
 ```
 
+In this case, the environment from the calling shell session is *not* inherited.
+
+## Installing packages
+
+When you run a command such as
+
+    $ pybombs install gnuradio
+
+PyBOMBS will initiate an installation procedure for the package. Since PyBOMBS
+can interact both with the system's package manager (e.g., apt, dnf, brew...)
+and install source packages, there need to be clearly defined rules about the
+order of operations. PyBOMBS will attempt to install packages following these
+rules:
+
+1. Is the package flagged explicitly for source installation? If so, put it
+   into a queue for source package builds. Otherwise, attempt to install it
+   from the system's package manager. If that fails, also put it into the queue
+   for source package builds.
+2. Any package that is flagged for building from source is analysed to find the
+   source build dependencies. For all of those packages, the same procedure is
+   applied.
+3. Eventually, all binary installs are complete and the source installs are
+   left. The source packages are put into a tree, so they can be installed
+   starting at the lowest dependee.
+
+Example: In the command above, the package gnuradio has two dependencies, `uhd`
+and `boost`. In a configuration file, uhd and gnuradio are flagged for building
+from source. PyBOMBS will put gnuradio and uhd into the source build queue, and
+then invoke the system's package manager to install boost.
+When the package boost is installed, PyBOMBS generates a source build tree,
+which in this case is a very simple tree: `gnuradio <- uhd`, meaning that the
+package gnuradio depends on the package uhd, so uhd needs to be installed first.
+PyBOMBS then executes a source build of uhd, then gnuradio (in that order) into
+the prefix.
+
+(Note: The actual dependency structure for those packages is more complex and
+was simplified for this document).
+
 ## Recipes
 
 ### Recipe Format
@@ -196,8 +275,41 @@ Important keys in the recipe files include:
 
 - `inherit`: This will load the values from a template file (`*.lwt`) before
   using the values from the recipe, to set up suitable defaults.
-- `category`: Can technically be anything, but certain categories
-  carry certain meanings
+- `category`: Can technically be anything, but certain categories carry certain
+  meanings. In most cases, choose 'common'.
+
+Example:
+
+
+```{.yml}
+# This means the build/install works like any other cmake project:
+inherit: cmake
+# These dependencies are only for source builds:
+depends:
+- boost
+- fftw
+- cppunit
+# There's more dependencies in the real repo, skipping for this example
+description: Free and open source toolkit for software defined radio
+category: common
+# Its good practice to add one of these for all the installers we have:
+satisfy:
+  deb: gnuradio-dev
+  pacman: gnuradio
+  port: gnuradio
+  portage: net-wireless/gnuradio
+source: git+https://github.com/gnuradio/gnuradio.git
+# master is the default branch, but you can choose a different branch here
+gitbranch: master
+# Only when cloning the source code is this used, in that case, these args are
+# appended to the git command that does the clone:
+gitargs: --recursive
+# Variables defined here can be used in various places in this recipe:
+vars:
+  config_opt: " -DENABLE_DOXYGEN=$builddocs "
+# For static builds, we need to override the defaults from the cmake.lwt recipe:
+configure_static: cmake .. -DCMAKE_BUILD_TYPE=$cmakebuildtype -DCMAKE_INSTALL_PREFIX=$prefix -DENABLE_STATIC_LIBS=True $config_opt
+```
 
 ### Recipe Management
 
@@ -205,11 +317,19 @@ Recipes can be stored in multiple locations, which easily allows to store
 separate recipe lists for specific projects.
 
 If the same recipe can be found in more than one location, it will be
-chosen from the most specific. The precise order is:
+chosen from the most specific. The precise order is (from more to less
+specific):
 - Recipe locations specified on the command line (Using the `-r` switch)
 - From the environment variable `PYBOMBS_RECIPE_DIR`
 - The current prefix (if available)
 - Global recipe locations
+
+The command
+
+    $ pybombs recipes list-repos
+
+will show the recipe locations in the order they're used (it will pick a recipe
+from the top line before it'll pick it from the bottom line).
 
 This mechanism can be used to override recipes for certain prefixes. For
 example, the `gnuradio.lwr` file could be copied and adapted to use a
@@ -261,47 +381,81 @@ The config.yml files are in YAML format. A typical file looks like this:
 ```{.yml}
 # All configuration options:
 # (Run `pybombs config` to learn which options are recognized)
+# You can edit these with `pybombs config` too
 config:
-	satisfy_order: native,src
-	default_prefix: default
-	# ... more options
+    default_prefix: default
+    makewidth: 8 # Run on 8 cores
+    # ... more options
 
 # Prefix aliases:
 prefix_aliases:
-	default: /home/user/src/pb-prefix/
-	sys: /usr/local
+    default: /home/user/src/pb-prefix/
+    sys: /usr/local
+    # pybombs prefix init -a <alias> will add one automatically here
 
 # Prefix configuration directories:
 prefix_config_dir:
-	sys: /home/user/pb-default/
-	# Typically, you don't need this, because the prefix configuration
-	# directory is in <PREFIX>/.pybombs
+    sys: /home/user/pb-default/
+    # Typically, you don't need this, because the prefix configuration
+    # directory is in <PREFIX>/.pybombs
 
 # Recipe locations:
 recipes:
-	myrecipes: /usr/local/share/recipes
-	morerecipes: /home/user/pb-recipes
-	remoterecipes: git+git://url/to/repo
+    myrecipes: /usr/local/share/recipes
+    morerecipes: /home/user/pb-recipes
+    remoterecipes: git+git://url/to/repo
+    # You wouldn't usually hand-edit this section, but use 'pybombs recipes' to
+    # manipulate it
 
 # Package flags:
 packages:
-	gnuradio:
-		forcebuild: True # This will skip any packagers for this package
-                                 # and use a source build
-                forceinstalled: False # 'True' will always assume this package is
-                                      # installed and skip installing it
-                # Any other option here will override whatever's in the
-                # corresponding recipe (in this case, gnuradio.lwr)
+    gnuradio:
+        forcebuild: True  # This will skip any packagers for this package
+                          # and use a source build
+        forceinstalled: False  # 'True' will always assume this package is
+                               # installed and skip installing it
+        # Any other option here will override whatever's in the
+        # corresponding recipe (in this case, gnuradio.lwr)
+        # You can set these with pybombs config --package gnuradio forcebuild False
 
 # Like package flags, but applies flags to all packages
 # in a certain category. 'common' is all OOTs.
 categories:
-	common:
-		forcebuild: True # This would force source builds for any package in the
-                                 # `common` category
+    common:
+        forcebuild: True  # This would force source builds for any package in the
+                          # `common` category
+        # Still works via pybombs config --category common forcebuild True
 
 # Environment variables
 env:
-	LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:/path/to/more/libs
+    LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:/path/to/more/libs
+    # You can also do pybombs config --env CC clang
 ```
+
+## git
+
+Many packages specify git source repositories. Because there's a lot of git
+interaction, pybombs has some tools to make your life working with git easier.
+
+### git cache (reference repository)
+
+If you use PyBOMBS a lot, and have many prefixes with similar content, you'll
+be cloning the same repos over and over again. You can set up a git cache, or
+reference repository, to locally store objects and hence reduce clone times.
+
+The simplest way to set this up is to run
+
+    $ pybombs git make-ref
+
+It will create the reference repository (which will then be used in subsequent)
+clones, and configure your PyBOMBS accordingly. See
+
+    $ pybombs git make-ref --help
+
+for more use cases.
+
+If you already have a reference repository elsewhere, simply point PyBOMBS to
+it:
+
+    $ pybombs config git-cache /path/to/ref
 

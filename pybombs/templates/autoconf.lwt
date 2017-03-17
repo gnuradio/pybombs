@@ -18,7 +18,7 @@
 #
 
 inherit: empty
-configure: ./configure --prefix=$prefix $config_opt CC=$cc CXX=$cxx
+configure: ./configure --prefix=$prefix $config_opt
 make: make -j$makewidth
 install: make install
 uninstall: make uninstall

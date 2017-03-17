@@ -20,15 +20,16 @@
 #
 
 from .base import PackagerBase, get_by_name
-from .cmd import TestCommand
-from .pkgconfig import PkgConfig
 from .apt import Apt
-from .yum import YumDnf
-from .pip import Pip
-from .pacman import Pacman
-from .dummy import Dummy
-from .source import Source
-from .port import Port
-from .portage import Portage
 from .brew import Homebrew
+from .cmd import TestCommand
+from .dummy import Dummy
+from .pacman import Pacman
+from .pip import Pip
+from .pkgconfig import PkgConfig
+from .portage import Portage
+from .port import Port
 from .zypper import Zypper
+from .pymod import PythonModule
+from .source import Source
+from .yum import YumDnf

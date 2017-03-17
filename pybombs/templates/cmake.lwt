@@ -23,8 +23,8 @@ installdir: build
 depends:
   - cmake
 inherit: empty
-configure: CC=$cc CXX=$cxx cmake .. -DCMAKE_BUILD_TYPE=$cmakebuildtype -DCMAKE_INSTALL_PREFIX=$prefix $config_opt -Wno-dev
-configure_static: CC=$cc CXX=$cxx cmake .. -DCMAKE_BUILD_TYPE=$cmakebuildtype -DCMAKE_INSTALL_PREFIX=$prefix -DENABLE_STATIC_LIBS=True $config_opt
+configure: cmake .. -DCMAKE_BUILD_TYPE=$cmakebuildtype -DCMAKE_INSTALL_PREFIX=$prefix $config_opt -Wno-dev
+configure_static: cmake .. -DCMAKE_BUILD_TYPE=$cmakebuildtype -DCMAKE_INSTALL_PREFIX=$prefix -DENABLE_STATIC_LIBS=True $config_opt
 make: make -j$makewidth
 install: make install
 uninstall: make uninstall

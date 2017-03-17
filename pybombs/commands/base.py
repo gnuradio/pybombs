@@ -42,10 +42,10 @@ class CommandBase(object):
         self.cmd = cmd
         self.args = args
         self.log = pb_logging.logger.getChild(cmd)
-        self.log.debug("Initializing command class for command {}".format(cmd))
+        self.log.debug("Initializing command class for command {0}".format(cmd))
         self.cfg = config_manager
         if not cmd in self.cmds.keys():
-            raise PBException("{} is not a valid name for this command.".format(cmd))
+            raise PBException("{0} is not a valid name for this command.".format(cmd))
         if load_recipes:
             from pybombs import recipe_manager
             self.recipe_manager = recipe_manager.recipe_manager
@@ -94,7 +94,7 @@ class SubCommandBase(CommandBase):
                 dest='sub_command',
         )
         for cmd, cmd_info in iteritems(subcommands):
-            subparser = subparsers.add_parser(cmd, help=cmd_info['help'])
+            subparser = subparsers.add_parser(cmd, description=cmd_info['help'])
             if cmd_info['subparser'] is None:
                 continue
             if isinstance(cmd_info['subparser'], tuple) or isinstance(cmd_info['subparser'], list):

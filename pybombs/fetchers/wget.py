@@ -23,21 +23,22 @@ wget-style fetcher
 """
 
 from  __future__ import print_function
-import hashlib
 import math
 import os
 import sys
-import requests
 from pybombs import utils
 from pybombs.fetchers.base import FetcherBase
+from pybombs.pb_exception import PBException
 
 
-MAX_RETRY_COUNT = 10
-def _download(url, filesize=None, range_start=None, hash_md5=None, partial_retry_count=None):
+def _download_with_requests(url, filesize=None, range_start=None, hash_md5=None, partial_retry_count=None):
     """
     Do a wget: Download the file specified in url to the cwd.
     Return the filename and the MD5 hash as hexdigest string.
     """
+    import requests
+    import hashlib
+    MAX_RETRY_COUNT = 10
     filename = os.path.split(url)[1]
     req_headers = {'User-Agent': 'PyBOMBS'}
     if range_start is not None:
@@ -72,11 +73,30 @@ def _download(url, filesize=None, range_start=None, hash_md5=None, partial_retry
     if filesize != 0 and filesize_dl != filesize:
         partial_retry_count = partial_retry_count or 0
         if partial_retry_count < MAX_RETRY_COUNT:
-            return _download(url, filesize, filesize_dl, hash_md5, partial_retry_count+1)
+            return _download_with_requests(url, filesize, filesize_dl, hash_md5, partial_retry_count+1)
         else:
             raise IOError("Downloaded file size does not match specified file size.")
     sys.stdout.write("\n")
     return filename, hash_md5.hexdigest()
+
+def _download_with_wget(url):
+    " Use the wget tool itself "
+    def get_md5(filename):
+        " Return MD5 sum of filename using the md5sum tool "
+        md5_exe = sysutils.which('md5sum')
+        if md5_exe is not None:
+            return subproc.check_output([md5_exe, filename])[0:32]
+        return None
+    from pybombs.utils import sysutils
+    from pybombs.utils import subproc
+    wget = sysutils.which('wget')
+    if wget is None:
+        raise PBException("wget executable not found")
+    filename = os.path.split(url)[1]
+    retval = subproc.monitor_process([wget, url], throw=True)
+    if retval:
+        raise PBException("wget failed to wget")
+    return filename, get_md5(filename)
 
 class Wget(FetcherBase):
     """
@@ -99,15 +119,20 @@ class Wget(FetcherBase):
         """
         try:
             self.log.debug("Downloading file: {0}".format(url))
-            filename, md5_hash = _download(url)
-            self.log.debug("MD5: {0}".format(md5_hash))
-            if 'md5' in args and args['md5'] != md5_hash:
-                self.log.error("While downloading {fname}: MD5 hashes to not match. Expected {exp}, got {actual}.".format(
-                    fname=filename, exp=args['md5'], actual=md5_hash
-                ))
-                return False
+            filename, md5_hash = _download_with_requests(url)
         except IOError as ex:
-            self.log.error(str(ex))
+            self.log.error("Download using requests failed: " + str(ex))
+            try:
+                self.log.warn("Attempting to download using wget...")
+                filename, md5_hash = _download_with_wget(url)
+            except PBException as ex:
+                self.log.warn(str(ex))
+                return False
+        self.log.debug("MD5: {0}".format(md5_hash))
+        if 'md5' in args and args['md5'] != md5_hash:
+            self.log.error("While downloading {fname}: MD5 hashes to not match. Expected {exp}, got {actual}.".format(
+                fname=filename, exp=args['md5'], actual=md5_hash
+            ))
             return False
         if utils.is_archive(filename):
             # Move archive contents to the correct source location:

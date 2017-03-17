@@ -1,6 +1,5 @@
-#!/usr/bin/env python2
 #
-# Copyright 2015 Free Software Foundation, Inc.
+# Copyright 2015-2016 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -24,7 +23,10 @@ Version comparison functions
 """
 
 import operator
-from distutils.version import LooseVersion
+try:
+    from distutils.version import LooseVersion
+except ImportError:
+    from pybombs.utils.version import LooseVersion
 
 def vcompare(cmp_op, version_x, version_y):
     """
