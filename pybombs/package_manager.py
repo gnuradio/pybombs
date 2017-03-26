@@ -71,19 +71,12 @@ class PackageManager(object):
             self.log.debug("No prefix specified. Skipping source package manager.")
             self.src = None
         # Create sorted list of binary package managers
-        requested_packagers = [x.strip() for x in self.cfg.get('packagers').split(',') if x]
-        self.binary_pkgrs = []
-        for pkgr in requested_packagers:
-            self.log.debug("Attempting to add binary package manager {0}".format(pkgr))
-            p = packagers.get_by_name(pkgr, packagers.__dict__.values())
-            if p is None:
-                self.log.warn("This binary package manager can't be instantiated: {0}".format(pkgr))
-                continue
-            if p.supported():
-                self.log.debug("{0} is supported!".format(pkgr))
-                self.binary_pkgrs.append(p)
-        self.log.debug("Using binary packagers: {0}".format(str([x.name for x in self.binary_pkgrs])))
-        # Now we can use self.packagers, in order, for our commands.
+        self.binary_pkgrs = packagers.filter_available_packagers(
+            self.cfg.get('packagers'),
+            packagers.__dict__.values(),
+            self.log
+        )
+        # Now we can use self.binary_pkgrs, in order, for our commands.
 
     def check_package_flag(self, pkgname, flag):
         """

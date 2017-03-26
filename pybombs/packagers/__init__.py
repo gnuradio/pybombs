@@ -19,7 +19,9 @@
 # Boston, MA 02110-1301, USA.
 #
 
-from .base import PackagerBase, get_by_name
+# When adding a packager here, also add a reference in
+# ConfigManager.defaults.
+from .base import PackagerBase, get_by_name, filter_available_packagers
 from .apt import Apt
 from .brew import Homebrew
 from .cmd import TestCommand

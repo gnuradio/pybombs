@@ -110,3 +110,34 @@ def get_by_name(name, objs):
             pass
     return None
 
+def filter_available_packagers(pkgrs, pkgr_objects, logger=None):
+    """
+    Given a list of packager names, return the ones that are available on this
+    OS.
+
+    If pkgrs is a string, it is interpreted as a comma-separated list of
+    packagers. Passing in a single packager name will also work.
+    """
+    if isinstance(pkgrs, str):
+        pkgrs = [x.strip() for x in pkgrs.split(',') if x]
+    pkgr_list = []
+    for pkgr in pkgrs:
+        if logger:
+            logger.debug("Attempting to add binary package manager {0}".format(
+                pkgr
+            ))
+        p = get_by_name(pkgr, pkgr_objects)
+        if p is None:
+            if logger:
+                logger.warn("This binary package manager can't be instantiated: {0}".format(pkgr))
+            continue
+        if p.supported():
+            if logger:
+                logger.debug("{0} is supported!".format(pkgr))
+            pkgr_list.append(p)
+    if logger:
+        logger.debug("Using binary packagers: {0}".format(
+            str([x.name for x in pkgr_list])
+        ))
+    return pkgr_list
+
