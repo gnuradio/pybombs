@@ -28,6 +28,8 @@ from pybombs import fetcher
 from pybombs.commands import SubCommandBase
 from pybombs.gitcache_manager import GitCacheManager
 
+DEFAULT_GITCACHE_PATH = 'gitcache'
+
 #############################################################################
 # Subcommand arg parsers
 #############################################################################
@@ -103,7 +105,7 @@ class Git(SubCommandBase):
         def _get_repo_path(path):
             " Return path to the git cache dir "
             if path is None:
-                return os.path.join(self.cfg.local_cfg_dir, 'gitcache')
+                return os.path.join(self.cfg.local_cfg_dir, DEFAULT_GITCACHE_PATH)
             return path
         def _get_git_remotes(packages):
             """ Return a dict pkgname -> git remote for every package that has
