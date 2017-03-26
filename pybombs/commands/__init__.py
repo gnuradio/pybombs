@@ -21,6 +21,7 @@
 
 ### List of commands:
 from .base import CommandBase, SubCommandBase, dispatch
+from .autoconfig import AutoConfig
 from .config import Config
 from .deploy import Deploy
 from .digraph import Digraph
