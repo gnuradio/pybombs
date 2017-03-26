@@ -66,7 +66,13 @@ class CommandBase(object):
         pass
 
     def run(self):
-        """ Override this. """
+        """
+        Override this.
+
+        The return value is passed to exit(), so don't return True on success.
+        Either return None (i.e., return nothing), or return an exit code (zero
+        on success, non-zero otherwise).
+        """
         raise PBException("run() method not implemented for command {1}!".format(self.cmd))
 
 
