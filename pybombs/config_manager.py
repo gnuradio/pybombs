@@ -310,11 +310,11 @@ class ConfigManager(object):
         ),
         'builddocs': ('OFF', 'Build doxygen while compiling packages? options are: ON, OFF'),
         'makewidth': ('4', 'Concurrent make threads [1,2,4,8...]'),
-        'packagers': 
-('pip,apt,yumdnf,port,brew,zypper,pacman,portage,pymod,pkgconfig,cmd', 
-'Priority of non-source package managers'),
+        # The following line must always list *all* available packagers in order of priority:
+        'packagers': ('pip,apt,yumdnf,port,brew,zypper,pacman,portage,pymod,pkgconfig,cmd', 'Priority of non-source package managers'),
         'keep_builddir': ('', 'When rebuilding, default to keeping the build directory'),
         'elevate_pre_args': (['sudo', '-H'], 'For commands that need elevated privileges, prepend this'),
+        'git-cache': (None, 'Path to git reference repository (git cache)'),
     }
     LAYER_DEFAULT = 0
     LAYER_GLOBALS = 1
