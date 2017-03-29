@@ -41,7 +41,7 @@ class ExternalZypper(ExternPackager):
             self.fastcommand = 'rpm'
         else:
             self.fastcommand = None
-			
+
     def get_available_version(self, pkgname):
         """
         Return a version that we can install through this package manager.
@@ -77,22 +77,22 @@ class ExternalZypper(ExternPackager):
         # zypper is very slow for mere queries of installed packages,
         # if we have rpm do that
         if self.fastcommand is not None:
-			try:
-				# using RPM we can query just what we want, and much faster
-				pkg, ver, arch = subproc.check_output(
-								   [self.fastcommand, "-q", 
-									'--qf=%{NAME}\ %{VERSION}-%{RELEASE}\ %{ARCH}', 
-									pkgname]).strip().split()
-				if pkg == pkgname and (pkgarch is None or arch == pkgarch):
-					self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.fastcommand))
-					return ver
-			# exception for unpack error if package not found
-			except subprocess.CalledProcessError:
-				pass
-			except Exception as ex:
-				self.log.error("Parsing `{0} list installed` failed.".format(self.fastcommand))
-				self.log.obnoxious(str(ex))
-			return False	# should we fall back to zypper instead?
+            try:
+                # using RPM we can query just what we want, and much faster
+                pkg, ver, arch = subproc.check_output(
+                                   [self.fastcommand, "-q", 
+                                    '--qf=%{NAME}\ %{VERSION}-%{RELEASE}\ %{ARCH}', 
+                                    pkgname]).strip().split()
+                if pkg == pkgname and (pkgarch is None or arch == pkgarch):
+                    self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.fastcommand))
+                    return ver
+            # exception for unpack error if package not found
+            except subprocess.CalledProcessError:
+                pass
+            except Exception as ex:
+                self.log.error("Parsing `{0} list installed` failed.".format(self.fastcommand))
+                self.log.obnoxious(str(ex))
+            return False    # should we fall back to zypper instead?
         try:
             # 'list installed' will return non-zero if package does not exist, thus will throw
             out = subproc.check_output(
@@ -105,9 +105,9 @@ class ExternalZypper(ExternPackager):
             # 1) Check that pkgname is correct (and, if necessary, the package arch)
             # 2) return version
             match_pat = r"^(?P<status>)\s+\|\s+(?P<pkg>[^\.]+)\s+\| \
-						\s+(?P<pkgtype>\S+)\s+\| \
-						\s+(?P<ver>[0-9]+([.-][0-9a-z]+))\s+\| \
-						\s+(?P<arch>\S+)\s+(\d+:)"
+                        \s+(?P<pkgtype>\S+)\s+\| \
+                        \s+(?P<ver>[0-9]+([.-][0-9a-z]+))\s+\| \
+                        \s+(?P<arch>\S+)\s+(\d+:)"
             matcher = re.compile(match_pat)
             for line in out:
                 mobj = matcher.match(line)
