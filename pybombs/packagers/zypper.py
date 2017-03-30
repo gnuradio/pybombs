@@ -22,11 +22,13 @@
 Packager: zypper (OpenSUSE)
 """
 
+import os
 import re
 import subprocess
 from pybombs.packagers.extern import ExternCmdPackagerBase, ExternPackager
 from pybombs.utils import subproc
 from pybombs.utils import sysutils
+from pybombs.utils import utils
 
 class ExternalZypper(ExternPackager):
     """
@@ -50,7 +52,8 @@ class ExternalZypper(ExternPackager):
             ver = subproc.match_output(
                 [self.command, "info", pkgname],
                 r'^Version\s+:\s+(?P<ver>.*$)',
-                'ver'
+                'ver',
+                 env=utils.dict_merge(os.environ, {'LC_ALL': 'C'}),
             )
             if ver is None:
                 return False
@@ -92,7 +95,7 @@ class ExternalZypper(ExternPackager):
             except Exception as ex:
                 self.log.error("Parsing `{0} list installed` failed.".format(self.fastcommand))
                 self.log.obnoxious(str(ex))
-            return False    # should we fall back to zypper instead?
+            return False
         try:
             # 'list installed' will return non-zero if package does not exist, thus will throw
             out = subproc.check_output(
