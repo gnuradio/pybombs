@@ -54,7 +54,7 @@ class ExternalZypper(ExternPackager):
             )
             if ver is None:
                 return False
-            self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.command))
+            self.log.debug("Package {0} has version {1} in {2}".format(pkgname, ver, self.command))
             return ver
         except subprocess.CalledProcessError as ex:
             # This usually means the package was not found, so don't worry
@@ -84,7 +84,7 @@ class ExternalZypper(ExternPackager):
                                     '--qf=%{NAME}\ %{VERSION}-%{RELEASE}\ %{ARCH}', 
                                     pkgname]).strip().split()
                 if pkg == pkgname and (pkgarch is None or arch == pkgarch):
-                    self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.fastcommand))
+                    self.log.debug("Package {0} has version {1} in {2}".format(pkgname, ver, self.fastcommand))
                     return ver
             # exception for unpack error if package not found
             except subprocess.CalledProcessError:
@@ -115,7 +115,7 @@ class ExternalZypper(ExternPackager):
                     if pkgarch is not None and mobj.group('arch') != pkgarch:
                         continue
                     ver = mobj.group('ver')
-                    self.log.debug("Package {} has version {} in {}".format(pkgname, ver, self.command))
+                    self.log.debug("Package {0} has version {1} in {2}".format(pkgname, ver, self.command))
                     return ver
             return False
         except subprocess.CalledProcessError:
