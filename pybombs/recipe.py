@@ -25,7 +25,6 @@ Recipe representation class.
 import re
 import os
 import shlex
-from io import StringIO
 from six import iteritems
 
 from pybombs import pb_logging
