@@ -29,6 +29,7 @@ from .pip import Pip
 from .pkgconfig import PkgConfig
 from .portage import Portage
 from .port import Port
+from .zypper import Zypper
 from .pymod import PythonModule
 from .source import Source
 from .yum import YumDnf
