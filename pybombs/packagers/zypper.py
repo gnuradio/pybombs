@@ -166,7 +166,7 @@ class Zypper(ExternCmdPackagerBase):
 
     def supported(self):
         """
-        Check if we can even run yum or dnf.
+        Check if we can even run zypper.
         Return True if so.
         """
         return self.packager.command is not None
