@@ -53,6 +53,10 @@ def setup_subsubparser_add(parser):
         '-f', '--force',
         help="Force additions", action='store_true',
     )
+    parser.add_argument(
+        '-r', '--rev', type=str,
+        help="Get git revision",
+    )
 def setup_subsubparser_remove(parser):
     parser.add_argument(
         'alias',
@@ -157,7 +161,10 @@ class Recipes(SubCommandBase):
         """
         alias = self.args.alias[0]
         uri = self.args.uri[0]
-        if not self.add_recipe_dir(alias, uri):
+        args = {}
+        if self.args.rev is not None:
+            args['gitrev'] = self.args.rev
+        if not self.add_recipe_dir(alias, uri, args):
             return -1
 
     def run_remove(self):
@@ -274,13 +281,14 @@ class Recipes(SubCommandBase):
     #########################################################################
     # Helpers
     #########################################################################
-    def add_recipe_dir(self, alias, uri):
+    def add_recipe_dir(self, alias, uri, args):
         """
         Add recipe location:
         - If a prefix was explicitly selected, install it there
         - Otherwise, use local config file
         - Check alias is not already used
         """
+        args = args or {}
         self.log.debug("Preparing to add recipe location {name} -> {uri}".format(
             name=alias, uri=uri
         ))
@@ -322,7 +330,7 @@ class Recipes(SubCommandBase):
             # Let the fetcher download the location
             self.log.debug("Fetching into directory: {0}/{1}".format(recipe_cache_top_level, alias))
             try:
-                Fetcher().fetch_url(uri, recipe_cache_top_level, alias, {}) # No args
+                Fetcher().fetch_url(uri, recipe_cache_top_level, alias, args)
             except PBException as ex:
                 self.log.error("Could not fetch recipes: {s}".format(s=str(ex)))
                 return False
