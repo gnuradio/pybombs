@@ -60,7 +60,7 @@ a cross-compile environment and cross-compile GNU Radio:
 For more informations see the `documentation`_.
 
 .. _GNU Radio project: http://gnuradio.org/
-.. _documentation: http://gnuradio.org/pybombs/
+.. _documentation: https://www.gnuradio.org/blog/pybombs-the-what-the-how-and-the-why/
 """
 
 from __future__ import print_function
@@ -107,7 +107,7 @@ setup(
                   "the local package manager is. Designed for easy install of source "
                   "trees for the GNU Radio project.",
     long_description=__doc__,
-    url="http://gnuradio.org/pybombs/",
+    url="https://www.gnuradio.org/blog/pybombs-the-what-the-how-and-the-why/",
     download_url="https://github.com/gnuradio/pybombs/tarball/v{version}".format(version=pybombs.__version__),
     author="Martin Braun",
     author_email="martin@gnuradio.org",
