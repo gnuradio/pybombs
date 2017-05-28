@@ -21,7 +21,7 @@
 """ Abstraction for config files """
 
 import os
-import yaml
+from ruamel import yaml
 from pybombs.utils import dict_merge
 from pybombs.pb_exception import PBException
 from pybombs.utils import sysutils
@@ -35,7 +35,7 @@ class PBConfigFile(object):
         self._filename = os.path.abspath(os.path.expanduser(os.path.normpath(filename)))
         self.data = None
         try:
-            self.data = yaml.safe_load(open(filename).read()) or {}
+            self.data = yaml.round_trip_load(open(filename).read()) or {}
         except (IOError, OSError):
             self.data = {}
         except Exception as e:
@@ -61,4 +61,3 @@ class PBConfigFile(object):
         self.data = dict_merge(self.data, newdata)
         self.save()
         return self.data
-
