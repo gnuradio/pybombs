@@ -299,7 +299,7 @@ satisfy:
   port: gnuradio
   portage: net-wireless/gnuradio
 source: git+https://github.com/gnuradio/gnuradio.git
-# master is the default branch, but you can choose a different branch here
+# master is the default branch, but you can choose a different branch or tag here
 gitbranch: master
 # Only when cloning the source code is this used, in that case, these args are
 # appended to the git command that does the clone:
