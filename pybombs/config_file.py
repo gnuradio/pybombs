@@ -54,7 +54,7 @@ class PBConfigFile(object):
         fpath = os.path.split(self._filename)[0]
         if len(fpath):
             sysutils.mkdirp_writable(fpath)
-        open(self._filename, 'w').write(yaml.dump(self.data, default_flow_style=False))
+        open(self._filename, 'w').write(yaml.round_trip_dump(self.data, default_flow_style=False))
 
     def update(self, newdata):
         " Overwrite the data with newdata recursively. Updates the file. "
