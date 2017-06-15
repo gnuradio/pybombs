@@ -93,12 +93,11 @@ package_data = {
 }
 
 deps = [
-    "setuptools",
-    "PyYAML",
+    "setuptools>=36.0.0",
     "requests",
     "six",
     "future",
-    "ruamel.yaml==0.14.12"
+    "ruamel.yaml"
 ]
 
 setup(
