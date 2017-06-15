@@ -93,7 +93,7 @@ package_data = {
 }
 
 deps = [
-    "setuptools",
+    "setuptools>=36.0.0",
     "requests",
     "six",
     "future",
