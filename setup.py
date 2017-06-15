@@ -97,7 +97,7 @@ deps = [
     "requests",
     "six",
     "future",
-    "ruamel.yaml==0.14.12"
+    "ruamel.yaml"
 ]
 
 setup(
