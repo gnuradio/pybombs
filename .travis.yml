@@ -5,5 +5,7 @@ python:
   - "3.5"
 install:
   - pip install .
+  - pip install --upgrade setuptools
+  - pip install --upgrade pip
   - pip install pylint
 script: ./run-tests.sh
