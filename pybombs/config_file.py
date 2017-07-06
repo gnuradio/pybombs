@@ -37,7 +37,8 @@ def touchFile(filename):
         except OSError as exc:
             if exc.errno != errno.EEXIST:
                 raise
-    open(filename, 'a').close()
+    if not os.path.exists(filename):
+        open(filename, 'a').close()
 
 class abstractYaml(object):
     def __init__(self):
