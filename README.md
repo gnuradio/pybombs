@@ -281,7 +281,7 @@ Important keys in the recipe files include:
 Example:
 
 
-```{.yml}
+```yml
 # This means the build/install works like any other cmake project:
 inherit: cmake
 # These dependencies are only for source builds:
@@ -299,8 +299,12 @@ satisfy:
   port: gnuradio
   portage: net-wireless/gnuradio
 source: git+https://github.com/gnuradio/gnuradio.git
-# master is the default branch, but you can choose a different branch or tag here
+# master is the default branch, but you can choose a different branch or tag here:
 gitbranch: master
+# Instead of a branch, you can also specify any commit:
+#gitrev: 012345abc
+# Another way to specify a commit is to append a rev, tag, or commit has to the
+# source URL (git+https://.../gnuradio.git@abcd1234)
 # Only when cloning the source code is this used, in that case, these args are
 # appended to the git command that does the clone:
 gitargs: --recursive
