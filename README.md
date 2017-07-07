@@ -199,7 +199,7 @@ Note that this will still use the regular system environment as well, but
 it will overwrite existing variables. Variable expansion can be used, so
 this will keep the original setting:
 
-```{.yml}
+```yaml
 env:
     LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}:/path/to/more/libs
 ```
@@ -220,7 +220,7 @@ environment, which will then be used for commands running inside this prefix.
 
 Example:
 
-```{.yml}
+```yaml
 config:
     # Other vars
     setup_env: /path/to/environment-setup-armv7ahf-vfp-neon-oe-linux-gnueabi
@@ -281,7 +281,7 @@ Important keys in the recipe files include:
 Example:
 
 
-```yml
+```yaml
 # This means the build/install works like any other cmake project:
 inherit: cmake
 # These dependencies are only for source builds:
@@ -382,7 +382,7 @@ choosing option values with higher priority.
 
 The config.yml files are in YAML format. A typical file looks like this:
 
-```{.yml}
+```yaml
 # All configuration options:
 # (Run `pybombs config` to learn which options are recognized)
 # You can edit these with `pybombs config` too
