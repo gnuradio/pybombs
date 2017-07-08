@@ -19,7 +19,7 @@
 # Boston, MA 02110-1301, USA.
 #
 """
-This is PyBOMBS -- gnuradio.org/pybombs
+This is PyBOMBS -- github.com/gnuradio/pybombs
 """
 
-__version__ = "2.3.1a0"
+__version__ = "2.3.1"
