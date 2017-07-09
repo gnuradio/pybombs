@@ -72,19 +72,22 @@ If you want to install PyBOMBS yourself, you need to make sure the `pybombs` mod
 For the impatient:
 
 1. Install PyBOMBS as per the previous section
-2. Add a list of recipes, e.g. by running
+2. Apply a configuration:
 
-        $ pybombs recipes add gr-recipes git+https://github.com/gnuradio/gr-recipes.git  
-        $ pybombs recipes add gr-etcetera git+https://github.com/gnuradio/gr-etcetera.git
+        $ pybombs auto-config
 
-3. Install GNU Radio, gr-osmosdr and some other goodies into your home directory `~/prefix`:
+3. Add a list of recipes, e.g., the default recipes:
+
+        $ pybombs recipes add-defaults
+
+4. Install GNU Radio, gr-osmosdr and some other goodies into your home directory `~/prefix`:
 
         $ pybombs prefix init ~/prefix -a myprefix -R gnuradio-default
 
    All commands after this will use `myprefix` as the default prefix. You can change the
    default prefix later by running `pybombs config default_prefix NEWPREFIX`
 
-4. Run GNU Radio Companion from your new prefix:
+5. Run GNU Radio Companion from your new prefix:
 
         $ source ~/prefix/setup_env.sh
         $ gnuradio-companion
