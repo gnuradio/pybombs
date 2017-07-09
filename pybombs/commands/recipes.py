@@ -25,6 +25,7 @@ import re
 import os
 import shutil
 import sys
+from six import iteritems
 from pybombs.utils import confirm
 from pybombs.commands import SubCommandBase
 from pybombs.config_file import PBConfigFile
@@ -34,6 +35,11 @@ from pybombs.recipe_manager import RecipeListManager
 from pybombs import recipe
 from pybombs.utils import tables
 from pybombs.pb_exception import PBException
+
+DEFAULT_RECIPES = {
+    'gr-recipes': 'git+https://github.com/gnuradio/gr-recipes.git',
+    'gr-etcetera': 'git+https://github.com/gnuradio/gr-etcetera.git',
+}
 
 #############################################################################
 # Subcommand arg parsers
@@ -108,6 +114,11 @@ class Recipes(SubCommandBase):
             'subparser': setup_subsubparser_add,
             'run': lambda x: x.run_add
         },
+        'add-defaults': {
+            'help': 'Add default recipe locations.',
+            'subparser': None,
+            'run': lambda x: x.run_add_defaults,
+        },
         'remove': {
             'help': 'Remove a recipes location.',
             'subparser': setup_subsubparser_remove,
@@ -159,6 +170,14 @@ class Recipes(SubCommandBase):
         uri = self.args.uri[0]
         if not self.add_recipe_dir(alias, uri):
             return -1
+
+    def run_add_defaults(self):
+        """
+        pybombs recipes add-defaults
+        """
+        for alias, uri in iteritems(DEFAULT_RECIPES):
+            if not self.add_recipe_dir(alias, uri):
+                return -1
 
     def run_remove(self):
         """
@@ -289,7 +308,7 @@ class Recipes(SubCommandBase):
             self.log.error("Invalid recipe alias: {alias}".format(alias=alias))
             return False
         if alias in self.cfg.get_named_recipe_dirs():
-            if self.args.force:
+            if getattr(self.args, 'force', False):
                 self.log.info("Overwriting existing recipe alias `{0}'".format(alias))
             elif not confirm("Alias `{0}' already exists, overwrite?".format(alias)):
                 self.log.warn('Aborting.')
