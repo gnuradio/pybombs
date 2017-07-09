@@ -147,16 +147,17 @@ class Recipes(SubCommandBase):
         Set up a subparser for a specific command
         """
         return SubCommandBase.setup_subcommandparser(
-                parser,
-                'Recipe Commands:',
-                Recipes.subcommands
+            parser,
+            'Recipe Commands:',
+            Recipes.subcommands
         )
 
     def __init__(self, cmd, args):
-        SubCommandBase.__init__(self,
-                cmd, args,
-                load_recipes=False,
-                require_prefix=False,
+        SubCommandBase.__init__(
+            self,
+            cmd, args,
+            load_recipes=False,
+            require_prefix=False,
         )
 
     #########################################################################
@@ -215,7 +216,7 @@ class Recipes(SubCommandBase):
             'available_from': "Available From",
         }
         self.args.format = [x for x in self.args.format.split(",") if len(x)]
-        if any(map(lambda x: x not in row_titles, self.args.format)):
+        if any((x not in row_titles for x in self.args.format)):
             self.log.error("Invalid column formatting: {0}".format(self.args.format))
             return -1
         print("Loading package information...", end="")
@@ -245,10 +246,10 @@ class Recipes(SubCommandBase):
             rows.append(row)
         print("")
         tables.print_table(
-                row_titles,
-                rows,
-                self.args.format,
-                sort_by=self.args.sort_by,
+            row_titles,
+            rows,
+            self.args.format,
+            sort_by=self.args.sort_by,
         )
 
     def run_list_recipe_repos(self):
@@ -258,7 +259,9 @@ class Recipes(SubCommandBase):
         all_locations = self.cfg.get_recipe_locations()
         named_locations = self.cfg.get_named_recipe_dirs()
         named_sources = self.cfg.get_named_recipe_sources()
-        unnamed_locations = [x for x in all_locations if not x in named_locations.values()]
+        unnamed_locations = [
+            x for x in all_locations if x not in named_locations.values()
+        ]
         table = []
         for name in named_locations.keys():
             try:
@@ -353,7 +356,7 @@ class Recipes(SubCommandBase):
         """
         Remove a recipe alias and, if applicable, its cache.
         """
-        if not alias in self.cfg.get_named_recipe_dirs():
+        if alias not in self.cfg.get_named_recipe_dirs():
             self.log.error("Unknown recipe alias: {alias}".format(alias=alias))
             return False
         # Remove from config file
