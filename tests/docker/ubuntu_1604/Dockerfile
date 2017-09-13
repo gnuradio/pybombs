@@ -1,5 +1,5 @@
 # Base image
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 WORKDIR /pybombs
 
 # Minimal package installation
@@ -15,7 +15,7 @@ RUN cd * && python setup.py install -q
 RUN mkdir /prefix
 RUN cd /prefix
 RUN pybombs config elevate_pre_args ''
-RUN pybombs -v recipes add gr-recipes git+https://github.com/gnuradio/gr-recipes.git
+RUN pybombs -v recipes add-defaults
 RUN pybombs -v prefix init -a default default
 RUN pybombs install gr-osmosdr
 
