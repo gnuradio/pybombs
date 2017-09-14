@@ -36,20 +36,6 @@ from pybombs.utils import sysutils
 from pybombs.config_file import PBConfigFile
 from pybombs import inventory
 from pybombs import __version__
-from collections import OrderedDict
-
-def extract_cfg_items(filename, section, throw_ex=True):
-    """
-    Read section from a config file and return it as an ordered dict.
-    Will throw KeyError if section does not exist.
-    """
-    cfg_data = PBConfigFile(filename).get() or OrderedDict()
-    try:
-        return cfg_data[section]
-    except KeyError as e:
-        if throw_ex:
-            raise e
-    return OrderedDict()
 
 def npath(path):
     """
@@ -134,7 +120,7 @@ class PrefixInfo(object):
         if not os.path.isfile(self.cfg_file):
             self.log.debug("Prefix configuration file not found: {0}, assuming empty.".format(self.cfg_file))
         else:
-            config_section = extract_cfg_items(self.cfg_file, 'config', False)
+            config_section = PBConfigFile(self.cfg_file).get('config')
             self._cfg_info = self._merge_config_info_from_file(self.cfg_file, self._cfg_info)
         # 4) Find the src dir
         self.src_dir = npath(config_section.get('srcdir', os.path.join(self.prefix_dir, self.src_dir_name)))
