@@ -22,7 +22,6 @@
 
 from __future__ import print_function
 from pybombs.commands import CommandBase
-from pybombs.config_manager import extract_cfg_items
 from pybombs.config_file import PBConfigFile
 
 class Config(CommandBase):
@@ -91,7 +90,7 @@ class Config(CommandBase):
     def _run_config(self):
         " Handle `pybombs config' "
         if self.args.config_only:
-            cfg_data = extract_cfg_items(self.cfg_file, 'config', False)
+            cfg_data = PBConfigFile(self.cfg_file).get('config')
         else:
             cfg_data = self.cfg
         keys = [self.args.key]
