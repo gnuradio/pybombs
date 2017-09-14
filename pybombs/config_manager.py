@@ -26,6 +26,7 @@ Used as a central cache for all kinds of settings.
 
 import os
 import argparse
+from collections import OrderedDict
 from six import iteritems
 
 from pybombs import pb_logging
@@ -35,19 +36,20 @@ from pybombs.utils import sysutils
 from pybombs.config_file import PBConfigFile
 from pybombs import inventory
 from pybombs import __version__
+from collections import OrderedDict
 
 def extract_cfg_items(filename, section, throw_ex=True):
     """
-    Read section from a config file and return it as a dict.
+    Read section from a config file and return it as an ordered dict.
     Will throw KeyError if section does not exist.
     """
-    cfg_data = PBConfigFile(filename).get() or {}
+    cfg_data = PBConfigFile(filename).get() or OrderedDict()
     try:
         return cfg_data[section]
     except KeyError as e:
         if throw_ex:
             raise e
-    return {}
+    return OrderedDict()
 
 def npath(path):
     """
@@ -98,12 +100,13 @@ class PrefixInfo(object):
         self.target_dir = None
         self.env = os.environ.copy()
         self.is_virtualenv = False
-        self._cfg_info = self.default_config_info
+        self._cfg_info = OrderedDict(self.default_config_info)
         if select_prefix is not None:
             args.prefix = select_prefix
         # 1) Load the config info
         for cfg_file in reversed(cfg_list):
-            self._cfg_info = self._merge_config_info_from_file(cfg_file, self._cfg_info)
+            self._cfg_info = \
+                self._merge_config_info_from_file(cfg_file, self._cfg_info)
         # 2) Find the prefix directory
         self._find_prefix_dir(args)
         if self.prefix_dir is None:
@@ -420,8 +423,8 @@ class ConfigManager(object):
             self._recipe_locations.append(self._prefix_info.recipe_dir)
         # From config files (from here, recipe locations are named):
         for cfg_file in cfg_files:
-            recipe_locations = extract_cfg_items(cfg_file, "recipes", False)
-            for name, uri in iteritems(recipe_locations):
+            recipe_locations = PBConfigFile(cfg_file).get('recipes')
+            for name, uri in reversed(recipe_locations.items()):
                 local_recipe_dir = self.resolve_recipe_uri(
                     uri, name, os.path.join(os.path.split(cfg_file)[0], 'recipes')
                 )

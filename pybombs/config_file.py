@@ -22,6 +22,7 @@
 
 import os
 import errno
+from collections import OrderedDict
 from ruamel import yaml
 from pybombs.utils import dict_merge
 from pybombs.pb_exception import PBException
@@ -76,17 +77,25 @@ class PBConfigFile(object):
         touchFile(filename)
         with open(filename) as fn:
             try:
-                self.data = self.yaml.load(fn.read()) or {}
+                # TODO: Recursively turn this into an OrderedDict, not just at
+                # top level. In a nested dict, some key elements will still be
+                # ruamel.ordereddict.
+                self.data = OrderedDict(self.yaml.load(fn.read()) or {})
             except (IOError, OSError):
-                self.data = {}
+                self.data = OrderedDict()
             except Exception as e:
                 raise PBException("Error loading {0}: {1}".format(filename, str(e)))
-        assert isinstance(self.data, dict)
+        assert isinstance(self.data, OrderedDict)
 
-
-    def get(self):
+    def get(self, key=None, default=None):
         " Return the data from the config file as a dict "
-        return self.data or {}
+        if key is None:
+            return self.data
+        if default is None:
+            default = OrderedDict()
+        # TODO Again, this is not recursive and sub-values may be non-vanilla
+        # ordered dicts
+        return OrderedDict(self.data.get(key, default))
 
     def save(self, newdata=None):
         " Write the contents of the data cache to the file. "
