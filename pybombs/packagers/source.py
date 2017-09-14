@@ -398,3 +398,60 @@ class Source(PackagerBase):
         if cmd is not None:
             return cmd
         return recipe.get_command(cmd_idx)
+
+
+class NoSource(PackagerBase):
+    """
+    Fake Source package manager (if there's no prefix)
+    """
+    name = "source"
+
+    def __init__(self):
+        PackagerBase.__init__(self)
+
+    def supported(self):
+        """
+        We can never build source packages if there's no prefix
+        """
+        return False
+
+    def exists(self, recipe):
+        """
+        This will work whenever any sources are defined.
+        """
+        if not hasattr(recipe, 'source') or len(recipe.source) == 0:
+            return None
+        # Return a pseudo-version
+        # TODO check if we can get something better from the inventory
+        return True
+
+    def installed(self, recipe):
+        """
+        No prefix? Not installed.
+        """
+        return False
+
+    def install(self, recipe, static=False, update=False):
+        """
+        Don't call me.
+        """
+        assert False
+
+    def update(self, recipe):
+        """
+        Don't call me.
+        """
+        assert False
+
+    def uninstall(self, recipe):
+        """
+        Don't call me.
+        """
+        assert False
+
+    def verify(self, recipe, try_again=False):
+        """
+        Don't call me.
+        """
+        assert False
+

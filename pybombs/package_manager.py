@@ -66,10 +66,9 @@ class PackageManager(object):
         # Create a source package manager
         if self.prefix_available:
             self.src = packagers.Source()
-            self.prefix = self.cfg.get_active_prefix()
         else:
             self.log.debug("No prefix specified. Skipping source package manager.")
-            self.src = None
+            self.src = packagers.NoSource()
         # Create sorted list of binary package managers
         self.binary_pkgrs = packagers.filter_available_packagers(
             self.cfg.get('packagers'),

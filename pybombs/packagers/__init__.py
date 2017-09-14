@@ -33,5 +33,5 @@ from .portage import Portage
 from .port import Port
 from .zypper import Zypper
 from .pymod import PythonModule
-from .source import Source
+from .source import Source, NoSource
 from .yum import YumDnf
