@@ -22,4 +22,4 @@
 This is PyBOMBS -- github.com/gnuradio/pybombs
 """
 
-__version__ = "2.3.3a"
+__version__ = "2.3.3a0"
