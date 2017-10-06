@@ -96,6 +96,14 @@ For the impatient:
 
         $ pybombs run gnuradio-companion
 
+## Platform-specific instructions
+
+Some platforms have their own idiosyncrasies. Platforms that require special
+attention are listed here:
+
+- [OpenSUSE](opensuse.md)
+- [CentOS](centos.md)
+
 ## Prefixes
 
 A prefix is a directory into which packages are installed.
