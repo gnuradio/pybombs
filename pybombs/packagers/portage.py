@@ -56,14 +56,15 @@ class ExternalPortage(ExternPackager):
         try:
             ver = None
             pkg = []
-            self.search.searchre = self.re.compile(pkgname, self.re.I)
+            self.search.searchre = self.re.compile(pkgname+"$", self.re.I)
             for package in self.search._cp_all():
                 match_string = package[:]
                 if self.search.searchre.search(match_string):
                     pkg += [package]
             full_package = []
             for p in pkg:
-                full_package += [self.search._xmatch('bestmatch-visible',p)]
+                # match-visible always returns a list
+                full_package.extend(self.search._xmatch('match-visible',p))
             versions = []
             for p in full_package:
                 versions += [self.portage.catpkgsplit(p, True)[2]]
