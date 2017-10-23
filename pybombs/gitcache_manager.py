@@ -55,7 +55,7 @@ class GitCacheManager(object):
         " Return dict remotename->url from current git repo "
         all_remotes = [x.strip() for x in self.run_git_command(['remote']).split()]
         return {
-            remote: self.run_git_command(['remote', 'get-url', remote]).strip()
+            remote: self.run_git_command(['config', '--get', "remote.%s.url" % remote]).strip()
             for remote in all_remotes
         }
 
