@@ -4,6 +4,7 @@ WORKDIR /pybombs
 
 # Minimal package installation
 RUN dnf install -y -q python-pip
+RUN dnf install -y -q python2-ruamel-yaml
 RUN dnf install -y -q tar
 
 # Install PyBOMBS using setuptools

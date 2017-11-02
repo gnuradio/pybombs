@@ -4,7 +4,9 @@ WORKDIR /pybombs
 
 # Minimal package installation
 RUN apt-get update -qq -y
-RUN apt-get install -qq -y python-pip
+# ruamel will get installed by setup.py via pip, but this just makes the
+# process smoother
+RUN apt-get install -qq -y python-pip python-ruamel.yaml
 
 # Install PyBOMBS using setuptools
 COPY PyBOMBS*.tar.gz /pybombs
