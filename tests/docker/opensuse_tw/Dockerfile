@@ -4,8 +4,10 @@ WORKDIR /pybombs
 
 # Minimal package installation
 RUN zypper refresh
-RUN zypper install -y --no-recommends python2-pip
-RUN zypper install -y --no-recommends tar
+RUN zypper -q install -y --no-recommends tar
+# On a raw OpenSuse, setuptools will fail to compile ruamel, because compilers
+# and Python headers are missing.
+RUN zypper -q install -y --no-recommends python2-pip python2-ruamel.yaml
 
 # Install PyBOMBS using setuptools
 COPY PyBOMBS*.tar.gz /pybombs
@@ -17,6 +19,8 @@ RUN mkdir /prefix
 
 RUN cd /prefix
 # Disable sudo:
-RUN pybombs config elevate_pre_args ''
-RUN pybombs recipes add gr-recipes git+https://github.com/jaredd/gr-recipes.git
+RUN pybombs auto-config
+# Just for verbosity:
+RUN pybombs config
+RUN pybombs recipes add-defaults
 RUN pybombs -v prefix init -a default -R gnuradio-default default
