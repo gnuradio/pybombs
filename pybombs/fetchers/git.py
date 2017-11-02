@@ -26,7 +26,6 @@ import os
 import re
 from pybombs.fetchers.base import FetcherBase
 from pybombs.utils import subproc
-from pybombs import pb_logging
 from pybombs.pb_exception import PBException
 
 def parse_git_url(url, args):
@@ -40,9 +39,9 @@ def parse_git_url(url, args):
     """
     if re.match(r'[a-z]+://[a-z]+@([^@:]+)$', url):
         return url, args
-    m = re.search(r'(.*)@([^:@]+)$', url)
-    if m:
-        url, args['gitrev'] = m.groups()
+    mobj = re.search(r'(.*)@([^:@]+)$', url)
+    if mobj:
+        url, args['gitrev'] = mobj.groups()
     return url, args
 
 class Git(FetcherBase):
