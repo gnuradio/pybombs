@@ -123,6 +123,26 @@ def _process_thread(event, args, kwargs):
     """
     This actually runs the process.
     """
+    def elevate_command(args, elevate_pre_args):
+        " Modify the command to run with elevated privileges. "
+        if isinstance(elevate_pre_args, str):
+            elevate_pre_args = [elevate_pre_args,]
+        if len(elevate_pre_args[0].strip()) == 0:
+            elevate_pre_args = []
+        if kwargs.get('shell', False) and isinstance(args, str):
+            args = ' '.join(elevate_pre_args) + args
+        else:
+            args = elevate_pre_args + args
+        return args
+    def pretty_print_cmd(args):
+        " Return pretty-printed version of the command. "
+        if isinstance(args, list):
+            return ' '.join(args)
+        else:
+            return "{sh}{cmd}".format(
+                sh="$ " if kwargs.get('shell', False) else "",
+                cmd=args.strip()
+            )
     from pybombs.config_manager import config_manager
     from pybombs.utils import output_proc
     _process_thread.result = 0
@@ -135,33 +155,32 @@ def _process_thread(event, args, kwargs):
     if kwargs.get('shell', False) and isinstance(args, list):
         args = ' '.join(args)
     if kwargs.get('elevate'):
-        elevate_pre_args = config_manager.get('elevate_pre_args')
-        if isinstance(elevate_pre_args, str):
-            elevate_pre_args = [elevate_pre_args,]
-        if len(elevate_pre_args[0].strip()) == 0:
-            elevate_pre_args = []
-        if kwargs.get('shell', False) and isinstance(args, str):
-            args = ' '.join(elevate_pre_args) + args
-        else:
-            args = elevate_pre_args + args
+        args = elevate_command(args, config_manager.get('elevate_pre_args'))
     log = logger.getChild("_process_thread()")
-    if isinstance(args, list):
-        log.debug("Executing command `{cmd}'".format(cmd=' '.join(args)))
-    else:
-        log.debug("Executing command `{sh}{cmd}'".format(
-            sh="$ " if kwargs.get('shell', False) else "",
-            cmd=args.strip()
-        ))
-    proc = subprocess.Popen(
-        args,
-        shell=kwargs.get('shell', False),
-        env=kwargs.get('env', config_manager.get_active_prefix().env),
-        **extra_popen_args
-    )
+    cmd_pp = pretty_print_cmd(args)
+    log.debug("Executing command `{cmd}'".format(cmd=cmd_pp))
+    try:
+        proc = subprocess.Popen(
+            args,
+            shell=kwargs.get('shell', False),
+            env=kwargs.get('env', config_manager.get_active_prefix().env),
+            **extra_popen_args
+        )
+    except OSError:
+        log.error("Failure executing command `{cmd}'!".format(cmd=cmd_pp))
+        if kwargs.get('elevate'):
+            log.debug("Make sure command can be elevated using `{epa}' " \
+                           "on this platform!".format(
+                               epa=config_manager.get('elevate_pre_args')))
+        return -1
     if use_oproc:
-        ret_code = run_with_output_processing(proc, o_proc, event, kwargs.get('cleanup'))
+        ret_code = run_with_output_processing(
+            proc, o_proc,
+            event, kwargs.get('cleanup')
+        )
     else:
-        # Wait until the process is done, or monitor_process() sends us the quit event
+        # Wait until the process is done, or monitor_process() sends us the
+        # quit event
         ret_code = None
         while ret_code is None and not event.is_set():
             ret_code = proc.poll()
