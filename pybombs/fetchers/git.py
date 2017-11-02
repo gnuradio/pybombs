@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2016 Free Software Foundation, Inc.
+# Copyright 2015-2017 Free Software Foundation, Inc.
 #
 # This file is part of PyBOMBS
 #
@@ -25,7 +25,6 @@ git fetcher functions
 import os
 import re
 from pybombs.fetchers.base import FetcherBase
-from pybombs.utils import output_proc
 from pybombs.utils import subproc
 from pybombs import pb_logging
 from pybombs.pb_exception import PBException
@@ -78,8 +77,6 @@ class Git(FetcherBase):
             git_cmd.append('-b')
             git_cmd.append(args.get('gitbranch'))
         o_proc = None
-        if self.log.getEffectiveLevel() >= pb_logging.DEBUG:
-            o_proc = output_proc.OutputProcessorMake(preamble="Cloning:     ")
         subproc.monitor_process(
             args=git_cmd,
             o_proc=o_proc,
@@ -133,8 +130,6 @@ class Git(FetcherBase):
             ]
         git_cmds.append(['git', 'submodule', 'update', '--recursive'])
         o_proc = None
-        if self.log.getEffectiveLevel() >= pb_logging.DEBUG:
-            o_proc = output_proc.OutputProcessorMake(preamble="Updating: ")
         for cmd in git_cmds:
             try:
                 if subproc.monitor_process(args=cmd, o_proc=o_proc, throw_ex=True) != 0:
