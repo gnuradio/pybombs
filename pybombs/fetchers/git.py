@@ -24,9 +24,11 @@ git fetcher functions
 
 import os
 import re
+import subprocess
 from pybombs.fetchers.base import FetcherBase
 from pybombs.utils import subproc
 from pybombs.pb_exception import PBException
+from pybombs.utils import vcompare
 
 def parse_git_url(url, args):
     """
@@ -44,6 +46,23 @@ def parse_git_url(url, args):
         url, args['gitrev'] = mobj.groups()
     return url, args
 
+def get_git_version():
+    """
+    Return the currently installed git version as a string.
+    """
+    try:
+        return re.search(
+            r'[0-9.]+',
+            subprocess.check_output(['git', '--version'])
+        ).group(0)
+    except OSError:
+        raise PBException("Unable to execute git!")
+    except subprocess.CalledProcessError:
+        raise PBException("Error executing 'git --version'!")
+    except AttributeError:
+        raise PBException("Unexpected output from 'git --version'!")
+
+
 class Git(FetcherBase):
     """
     git fetcher
@@ -59,6 +78,8 @@ class Git(FetcherBase):
         """
         git clone
         """
+        git_version = get_git_version()
+        self.log.debug("We have git version %s", git_version)
         url, args = parse_git_url(url, args or {})
         self.log.debug("Using url - {0}".format(url))
         git_cmd = ['git', 'clone', url, dirname]
@@ -70,7 +91,10 @@ class Git(FetcherBase):
             gcm = gitcache_manager.GitCacheManager(self.cfg.get("git-cache"))
             self.log.debug("Adding remote into git ref")
             gcm.add_remote(dirname, url, True)
-            git_cmd.append('--reference')
+            git_cmd.append(
+                '--reference-if-able'
+                if vcompare(">=", git_version, "2.11") else '--reference'
+            )
             git_cmd.append(self.cfg.get("git-cache"))
         if args.get('gitbranch'):
             git_cmd.append('-b')
