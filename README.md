@@ -104,6 +104,26 @@ attention are listed here:
 - [OpenSUSE](opensuse.md)
 - [CentOS](centos.md)
 
+### Testing specific platforms
+
+For testing distributions, PyBOMBS uses Docker containers. To make the
+statement "PyBOMBS is fully functional on platform XYZ", a specific container
+for said platform is run using the test framework. For example, to test
+Fedora 26, the following command can be run:
+
+    $ ./run-tests.sh --skip-pylint --container=fedora26
+
+The Dockerfiles are stored in `tests/docker/*`. It is easy to add containers
+to include more distributions, and submitting new Dockerfiles is heavily
+encouraged. Note that distributions can have subtle differences, and the
+Dockerfiles can be used as a reference on how exactly to set up PyBOMBS on a
+specific distribution.
+
+If the tests pass, a distribution is usually considered functional. This does
+not mean that everything will automatically work on someone's computer running
+this distribution, but that's usually because local settings weren't taken into
+account.
+
 ## Prefixes
 
 A prefix is a directory into which packages are installed.
