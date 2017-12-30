@@ -21,7 +21,7 @@ category: baseline
 inherit: autoconf
 satisfy:
   deb: python2.7 && python-dev
-  rpm: python-devel >= 2.7
+  rpm: python-devel >= 2.7 || python2-devel >= 2.7
   cmd: python --version >= 2.7
   pacman: python2 >= 2.7
   port: python27 >= 2.7
