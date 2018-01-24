@@ -109,7 +109,8 @@ class Install(CommandBase):
 
     def run(self):
         """ Go, go, go! """
-        self.install_manager.install(
+        # Return False (0) on success, as it gets sent to exit()
+        return not self.install_manager.install(
                 self.args.packages,
                 mode=self.cmd,
                 fail_if_not_exists=self.fail_if_not_exists,
