@@ -36,12 +36,14 @@ def extract_to(filename, path):
     log = pb_logging.logger.getChild("extract_to")
     if tarfile.is_tarfile(filename):
         archive = tarfile.open(filename)
+        names = archive.getnames()
     elif zipfile.is_zipfile(filename):
         archive = zipfile.ZipFile(filename)
+        names = archive.namelist()
     else:
         raise RuntimeError("Cannot extract {}: Unknown archive type")
     log.debug("Unpacking {0}".format(filename))
-    if len(archive.getnames()) == 1:
+    if len(names) == 1:
         prefix = os.path.split(archive.getnames()[0])[0]
     else:
         prefix = os.path.commonprefix(archive.getnames())
