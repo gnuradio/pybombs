@@ -302,7 +302,7 @@ class ConfigManager(object):
         # The following line must always list *all* available packagers in order of priority:
         'packagers': ('apt,yumdnf,port,brew,zypper,pacman,portage,pymod,pip,pkgconfig,cmd', 'Priority of non-source package managers'),
         'keep_builddir': ('', 'When rebuilding, default to keeping the build directory'),
-        'elevate_pre_args': (['sudo', '-H'], 'For commands that need elevated privileges, prepend this'),
+        'elevate_pre_args': (['sudo', '-H', '-E'], 'For commands that need elevated privileges, prepend this'),
         'git-cache': (None, 'Path to git reference repository (git cache)'),
     }
     LAYER_DEFAULT = 0
