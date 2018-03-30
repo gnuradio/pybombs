@@ -53,7 +53,7 @@ def get_git_version():
     try:
         return re.search(
             r'[0-9.]+',
-            subprocess.check_output(['git', '--version'])
+            subprocess.check_output(['git', '--version']).decode('ascii')
         ).group(0)
     except OSError:
         raise PBException("Unable to execute git!")
