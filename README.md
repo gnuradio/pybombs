@@ -1,6 +1,6 @@
 # PyBOMBS
 
-Website: https://www.gnuradio.org/blog/pybombs-the-what-the-how-and-the-why/
+Website: https://www.gnuradio.org/blog/pybombs-the-what-the-how-and-the-why
 
 Minimum Python version: 2.7
 
