@@ -19,8 +19,8 @@ RUN cd * && python setup.py install -q
 # Install something
 RUN mkdir /prefix
 RUN cd /prefix
-RUN pybombs auto-config
-RUN pybombs -v recipes add gr-recipes git+https://github.com/gnuradio/gr-recipes.git
+RUN pybombs -v auto-config
+RUN pybombs -v recipes add-defaults
 RUN pybombs -v prefix init -a default default
 RUN pybombs install gr-osmosdr
 

@@ -18,6 +18,6 @@ RUN cd * && python setup.py -q install
 # Install something
 RUN mkdir /prefix
 RUN cd /prefix
-RUN pybombs auto-config
-RUN pybombs recipes add-defaults
+RUN pybombs -v auto-config
+RUN pybombs -v recipes add-defaults
 RUN pybombs -v prefix init -a default -R gnuradio-default default

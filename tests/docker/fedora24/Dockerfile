@@ -15,6 +15,6 @@ RUN cd * && python setup.py -q install
 RUN mkdir /prefix
 RUN cd /prefix
 # Disable sudo:
-RUN pybombs config elevate_pre_args ''
-RUN pybombs recipes add gr-recipes git+https://github.com/gnuradio/gr-recipes.git
+RUN pybombs -v auto-config
+RUN pybombs -v recipes add-defaults
 RUN pybombs -v prefix init -a default -R gnuradio-default default

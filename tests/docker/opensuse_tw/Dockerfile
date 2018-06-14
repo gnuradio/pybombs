@@ -19,8 +19,8 @@ RUN mkdir /prefix
 
 RUN cd /prefix
 # Disable sudo:
-RUN pybombs auto-config
+RUN pybombs -v auto-config
 # Just for verbosity:
 RUN pybombs config
-RUN pybombs recipes add-defaults
+RUN pybombs -v recipes add-defaults
 RUN pybombs -v prefix init -a default -R gnuradio-default default

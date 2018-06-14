@@ -17,8 +17,7 @@ RUN cd * && python3 setup.py install -q
 # Install something
 RUN mkdir /prefix
 RUN cd /prefix
-RUN pybombs config elevate_pre_args ''
-RUN pybombs config makewidth 12
+RUN pybombs -v auto-config
 RUN pybombs -v recipes add-defaults
 RUN pybombs -v prefix init -a default default
 RUN pybombs install gr-osmosdr
