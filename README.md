@@ -101,8 +101,9 @@ For the impatient:
 Some platforms have their own idiosyncrasies. Platforms that require special
 attention are listed here:
 
-- [OpenSUSE](opensuse.md)
 - [CentOS](centos.md)
+- [Debian](debian.md)
+- [OpenSUSE](opensuse.md)
 
 ### Testing specific platforms
 
