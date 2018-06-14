@@ -244,7 +244,7 @@ class Recipe(object):
         self.log.obnoxious("Loaded recipe - {0}".format(self.id))
 
     def __str__(self):
-        import yaml
+        from ruamel import yaml
         out = "Recipe: {id}\n".format(id=str(self.id))
         out += yaml.dump(self._data, default_flow_style=False)
         return out
