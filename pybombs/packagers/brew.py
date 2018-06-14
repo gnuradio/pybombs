@@ -23,11 +23,9 @@ Packager: homebrew
 """
 
 import json
-import subprocess
 from pybombs.packagers.extern import ExternCmdPackagerBase, ExternPackager
 from pybombs.utils import subproc
 from pybombs.utils import sysutils
-from pybombs.utils.vcompare import vcompare
 
 
 class ExternalHomebrew(ExternPackager):
@@ -40,7 +38,7 @@ class ExternalHomebrew(ExternPackager):
         """
         try:
             self.log.obnoxious("Checking homebrew for `{0}'".format(pkgname))
-            out = subprocess.check_output(["brew", "info", "--json=v1", pkgname])
+            out = subproc.check_output(["brew", "info", "--json=v1", pkgname])
             # Returns non-zero exit status if package does not exist in brew taps
             if len(out) >= 0:
                 # Get the version.
@@ -49,7 +47,7 @@ class ExternalHomebrew(ExternPackager):
                 return version
             else:
                 return False
-        except subprocess.CalledProcessError:
+        except subproc.CalledProcessError:
             # This usually means the packet is not installed
             return False
         except Exception as e:
@@ -66,7 +64,7 @@ class ExternalHomebrew(ExternPackager):
         """
         try:
             self.log.obnoxious("Checking homebrew for `{0}'".format(pkgname))
-            out = subprocess.check_output(["brew", "info", "--json=v1", pkgname])
+            out = subproc.check_output(["brew", "info", "--json=v1", pkgname])
             # Returns non-zero exit status if package does not exist in brew taps
             if len(out) >= 0:
                 # Get the version.
@@ -80,14 +78,14 @@ class ExternalHomebrew(ExternPackager):
                 return version
             else:
                 return False
-        except subprocess.CalledProcessError as e:
+        except subproc.CalledProcessError:
             self.log.error("Unable to find package")
-        except KeyError as e:
+        except KeyError:
             self.log.error("Package is not installed")
-        except Exception as e:
+        except Exception as ex:
             # Non-zero return.
             self.log.error("Error running brew info")
-            self.log.error(repr(e))
+            self.log.error(repr(ex))
         return False
 
     def install(self, pkgname):

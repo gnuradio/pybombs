@@ -59,7 +59,7 @@ class ExternalZypper(ExternPackager):
                 return False
             self.log.debug("Package {0} has version {1} in {2}".format(pkgname, ver, self.command))
             return ver
-        except subprocess.CalledProcessError as ex:
+        except subproc.CalledProcessError as ex:
             # This usually means the package was not found, so don't worry
             self.log.obnoxious("`{0} info' returned non-zero exit status.".format(self.command))
             self.log.obnoxious(str(ex))
@@ -90,7 +90,7 @@ class ExternalZypper(ExternPackager):
                     self.log.debug("Package {0} has version {1} in {2}".format(pkgname, ver, self.fastcommand))
                     return ver
             # exception for unpack error if package not found
-            except subprocess.CalledProcessError:
+            except subproc.CalledProcessError:
                 pass
             except Exception as ex:
                 self.log.error("Parsing `{0} list installed` failed.".format(self.fastcommand))
@@ -121,7 +121,7 @@ class ExternalZypper(ExternPackager):
                     self.log.debug("Package {0} has version {1} in {2}".format(pkgname, ver, self.command))
                     return ver
             return False
-        except subprocess.CalledProcessError:
+        except subproc.CalledProcessError:
             # This usually means the packet is not installed
             return False
         except Exception as ex:

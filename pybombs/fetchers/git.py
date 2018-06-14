@@ -24,7 +24,6 @@ git fetcher functions
 
 import os
 import re
-import subprocess
 from pybombs.fetchers.base import FetcherBase
 from pybombs.utils import subproc
 from pybombs.pb_exception import PBException
@@ -53,11 +52,11 @@ def get_git_version():
     try:
         return re.search(
             r'[0-9.]+',
-            subprocess.check_output(['git', '--version'])
+            subproc.check_output(['git', '--version'])
         ).group(0)
     except OSError:
         raise PBException("Unable to execute git!")
-    except subprocess.CalledProcessError:
+    except subproc.CalledProcessError:
         raise PBException("Error executing 'git --version'!")
     except AttributeError:
         raise PBException("Unexpected output from 'git --version'!")

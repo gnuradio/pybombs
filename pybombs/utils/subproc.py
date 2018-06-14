@@ -39,16 +39,28 @@ READ_TIMEOUT = 0.1 # s
 
 CalledProcessError = subprocess.CalledProcessError
 
+
+def check_output(*args, **kwargs):
+    """
+    Identical to Python's subprocess.check_output(), with one difference:
+    It will *always* return a string, never a byte string.
+    This makes it work with string-based tools (e.g. regex stuff) across Python
+    versions 2 and 3.
+    """
+    return subprocess.check_output(*args, **kwargs).decode('utf-8')
+
+
 def get_child_pids(pid):
     """
     Returns a list of all child pids associated with this pid.
     """
     get_child_pids_cmd = ["ps", "-o", "pid", "--ppid", str(pid), "--no-headers"]
     try:
-        children = subprocess.check_output(get_child_pids_cmd).strip().split("\n")
+        children = check_output(get_child_pids_cmd).strip().split("\n")
     except (OSError, subprocess.CalledProcessError):
         return []
     return [int(child) for child in children]
+
 
 def kill_process_tree(process, pid=None):
     """
@@ -246,15 +258,6 @@ def monitor_process(args, **kwargs):
         else:
             return -1
 
-
-def check_output(*args, **kwargs):
-    """
-    Identical to Python's subprocess.check_output(), with one difference:
-    It will *always* return a string, never a byte string.
-    This makes it work with string-based tools (e.g. regex stuff) across Python
-    versions 2 and 3.
-    """
-    return subprocess.check_output(*args, **kwargs).decode('utf-8')
 
 def match_output(command, pattern, match_key=None, **kwargs):
     """
