@@ -79,19 +79,3 @@ class File(FetcherBase):
             os.remove(filename)
         return self.fetch_url(url, dest, dirname, args)
 
-    #def get_version(self, recipe, url):
-        #if not self.check_fetched(recipe, url):
-            #self.log.error("Can't return version for {0}, not fetched!".format(recipe.id))
-            #return None
-        #cwd = os.getcwd()
-        #repo_dir = os.path.join(self.cfg.get_active_prefix().src_dir, recipe.id)
-        #self.log.obnoxious("Switching cwd to: {0}".format(repo_dir))
-        #os.chdir(repo_dir)
-        ## TODO run this process properly
-        #out1 = subprocess.check_output("svnversion {0}".format(repo_dir), shell=True)
-        #rm = re.search("\d*:*(\d+).*", out1)
-        #self.version = rm.group(1)
-        #self.log.debug("Found version: {0}".format(self.version))
-        #self.log.obnoxious("Switching cwd to: {0}".format(cwd))
-        #os.chdir(cwd)
-        #return self.version

@@ -164,18 +164,3 @@ class Git(FetcherBase):
         os.chdir(cwd)
         return True
 
-    #def get_version(self, recipe, url):
-        #if not self.check_fetched(recipe, url):
-            #self.log.error("Can't return version for {0}, not fetched!".format(recipe.id))
-            #return None
-        #cwd = os.getcwd()
-        #self.log.obnoxious("Switching cwd to: {0}".format(os.path.join(self.src_dir, recipe.id)))
-        #os.chdir(os.path.join(self.src_dir, recipe.id))
-        #out1 = subprocess.check_output("git rev-parse HEAD", shell=True)
-        #rm = re.search("([0-9a-f]+).*", out1)
-        #self.version = rm.group(1)
-        #self.log.debug("Found version: {0}".format(self.version))
-        #self.log.obnoxious("Switching cwd to: {0}".format(cwd))
-        #os.chdir(cwd)
-        #return self.version
-
