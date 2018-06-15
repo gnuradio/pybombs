@@ -318,6 +318,7 @@ class ConfigManager(object):
         self.module_dir = os.path.dirname(pb_logging.__file__)
         self.load(select_prefix)
         pb_logging.logger.info("PyBOMBS Version " + str(__version__))
+        self._config_reference = 'pybombs'
 
     def load(self, select_prefix=None):
         """
@@ -382,6 +383,7 @@ class ConfigManager(object):
         self.log.debug("Template directory: {0}".format(self._template_dir))
         ## Init prefix:
         self._prefix_info = PrefixInfo(args, cfg_files, select_prefix)
+        self._config_reference = 'prefix'
         # Add the prefix config file (if it exists)
         prefix_config = self._prefix_info.cfg_file
         if prefix_config is not None and os.path.exists(prefix_config):
@@ -486,6 +488,22 @@ class ConfigManager(object):
         Will return an empty string if the key is not available.
         """
         return self.defaults.get(key, ("", ""))[1]
+
+    def set_config_reference(self, ref):
+        """
+        Set the reference for configuration settings. ref can have the following
+        values:
+
+        'prefix': The reference is the prefix. This is the default.
+        'pybombs': The reference is the environment in which PyBOMBS is being
+                   executed.
+
+        Setting the reference changes the behaviour of some methods of this
+        class.
+        """
+        assert ref in ('prefix', 'pybombs')
+        self._config_reference = ref
+
 
     def get_active_prefix(self):
         """
