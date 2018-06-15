@@ -304,6 +304,7 @@ class ConfigManager(object):
         'keep_builddir': ('', 'When rebuilding, default to keeping the build directory'),
         'elevate_pre_args': (['sudo', '-H'], 'For commands that need elevated privileges, prepend this'),
         'git-cache': (None, 'Path to git reference repository (git cache)'),
+        'python_ver': (None, 'Python version for this prefix'),
     }
     LAYER_DEFAULT = 0
     LAYER_GLOBALS = 1
@@ -424,6 +425,13 @@ class ConfigManager(object):
         self._recipe_locations.append(os.path.join(self.module_dir, 'recipes'))
         self.log.debug("Full list of recipe locations: {0}".format(self._recipe_locations))
         self.log.debug("Named recipe locations: {0}".format(self._named_recipe_sources))
+        # Detect Python version of the prefix (this is *not* necessarily
+        # the Python version that is used for executing this script! The
+        # prefix could be, for example, a virtualenv with its custom Python
+        # version.)
+        self._detect_python_version()
+        self.log.info("Prefix Python version is: {}"
+                      .format(self.get('python_ver')))
 
     def _append_cfg_from_file(self, cfg_filename, index=None):
         """
@@ -446,6 +454,23 @@ class ConfigManager(object):
         else:
             self.cfg_cascade[index] = config_items
         return True
+
+    def _detect_python_version(self):
+        """
+        Detect the Python version used in the prefix. Note this is *not*
+        necessarily the version of Python used to execute this script.
+        """
+        if self.get('python_ver'):
+            self.log.debug("Python version set by config file.")
+            return
+        # Put all the smart stuff here, were we detect the actual Python version
+        # used in the prefix TODO
+        else:
+            # If there is no indication which Python version is used in the
+            # prefix, we'll assume it's be using the same Python version as
+            # is currently running
+            self.log.debug("Python version derived from current interpreter.")
+            self.set('python_ver', sysutils.get_interpreter_version())
 
     def get_pybombs_dir(self, prefix_dir=None):
         """
@@ -570,6 +595,16 @@ class ConfigManager(object):
             getattr(self._prefix_info, 'categories', {}).get(categoryname, {}),
             getattr(self._prefix_info, 'packages', {}).get(pkgname, {})
         )
+
+    def get_python_version(self):
+        """
+        Get Python version of the prefix (unless set_config_reference() is set
+        to pybombs).
+        """
+        return {
+            'pybombs': sysutils.get_interpreter_version(),
+            'prefix': self.get('python_ver'),
+        }[self._config_reference]
 
     def update_cfg_file(self, new_data, cfg_file=None):
         """
