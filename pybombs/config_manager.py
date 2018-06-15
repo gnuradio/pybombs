@@ -606,6 +606,17 @@ class ConfigManager(object):
             'prefix': self.get('python_ver'),
         }[self._config_reference]
 
+    def get_satisfier_tags(self):
+        """
+        Return a list of tags to be used in satisfiers.
+
+        This can return different values when changing the config reference.
+        """
+        ref_python_ver = self.get_python_version()
+        python_tag = "python3" if ref_python_ver.startswith('3') else "python2"
+        return [python_tag]
+
+
     def update_cfg_file(self, new_data, cfg_file=None):
         """
         Write new data to a config file.
