@@ -26,6 +26,7 @@ from __future__ import print_function
 import re
 import os
 import os.path as op
+import sys
 from pybombs.pb_exception import PBException
 
 def which(program, env=None):
@@ -123,6 +124,16 @@ def is_virtualenv(path):
         return is_venv
     except IOError:
         return False
+
+def get_interpreter_version():
+    """
+    Return the version of the current interpreter as a string.
+    """
+    return "{major}.{minor}.{micro}".format(
+        major=sys.version_info.major,
+        minor=sys.version_info.minor,
+        micro=sys.version_info.micro,
+    )
 
 if __name__ == "__main__":
     print(which("vim"))
