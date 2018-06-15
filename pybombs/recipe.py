@@ -286,6 +286,11 @@ class Recipe(object):
         If pkg_type was not listed in the recipe, return None.
         """
         req_string = getattr(self, 'satisfy', {}).get(pkg_type)
+        satisfy_tags = config_manager.config_manager.get_satisfier_tags()
+        for tag in satisfy_tags:
+            satisfy_key = 'satisfy@{}'.format(tag)
+            if getattr(self, satisfy_key, {}).get(pkg_type):
+                req_string = getattr(self, satisfy_key, {}).get(pkg_type)
         if req_string is True:
             return req_string
         return PBPackageRequirementScanner(req_string).get_preq()
