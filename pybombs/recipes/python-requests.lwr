@@ -24,4 +24,10 @@ satisfy:
   deb: python-requests
   rpm: python-requests || python2-requests
   port: py27-requests
+# This is an override for Python 3. It will supersede the regular `satisfy`, but
+# only for the keys listed here (and of course only when the target is using
+# Python 3).
+satisfy@python3:
+  deb: python3-requests
+  rpm: python3-requests
 source: wget+https://pypi.python.org/packages/source/r/requests/requests-2.8.1.tar.gz
