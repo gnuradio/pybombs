@@ -21,7 +21,6 @@
 """ Abstraction for config files """
 
 import os
-import errno
 from collections import OrderedDict
 from ruamel import yaml
 from pybombs.utils import dict_merge
@@ -29,23 +28,23 @@ from pybombs.pb_exception import PBException
 from pybombs.utils import sysutils
 
 
-def touchFile(filename):
-    #https://stackoverflow.com/questions/12517451/automatically-creating-directories-with-file-output
-    if not os.path.exists(os.path.dirname(filename)):
-        try:
-            os.makedirs(os.path.dirname(filename))
-
-        except OSError as exc:
-            if exc.errno != errno.EEXIST:
-                raise
+def touch_file(filename):
+    """
+    Like mkdir -p && touch
+    """
+    sysutils.mkdirp_writable(os.path.dirname(filename))
     if not os.path.exists(filename):
         open(filename, 'a').close()
 
-class abstractYaml(object):
+class AbstractYaml(object):
+    """
+    Abstraction layer around yaml, so we can do round_trip_* regardless of the
+    YAML version.
+    """
     def __init__(self):
-        if yaml.version_info >= (0,15):
+        if yaml.version_info[0] >= 0 and yaml.version_info[1] >= 15:
             self.yaml = yaml.YAML(typ='rt')
-            self.yaml.default_flow_style=False
+            self.yaml.default_flow_style = False
             self._load = self.yaml.load
             self._dump = self.yaml.dump
         else:
@@ -54,14 +53,15 @@ class abstractYaml(object):
             self._dump = self.yaml.round_trip_dump
 
     def load(self, fd):
+        """Load contents of a file descriptor and return a dictionary."""
         return self._load(fd)
 
     def dump(self, data, out):
-        if yaml.version_info >= (0,15):
+        """Dump contents of a dictionary"""
+        if yaml.version_info[0] >= 0 and yaml.version_info[1] >= 15:
             return self._dump(data, out)
         else:
             return self._dump(data, out, default_flow_style=False)
-
 
 
 
@@ -73,8 +73,8 @@ class PBConfigFile(object):
         # Store normalized path, in case someone chdirs after calling the ctor
         self._filename = os.path.abspath(os.path.expanduser(os.path.normpath(filename)))
         self.data = None
-        self.yaml = abstractYaml()
-        touchFile(filename)
+        self.yaml = AbstractYaml()
+        touch_file(filename)
         with open(filename) as fn:
             try:
                 # TODO: Recursively turn this into an OrderedDict, not just at
