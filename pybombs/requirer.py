@@ -22,8 +22,6 @@
 A requirer is a class that itself has dependencies on packages.
 """
 
-import argparse
-
 REQUIRER_CHECKED_CACHE = []
 
 def require_hostsys_dependencies(deps):
@@ -40,7 +38,9 @@ def require_hostsys_dependencies(deps):
     from pybombs import install_manager
     from pybombs.config_manager import config_manager
     REQUIRER_CHECKED_CACHE += deps_to_check
-    install_manager.InstallManager().install(
+    try:
+        config_manager.set_config_reference('pybombs')
+        install_manager.InstallManager().install(
             deps_to_check,
             'install', # install / update
             fail_if_not_exists=False,
@@ -48,7 +48,9 @@ def require_hostsys_dependencies(deps):
             quiet=True,
             print_tree=False,
             install_type="binary", # Requirers may not request source packages
-    )
+        )
+    finally:
+        config_manager.set_config_reference('prefix')
 
 class Requirer(object):
     """
