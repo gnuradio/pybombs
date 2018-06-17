@@ -26,8 +26,25 @@ import re
 from pybombs.packagers.extern import ExternCmdPackagerBase, ExternPackager
 from pybombs.utils import sysutils
 from pybombs.utils import subproc
+from pybombs.utils import vcompare
 
 PIP_INSTALLED_CACHE = None
+
+def detect_pip_exe():
+    """TODO: Docstring for detect_pip_exe.
+    :returns: TODO
+
+    """
+    from pybombs.config_manager import config_manager
+    if vcompare('>=', config_manager.get_python_version(), '3'):
+        default_pip = 'pip3'
+    else:
+        default_pip = 'pip2'
+    if sysutils.which(default_pip) is not None:
+        return default_pip
+    if sysutils.which('pip') is not None:
+        return 'pip'
+    return None
 
 class ExternalPip(ExternPackager):
     """
@@ -35,6 +52,9 @@ class ExternalPip(ExternPackager):
     """
     def __init__(self, logger):
         ExternPackager.__init__(self, logger)
+        self.cmd = detect_pip_exe()
+        assert self.cmd
+        self.log.debug("Using pip executable: %s", self.cmd)
 
     def get_available_version(self, pkgname):
         """
@@ -42,14 +62,15 @@ class ExternalPip(ExternPackager):
         """
         try:
             output_match = subproc.match_output(
-                ["pip", "search", pkgname],
+                [self.cmd, "search", pkgname],
                 r'^\b{pkg}\b'.format(pkg=pkgname),
             )
             return bool(output_match)
         except subproc.CalledProcessError:
             return False
         except Exception as ex:
-            self.log.error("Error running `pip search {0}`".format(pkgname))
+            self.log.error("Error running `{cmd} search {pkg}`"
+                           .format(cmd=self.cmd, pkg=pkgname))
             self.log.debug(ex)
         return False
 
@@ -71,7 +92,8 @@ class ExternalPip(ExternPackager):
         self.log.debug("Loading pip install cache.")
         PIP_INSTALLED_CACHE = {}
         try:
-            installed_packages = str(subproc.check_output(["pip", "list"])).strip().split("\n")
+            installed_packages = \
+                str(subproc.check_output([self.cmd, "list"])).strip().split("\n")
             for pkg in installed_packages:
                 mobj = re.match(r'(?P<pkg>\S+)\s+\((?P<ver>[^)]+)\)', str(pkg))
                 if mobj is None:
@@ -79,21 +101,21 @@ class ExternalPip(ExternPackager):
                 PIP_INSTALLED_CACHE[mobj.group('pkg')] = mobj.group('ver')
             return
         except subproc.CalledProcessError as e:
-            self.log.error("Could not run pip list. Hm.")
+            self.log.error("Could not run %s list. Hm.", self.cmd)
             self.log.error(str(e))
         except Exception as e:
-            self.log.error("Some error while running pip list.")
+            self.log.error("Some error while running %s list.", self.cmd)
             self.log.error(str(e))
 
     def install(self, pkgname):
         """
-        yum/dnf install pkgname
+        pip install pkgname
         """
         return self._run_pip_install(pkgname)
 
     def update(self, pkgname):
         """
-        yum/dnf update pkgname
+        pip install --upgrade pkgname
         """
         return self._run_pip_install(pkgname, True)
 
@@ -102,7 +124,7 @@ class ExternalPip(ExternPackager):
         Run pip install [--upgrade]
         """
         try:
-            command = [sysutils.which('pip'), "install"]
+            command = [self.cmd, "install"]
             if update:
                 command.append('--upgrade')
             command.append(pkgname)
@@ -131,5 +153,5 @@ class Pip(ExternCmdPackagerBase):
         Check if we can even run 'pip'.
         Return True if so.
         """
-        return sysutils.which('pip') is not None
+        return detect_pip_exe() is not None
 
