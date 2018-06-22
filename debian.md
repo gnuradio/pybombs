@@ -1,4 +1,4 @@
-# Using PyBOMBS on CentOS
+# Using PyBOMBS on Debian
 
 ## Debian Jessie
 
