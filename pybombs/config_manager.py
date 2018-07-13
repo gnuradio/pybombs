@@ -297,7 +297,7 @@ class ConfigManager(object):
             'RelWithDebInfo',
             'CMAKE_BUILD_TYPE args to pass to cmake projects, options are: Debug, Release, RelWithDebInfo, MinSizeRel'
         ),
-        'builddocs': ('OFF', 'Build doxygen while compiling packages? options are: ON, OFF'),
+        'builddocs': ('ON', 'Build doxygen while compiling packages? options are: ON, OFF'),
         'makewidth': ('4', 'Concurrent make threads [1,2,4,8...]'),
         # The following line must always list *all* available packagers in order of priority:
         'packagers': ('apt,yumdnf,port,brew,zypper,pacman,portage,pymod,pip,pkgconfig,cmd', 'Priority of non-source package managers'),
