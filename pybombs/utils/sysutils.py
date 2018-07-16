@@ -80,6 +80,9 @@ def mkdirp_writable(dir_path, log=None):
     """
     if dir_is_writable(dir_path):
         return True
+    # If we're at the root, and can't write, need to break the iteration cycle:
+    if dir_path == "/":
+        return False
     parent = os.path.split(dir_path)[0]
     if len(parent) != 0:
         if not mkdirp_writable(parent, log):
