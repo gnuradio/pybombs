@@ -26,16 +26,20 @@ import sys
 from copy import deepcopy
 from six import iteritems
 from builtins import input
+try:
+    from collections.abc import Mapping
+except ImportError:
+    from collections import Mapping
 
 def dict_merge(a, b):
     """
     Recursively merge b into a. b[k] will overwrite a[k] if it exists.
     """
-    if not isinstance(b, dict):
+    if not isinstance(b, Mapping):
         return b
     result = deepcopy(a)
     for k, v in iteritems(b):
-        if k in result and isinstance(result[k], dict):
+        if k in result and isinstance(result[k], Mapping):
             result[k] = dict_merge(result[k], v)
         else:
             result[k] = deepcopy(v)

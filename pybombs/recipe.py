@@ -26,6 +26,11 @@ import re
 import os
 import shlex
 from six import iteritems
+try:
+     from collections.abc import Sequence
+except ImportError:
+     from collections import Sequence
+
 
 from pybombs import pb_logging
 from pybombs import recipe_manager
@@ -256,8 +261,10 @@ class Recipe(object):
         data = PBConfigFile(filename).get()
         # Make sure dependencies is always a valid list:
         if 'depends' in data and data['depends'] is not None:
-            if not isinstance(data['depends'], list):
+            if not isinstance(data['depends'], Sequence):
                 data['depends'] = [data['depends'], ]
+            else:
+                data['depends'] = list(data['depends'])  # not every Sequence is a list
         else:
             data['depends'] = []
         return data
