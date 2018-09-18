@@ -115,7 +115,7 @@ class PBPackageRequirementScanner(object):
         self.preq = None
         self.stack = []
         if not req_string:
-            self.log.obnoxious("Empty requirements string.")
+            self.log.trace("Empty requirements string.")
             return
         lexer = shlex.shlex(req_string)
         lexer.wordchars += '-<>=.&|/+'
@@ -125,7 +125,7 @@ class PBPackageRequirementScanner(object):
                 self.end_distro_pkg_expr()
                 break
             self.get_token_functor(token)(self, token)
-        self.log.obnoxious("Done parsing requirements string `{0}`".format(req_string))
+        self.log.trace("Done parsing requirements string `{0}`".format(req_string))
 
     def get_token_functor(self, token):
         " Return a functor for a given token or throw "
@@ -141,22 +141,22 @@ class PBPackageRequirementScanner(object):
     def pl_pkg(self, pkg_name):
         " Called in a package requirements list, when a package name is found "
         if self.preq is None:
-            self.log.obnoxious("Adding package with name {0}".format(pkg_name))
+            self.log.trace("Adding package with name {0}".format(pkg_name))
             self.preq = PBPackageRequirement(pkg_name)
         elif isinstance(self.preq, PBPackageRequirement):
             if self.preq.compare is None:
                 self.preq.name = " ".join((self.preq.name, pkg_name))
-                self.log.obnoxious("Extending package name {0}".format(self.preq.name))
+                self.log.trace("Extending package name {0}".format(self.preq.name))
             else:
                 raise PBException("Parsing Error. Did not expect package name here.")
         elif isinstance(self.preq, PBPackageRequirementPair):
             if self.preq.second is None:
-                self.log.obnoxious("Adding package with name {0}".format(pkg_name))
+                self.log.trace("Adding package with name {0}".format(pkg_name))
                 self.preq.second = PBPackageRequirement(pkg_name)
             else:
                 if self.preq.second.compare is None:
                     self.preq.second.name = " ".join((self.preq.second.name, pkg_name))
-                    self.log.obnoxious("Extending package name {0}".format(self.preq.second.name))
+                    self.log.trace("Extending package name {0}".format(self.preq.second.name))
                 else:
                     raise PBException("Parsing Error. Did not expect package name here ({0}).".format(self.preq.second))
         else:
@@ -178,7 +178,7 @@ class PBPackageRequirementScanner(object):
 
     def pl_cmp(self, cmpr):
         " Called in a package requirements list, when version comparator is found "
-        self.log.obnoxious("Adding version comparator {0}".format(cmpr))
+        self.log.trace("Adding version comparator {0}".format(cmpr))
         if isinstance(self.preq, PBPackageRequirement):
             self.preq.compare = cmpr
         else:
@@ -186,7 +186,7 @@ class PBPackageRequirementScanner(object):
 
     def pl_ver(self, ver):
         " Called in a package requirements list, when version number is found "
-        self.log.obnoxious("Adding version number {0}".format(ver))
+        self.log.trace("Adding version number {0}".format(ver))
         if isinstance(self.preq, PBPackageRequirement):
             self.preq.version = ver
         else:
@@ -194,7 +194,7 @@ class PBPackageRequirementScanner(object):
 
     def pl_cmb(self, cmb):
         " Called in a package requirements list, when a logical combiner (||, &&) is found "
-        self.log.obnoxious("Found package combiner {0}".format(cmb))
+        self.log.trace("Found package combiner {0}".format(cmb))
         if self.preq is None:
             raise PBException("Parsing Error. Did not expect combiner here.")
         self.preq = PBPackageRequirementPair(self.preq)
@@ -202,7 +202,7 @@ class PBPackageRequirementScanner(object):
 
     def end_distro_pkg_expr(self):
         " Called when a list of package reqs is finished "
-        self.log.obnoxious("End of requirements list")
+        self.log.trace("End of requirements list")
         self.stack = []
         return "foo"
 
@@ -220,20 +220,20 @@ class Recipe(object):
         self.inherit = 'empty'
         self._static = False
         # Load original recipe:
-        self.log.obnoxious("Loading recipe file: {0}".format(filename))
+        self.log.trace("Loading recipe file: {0}".format(filename))
         self._data = self._load_recipe_from_file(filename)
         # Recursively do the inheritance:
         while self._data.get('inherit', 'empty'):
             inherit_from = self._data.get('inherit', 'empty')
             try:
                 filename = recipe_manager.recipe_manager.get_template_filename(inherit_from)
-                self.log.obnoxious("Loading template file: {0}".format(filename))
+                self.log.trace("Loading template file: {0}".format(filename))
             except PBException as e:
                 self.log.warn("Recipe attempting to inherit from unknown template {0}".format(
                     inherit_from
                 ))
                 break
-            self.log.obnoxious("Inheriting from file {0}".format(filename))
+            self.log.trace("Inheriting from file {0}".format(filename))
             parent_data = self._load_recipe_from_file(filename)
             self._data['depends'] = self._data['depends'] + parent_data['depends']
             self._data = dict_merge(parent_data, self._data)
@@ -246,7 +246,7 @@ class Recipe(object):
         for k, v in iteritems(self._data):
             if not hasattr(self, k):
                 setattr(self, k, v)
-        self.log.obnoxious("Loaded recipe - {0}".format(self.id))
+        self.log.trace("Loaded recipe - {0}".format(self.id))
 
     def __str__(self):
         from ruamel import yaml
@@ -389,7 +389,7 @@ def get_recipe(pkgname, target='package', fail_easy=False):
     """
     cache_key = pkgname
     if cache_key in recipe_cache:
-        pb_logging.logger.getChild("get_recipe").obnoxious("Woohoo, this one's already cached ({0})".format(pkgname))
+        pb_logging.logger.getChild("get_recipe").trace("Woohoo, this one's already cached ({0})".format(pkgname))
         return recipe_cache[cache_key]
     try:
         r = Recipe(recipe_manager.recipe_manager.get_recipe_filename(pkgname))

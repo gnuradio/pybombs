@@ -157,7 +157,7 @@ class Inventory(object):
             return self.set_version(pkg, value)
         if not self.has(pkg):
             self._invfile.data[pkg] = {}
-        self.log.obnoxious("Setting key {k} on package {p} to {v}.".format(k=key, p=pkg, v=value))
+        self.log.trace("Setting key {k} on package {p} to {v}.".format(k=key, p=pkg, v=value))
         self._invfile.data[pkg][key] = value
 
     def get_key(self, pkg, key):

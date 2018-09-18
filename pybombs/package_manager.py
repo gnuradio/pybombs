@@ -119,7 +119,7 @@ class PackageManager(object):
         can install this package.
         """
         if not return_pkgr_name and name in self.pmc.known_installable:
-            self.log.obnoxious("{0} has cached installable-status: {1}".format(
+            self.log.trace("{0} has cached installable-status: {1}".format(
                 name, self.pmc.known_installable.get(name)
             ))
             return True
@@ -158,7 +158,7 @@ class PackageManager(object):
         """
         install_type = _get_valid_install_type(install_type)
         if not return_pkgr_name and name in self.pmc.known_installed.get(install_type, {}):
-            self.log.obnoxious("{0} has cached installed-status: {1}".format(
+            self.log.trace("{0} has cached installed-status: {1}".format(
                 name, self.pmc.known_installed.get(install_type, {}).get(name)
             ))
             return self.pmc.known_installed.get(install_type, {}).get(name)

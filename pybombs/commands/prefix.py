@@ -157,7 +157,7 @@ class Prefix(SubCommandBase):
         pybombs prefix info
         """
         #self.log.info('Prefix dir: {0}'.format(self.prefix.prefix_dir))
-        print("\x1b[32m[Default Prefix]: {0} \033[0m".format(self.cfg.get('default_prefix')))
+        print("Default Prefix: {0}".format(self.cfg.get('default_prefix')))
         active_prefix = self.cfg.get_active_prefix()
         print("Available Prefixes :")
         for key, value in iteritems(active_prefix.prefix_aliases):
@@ -355,7 +355,7 @@ class Prefix(SubCommandBase):
         ### Get the recipe
         r = recipe.get_recipe(sdkname, target='sdk')
         try:
-            self.log.obnoxious("Switching CWD to {0}".format(src_dir))
+            self.log.trace("Switching CWD to {0}".format(src_dir))
             if not op.isdir(src_dir):
                 os.mkdir(src_dir)
             os.chdir(src_dir)
@@ -399,7 +399,7 @@ class Prefix(SubCommandBase):
         # Filter out keys we don't care about:
         sdk_recipe_keys_for_config = ('config', 'packages', 'categories', 'env')
         sdk_cfg_data = {k: v for k, v in iteritems(r.get_dict()) if k in sdk_recipe_keys_for_config}
-        self.log.obnoxious("New data: {new}".format(new=sdk_cfg_data))
+        self.log.trace("New data: {new}".format(new=sdk_cfg_data))
         cfg_data = dict_merge(old_cfg_data, sdk_cfg_data)
         self.log.debug("Writing updated prefix config to `{0}'".format(cfg_file))
         PBConfigFile(cfg_file).save(cfg_data)

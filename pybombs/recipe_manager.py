@@ -108,7 +108,7 @@ class RecipeListManager(object):
             abs_filename = os.path.join(template_dir, f)
             if template not in self._template_list.keys():
                 self._template_list[template] = abs_filename
-                self.log.obnoxious("Adding template {0}".format(abs_filename))
+                self.log.trace("Adding template {0}".format(abs_filename))
 
 recipe_manager = RecipeListManager()
 

@@ -106,7 +106,7 @@ class ExternalPortage(ExternPackager):
             return ver
         except Exception as ex:
             self.log.error("Error: '{0}'".format(ex))
-            self.log.obnoxious(str(ex))
+            self.log.trace(str(ex))
             return False
 
     def install(self, pkgname):
@@ -132,7 +132,7 @@ class ExternalPortage(ExternPackager):
             return True
         except Exception as e:
             self.log.error("Running `emerge {0}` failed.".format(cmd))
-            self.log.obnoxious(str(e))
+            self.log.trace(str(e))
             return False
 
 class Portage(ExternCmdPackagerBase):

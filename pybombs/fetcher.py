@@ -114,10 +114,10 @@ class Fetcher(object):
         # Do the fetch
         for src in recipe.source:
             src = recipe.var_replace_all(src)
-            self.log.obnoxious("Trying to fetch {0}".format(src))
+            self.log.trace("Trying to fetch {0}".format(src))
             try:
                 if self.fetch_url(src, self.src_dir, recipe.id, recipe.get_dict()):
-                    self.log.obnoxious("Success.")
+                    self.log.trace("Success.")
                     self.inventory.set_key(recipe.id, 'source', src)
                     if self.inventory.get_state(recipe.id) < self.inventory.STATE_FETCHED:
                         self.inventory.set_state(recipe.id, self.inventory.STATE_FETCHED)
@@ -174,19 +174,19 @@ class Fetcher(object):
         if not src:
             raise PBException("Cannot establish prior source for package {p}".format(p=recipe.id))
         # Do the update
-        self.log.obnoxious("Trying to update from {0}".format(src))
+        self.log.trace("Trying to update from {0}".format(src))
         try:
             if self.update_src(src, self.src_dir, recipe.id, recipe.get_dict()):
-                self.log.obnoxious("Update successful.")
+                self.log.trace("Update successful.")
                 if self.inventory.get_state(recipe.id) >= self.inventory.STATE_CONFIGURED:
-                    self.log.obnoxious("Setting package state to 'configured'.")
+                    self.log.trace("Setting package state to 'configured'.")
                     self.inventory.set_state(recipe.id, self.inventory.STATE_CONFIGURED)
                 else:
-                    self.log.obnoxious("Setting package state to 'fetched'.")
+                    self.log.trace("Setting package state to 'fetched'.")
                     self.inventory.set_state(recipe.id, self.inventory.STATE_FETCHED)
                 self.inventory.save()
                 os.chdir(cwd)
-                self.log.obnoxious("Update completed.")
+                self.log.trace("Update completed.")
                 return True
         except PBException as ex:
             self.log.debug("That didn't work.")

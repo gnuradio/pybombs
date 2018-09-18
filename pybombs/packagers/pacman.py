@@ -52,8 +52,8 @@ class ExternalPacman(ExternPackager):
             return ver
         except subprocess.CalledProcessError as ex:
             # This usually means the package was not found, so don't worry
-            self.log.obnoxious("`{0} -Si' returned non-zero exit status.".format(self.command))
-            self.log.obnoxious(str(ex))
+            self.log.trace("`{0} -Si' returned non-zero exit status.".format(self.command))
+            self.log.trace(str(ex))
             return False
         except Exception as ex:
             self.log.error("Error parsing {0} -Si".format(self.command))
@@ -83,7 +83,7 @@ class ExternalPacman(ExternPackager):
             return False
         except Exception as ex:
             self.log.error("Parsing `{0} -Qi` failed.".format(self.command))
-            self.log.obnoxious(str(ex))
+            self.log.trace(str(ex))
         return False
 
     def install(self, pkgname):
@@ -107,7 +107,7 @@ class ExternalPacman(ExternPackager):
             return True
         except Exception as ex:
             self.log.error("Running `{0} {1}' failed.".format(self.command, cmd))
-            self.log.obnoxious(str(ex))
+            self.log.trace(str(ex))
             return False
 
 class Pacman(ExternCmdPackagerBase):

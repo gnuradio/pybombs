@@ -61,8 +61,8 @@ class ExternalZypper(ExternPackager):
             return ver
         except subproc.CalledProcessError as ex:
             # This usually means the package was not found, so don't worry
-            self.log.obnoxious("`{0} info' returned non-zero exit status.".format(self.command))
-            self.log.obnoxious(str(ex))
+            self.log.trace("`{0} info' returned non-zero exit status.".format(self.command))
+            self.log.trace(str(ex))
             return False
         except Exception as ex:
             self.log.error("Error parsing {0} info".format(self.command))
@@ -94,7 +94,7 @@ class ExternalZypper(ExternPackager):
                 pass
             except Exception as ex:
                 self.log.error("Parsing `{0} list installed` failed.".format(self.fastcommand))
-                self.log.obnoxious(str(ex))
+                self.log.trace(str(ex))
             return False
         try:
             # 'list installed' will return non-zero if package does not exist, thus will throw
@@ -126,7 +126,7 @@ class ExternalZypper(ExternPackager):
             return False
         except Exception as ex:
             self.log.error("Parsing `{0} list installed` failed.".format(self.command))
-            self.log.obnoxious(str(ex))
+            self.log.trace(str(ex))
         return False
 
     def install(self, pkgname):
@@ -150,7 +150,7 @@ class ExternalZypper(ExternPackager):
             return True
         except Exception as ex:
             self.log.error("Running `{0} install' failed.".format(self.command))
-            self.log.obnoxious(str(ex))
+            self.log.trace(str(ex))
             return False
 
 class Zypper(ExternCmdPackagerBase):

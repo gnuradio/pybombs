@@ -59,7 +59,7 @@ class ExternalTestCmd(ExternReadOnlyPackager):
             return False
         except Exception as e:
             self.log.error("Running `{0}` failed.".format(command))
-            self.log.obnoxious(str(e))
+            self.log.trace(str(e))
         return False
 
 

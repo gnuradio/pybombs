@@ -53,12 +53,12 @@ class InstallManager(object):
         """
         def _check_if_pkg_goes_into_tree(pkg):
             " Return True if pkg has a legitimate right to be in the tree. "
-            self.log.obnoxious("Checking if package `{pkg}' goes into tree...".format(pkg=pkg))
+            self.log.trace("Checking if package `{pkg}' goes into tree...".format(pkg=pkg))
             if fail_if_not_exists and not bool(self.pm.installed(pkg)):
-                self.log.obnoxious("Only installed packages need to into tree, and this one is not.")
+                self.log.trace("Only installed packages need to into tree, and this one is not.")
                 return False
             if no_deps and pkg not in packages:
-                self.log.obnoxious("Not installing, because it's not in the list.")
+                self.log.trace("Not installing, because it's not in the list.")
                 return False
             if not self.pm.exists(pkg):
                 self.log.error("Package has no install method: {0}".format(pkg))
@@ -69,24 +69,24 @@ class InstallManager(object):
                 if self.pm.install(pkg, install_type="binary",
                                    static=static, verify=verify,
                                    fail_silently=True):
-                    self.log.obnoxious("Binary install successful, so we don't put it into tree.")
+                    self.log.trace("Binary install successful, so we don't put it into tree.")
                     # ...and if that worked, it doesn't have to go into the tree.
                     return False
-                self.log.obnoxious("Not installed: It goes into tree.")
+                self.log.trace("Not installed: It goes into tree.")
                 # Now it's still not installed, so it has to go into the tree:
                 return True
             else:
                 # If a package is already installed, but not flagged for
                 # updating, it does not go into the tree:
                 if not update_if_exists or pkg not in packages:
-                    self.log.obnoxious("Installed, but no update requested. Does not go into tree.")
+                    self.log.trace("Installed, but no update requested. Does not go into tree.")
                     return False
                 # OK, so it needs updating. But only if it's a source package:
                 if self.pm.installed(pkg, install_type="source"):
-                    self.log.obnoxious("Package was source-installed, and needs update.")
+                    self.log.trace("Package was source-installed, and needs update.")
                     return True
                 # Otherwise, we should give it a shot:
-                self.log.obnoxious("Doesn't go into tree, but we'll try a packager update.")
+                self.log.trace("Doesn't go into tree, but we'll try a packager update.")
                 self.pm.update(pkg, install_type="binary")
                 return False
             assert False # Should never reach this line

@@ -60,14 +60,14 @@ class ExternalApt(ExternPackager):
         Check which version is available.
         """
         if self.cache:
-            self.log.obnoxious("Checking apt for `{0}'".format(pkgname))
+            self.log.trace("Checking apt for `{0}'".format(pkgname))
             (ver, is_installed) = self.check_cache(pkgname)
             if ver:
                 self.log.debug("Package {0} has version {1} in repositories".format(pkgname, ver))
             return ver
         else:
             try:
-                self.log.obnoxious("Checking {0} for `{1}'".format(self.searchcmd, pkgname))
+                self.log.trace("Checking {0} for `{1}'".format(self.searchcmd, pkgname))
                 ver = subproc.match_output(
                     [self.searchcmd, "show", pkgname],
                     r'Version: (?:\d+:)?(?P<ver>[0-9]+\.[0-9]+\.[0-9]+|[0-9]+\.[0-9]+|[0-9]+[a-z]+|[0-9]+).*\n',
@@ -112,7 +112,7 @@ class ExternalApt(ExternPackager):
                 return False
             except Exception as e:
                 self.log.error("Running dpkg -s failed.")
-                self.log.obnoxious(str(e))
+                self.log.trace(str(e))
         return False
 
     def install(self, pkgname):
@@ -126,7 +126,7 @@ class ExternalApt(ExternPackager):
             return True
         except Exception as ex:
             self.log.error("Running {0} install failed.".format(self.getcmd))
-            self.log.obnoxious(str(ex))
+            self.log.trace(str(ex))
             return False
 
     def check_cache(self, pkgname):

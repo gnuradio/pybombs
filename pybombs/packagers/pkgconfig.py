@@ -49,7 +49,7 @@ class ExternalPkgConfig(ExternReadOnlyPackager):
             return False
         except Exception as e:
             self.log.error("Running `pkg-config --modversion` failed.")
-            self.log.obnoxious(str(e))
+            self.log.trace(str(e))
         return False
 
 

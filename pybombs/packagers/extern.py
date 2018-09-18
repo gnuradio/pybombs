@@ -98,7 +98,7 @@ class ExternCmdPackagerBase(PackagerBase):
         return True.
         If not available, return None.
         """
-        self.log.obnoxious("exists({0})".format(recipe.id))
+        self.log.trace("exists({0})".format(recipe.id))
         return self._packager_run_tree(recipe, self._package_exists)
 
     def installed(self, recipe):
@@ -108,7 +108,7 @@ class ExternCmdPackagerBase(PackagerBase):
         May also return True if a version can't be determined, but the
         recipe is installed.
         """
-        self.log.obnoxious("Checking if recipe {0} is installed".format(recipe.id))
+        self.log.trace("Checking if recipe {0} is installed".format(recipe.id))
         return self._packager_run_tree(recipe, self._package_installed)
 
     def install(self, recipe, static=False):
@@ -119,7 +119,7 @@ class ExternCmdPackagerBase(PackagerBase):
         failed in a controlled manner (e.g. the package wasn't available
         by this package manager).
         """
-        self.log.obnoxious("install({0}, static={1})".format(recipe.id, static))
+        self.log.trace("install({0}, static={1})".format(recipe.id, static))
         return self._packager_run_tree(recipe, self._package_install)
 
     def update(self, recipe):
@@ -129,14 +129,14 @@ class ExternCmdPackagerBase(PackagerBase):
         May also return True if a version can't be determined, but the
         recipe is installed.
         """
-        self.log.obnoxious("Checking if recipe {0} is installed".format(recipe.id))
+        self.log.trace("Checking if recipe {0} is installed".format(recipe.id))
         return self._packager_run_tree(recipe, self._package_installed)
 
     def verify(self, recipe):
         """
         We can't really verify, we just need to trust the packager.
         """
-        self.log.obnoxious("Skipping verification of recipe {0}".format(recipe.id))
+        self.log.trace("Skipping verification of recipe {0}".format(recipe.id))
         return True
 
     def uninstall(self, recipe):
@@ -167,7 +167,7 @@ class ExternCmdPackagerBase(PackagerBase):
                 )
             )
             return True
-        self.log.obnoxious("Calling ev for recursive satisfier rule evaluation")
+        self.log.trace("Calling ev for recursive satisfier rule evaluation")
         return satisfy_rule.ev(satisfy_evaluator)
 
     def _package_exists(self, pkg_name, comparator=">=", required_version=None):

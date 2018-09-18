@@ -59,8 +59,8 @@ class ExternalYumDnf(ExternPackager):
             return ver
         except subprocess.CalledProcessError as ex:
             # This usually means the package was not found, so don't worry
-            self.log.obnoxious("`{0} info' returned non-zero exit status.".format(self.command))
-            self.log.obnoxious(str(ex))
+            self.log.trace("`{0} info' returned non-zero exit status.".format(self.command))
+            self.log.trace(str(ex))
             return False
         except Exception as ex:
             self.log.error("Error parsing {0} info".format(self.command))
@@ -100,7 +100,7 @@ class ExternalYumDnf(ExternPackager):
             return False
         except Exception as ex:
             self.log.error("Parsing `{0} list installed` failed.".format(self.command))
-            self.log.obnoxious(str(ex))
+            self.log.trace(str(ex))
         return False
 
     def install(self, pkgname):
@@ -124,7 +124,7 @@ class ExternalYumDnf(ExternPackager):
             return True
         except Exception as ex:
             self.log.error("Running `{0} install' failed.".format(self.command))
-            self.log.obnoxious(str(ex))
+            self.log.trace(str(ex))
             return False
 
 class YumDnf(ExternCmdPackagerBase):

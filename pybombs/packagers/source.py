@@ -160,7 +160,7 @@ class Source(PackagerBase):
             shutil.rmtree(pkg_src_dir)
             self.inventory.remove(recipe.id)
             self.inventory.save()
-        self.log.obnoxious("Uninstall complete.")
+        self.log.trace("Uninstall complete.")
         return True
 
     def rebuild(self, recipe, make_clean=False, nuke_builddir=False):
@@ -381,7 +381,7 @@ class Source(PackagerBase):
         cmd_filter = self.cfg.get_package_flags(recipe.id, recipe.category).get(filter_flag)
         if not cmd_filter:
             return unfiltered_command
-        self.log.obnoxious('Filtering command using: {filt}'.format(filt=cmd_filter))
+        self.log.trace('Filtering command using: {filt}'.format(filt=cmd_filter))
         recipe.vars['command'] = unfiltered_command
         return recipe.var_replace_all(cmd_filter)
 

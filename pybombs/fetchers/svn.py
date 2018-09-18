@@ -69,7 +69,7 @@ class Svn(FetcherBase):
         self.log.debug("Using url {0}".format(url))
         cwd = os.getcwd()
         src_dir = os.path.join(dest, dirname)
-        self.log.obnoxious("Switching cwd to: {0}".format(src_dir))
+        self.log.trace("Switching cwd to: {0}".format(src_dir))
         os.chdir(src_dir)
         svn_cmd = ['svn', 'up', '--force']
         if args.get('svnrev'):
@@ -80,7 +80,7 @@ class Svn(FetcherBase):
             throw_ex=True,
             #o_proc=foo #FIXME
         )
-        self.log.obnoxious("Switching cwd back to: {0}".format(cwd))
+        self.log.trace("Switching cwd back to: {0}".format(cwd))
         os.chdir(cwd)
         return True
 

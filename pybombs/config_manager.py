@@ -334,8 +334,8 @@ class ConfigManager(object):
         ## Set verbosity level:
         verb_offset = args.verbose - args.quiet
         verb_level = pb_logging.default_log_level - 10 * verb_offset
-        if verb_level < pb_logging.OBNOXIOUS:
-            verb_level = pb_logging.OBNOXIOUS
+        if verb_level < pb_logging.TRACE:
+            verb_level = pb_logging.TRACE
         pb_logging.logger.setLevel(verb_level)
         self.yes = args.yes
         ## Set up logger:
@@ -631,7 +631,7 @@ class ConfigManager(object):
             path = os.path.split(cfg_file)[0]
             if not os.path.isdir(path):
                 os.mkdir(path)
-        self.log.obnoxious(
+        self.log.trace(
             "Updating file {0} with new data: {1}".format(cfg_file, new_data)
         )
         try:

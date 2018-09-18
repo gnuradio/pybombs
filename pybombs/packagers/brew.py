@@ -37,7 +37,7 @@ class ExternalHomebrew(ExternPackager):
         Check which version is currently installed.
         """
         try:
-            self.log.obnoxious("Checking homebrew for `{0}'".format(pkgname))
+            self.log.trace("Checking homebrew for `{0}'".format(pkgname))
             out = subproc.check_output(["brew", "info", "--json=v1", pkgname])
             # Returns non-zero exit status if package does not exist in brew taps
             if len(out) >= 0:
@@ -52,7 +52,7 @@ class ExternalHomebrew(ExternPackager):
             return False
         except Exception as e:
             self.log.error("Running brew info failed.")
-            self.log.obnoxious(str(e))
+            self.log.trace(str(e))
         return False
 
     def get_installed_version(self, pkgname):
@@ -63,7 +63,7 @@ class ExternalHomebrew(ExternPackager):
         If older versions of the package exist, tell the user they may want to run "brew cleanup".?
         """
         try:
-            self.log.obnoxious("Checking homebrew for `{0}'".format(pkgname))
+            self.log.trace("Checking homebrew for `{0}'".format(pkgname))
             out = subproc.check_output(["brew", "info", "--json=v1", pkgname])
             # Returns non-zero exit status if package does not exist in brew taps
             if len(out) >= 0:
@@ -74,7 +74,7 @@ class ExternalHomebrew(ExternPackager):
                     version = installed[0]["version"]
                 else:
                     return False
-                self.log.obnoxious("{0} version {1} installed through homebrew".format(pkgname, version))
+                self.log.trace("{0} version {1} installed through homebrew".format(pkgname, version))
                 return version
             else:
                 return False
@@ -98,7 +98,7 @@ class ExternalHomebrew(ExternPackager):
             subproc.monitor_process(["brew", "install", pkgname])
             return True
         except Exception as e:
-            #self.log.obnoxious(e)
+            #self.log.trace(e)
             self.log.error("Running brew install failed.")
         return False
 

@@ -109,7 +109,7 @@ class Git(FetcherBase):
         if args.get('gitrev'):
             cwd = os.getcwd()
             src_dir = os.path.join(dest, dirname)
-            self.log.obnoxious("Switching cwd to: {0}".format(src_dir))
+            self.log.trace("Switching cwd to: {0}".format(src_dir))
             os.chdir(src_dir)
             git_co_cmd = ["git", "checkout", "--force", args.get('gitrev')]
             subproc.monitor_process(
@@ -117,7 +117,7 @@ class Git(FetcherBase):
                 o_proc=o_proc,
                 throw_ex=True,
             )
-            self.log.obnoxious("Switching cwd to: {0}".format(cwd))
+            self.log.trace("Switching cwd to: {0}".format(cwd))
             os.chdir(cwd)
         return True
 
@@ -129,7 +129,7 @@ class Git(FetcherBase):
         self.log.debug("Using url {0}".format(url))
         cwd = os.getcwd()
         src_dir = os.path.join(dest, dirname)
-        self.log.obnoxious("Switching cwd to: {0}".format(src_dir))
+        self.log.trace("Switching cwd to: {0}".format(src_dir))
         os.chdir(src_dir)
         if args.get('gitrev'):
             # If we have a rev or tag specified, fetch, then checkout.
@@ -160,7 +160,7 @@ class Git(FetcherBase):
             except Exception:
                 self.log.error("Could not run command `{0}`".format(" ".join(cmd)))
                 raise PBException("git commands failed.")
-        self.log.obnoxious("Switching cwd back to: {0}".format(cwd))
+        self.log.trace("Switching cwd back to: {0}".format(cwd))
         os.chdir(cwd)
         return True
 

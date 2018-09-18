@@ -66,7 +66,7 @@ class ExternalPort(ExternPackager):
             return False
         except Exception as e:
             self.log.error("Running port installed failed.")
-            self.log.obnoxious(str(e))
+            self.log.trace(str(e))
 
     def install(self, pkgname):
         """
@@ -77,7 +77,7 @@ class ExternalPort(ExternPackager):
             return True
         except Exception as ex:
             self.log.error("Running port install failed.")
-            self.log.obnoxious(str(ex))
+            self.log.trace(str(ex))
             return False
 
     def update(self, pkgname):
@@ -89,7 +89,7 @@ class ExternalPort(ExternPackager):
             return True
         except Exception as ex:
             self.log.error("Running port upgrade failed.")
-            self.log.obnoxious(str(ex))
+            self.log.trace(str(ex))
 
 class Port(ExternCmdPackagerBase):
     """
