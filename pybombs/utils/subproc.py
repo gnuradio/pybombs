@@ -170,7 +170,11 @@ def _process_thread(event, args, kwargs):
         args = elevate_command(args, config_manager.get('elevate_pre_args'))
     log = logger.getChild("_process_thread()")
     cmd_pp = pretty_print_cmd(args)
-    log.debug("Executing command `{cmd}'".format(cmd=cmd_pp))
+    if kwargs.get('elevate'):
+        log.info("Executing command with elevated privileges: `{cmd}'"
+                 .format(cmd=cmd_pp))
+    else:
+        log.debug("Executing command `{cmd}'".format(cmd=cmd_pp))
     try:
         proc = subprocess.Popen(
             args,
