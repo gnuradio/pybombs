@@ -66,8 +66,10 @@ logging.addLevelName(OBNOXIOUS, 'OBNOXIOUS')
 logging.setLoggerClass(PBLogger)
 logger = logging.getLogger('PyBOMBS')
 ch = ColoredConsoleHandler()
-formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
-ch.setFormatter(formatter)
+ch.setFormatter(
+    # logging.Formatter("%(name)s - %(levelname)s - %(message)s")
+    logging.Formatter("[%(levelname)s] %(message)s")
+)
 logger.addHandler(ch)
 # Set default level:
 default_log_level = INFO
