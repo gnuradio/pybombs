@@ -67,7 +67,10 @@ class GitCacheManager(object):
         self.log.debug("Adding remote: {name} -> {url}".format(name=name, url=url))
         if url not in self.remotes.values():
             if name in self.remotes:
-                self.log.error("Trying to add another remote with same name {name}".format(name=name))
+                self.log.warning(
+                    "Trying to add another remote with same name {name}"
+                    .format(name=name)
+                )
                 return
             self.run_git_command(['remote', 'add', name, url])
             self.remotes[name] = url
