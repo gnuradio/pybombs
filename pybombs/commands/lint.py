@@ -122,4 +122,9 @@ class Lint(CommandBase):
             for key in key_list:
                 if not key in recipe_dict:
                     print("[{err}] Recipe doesn't have key: {key}".format(err=err_type, key=key))
+        # Check dependencies is a list
+        dependencies = recipe_dict.get('depends', [])
+        if not isinstance(dependencies, list):
+            print("[VERY BAD] Dependencies is not a list: {}"
+                  .format(dependencies))
 
