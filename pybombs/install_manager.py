@@ -112,7 +112,7 @@ class InstallManager(object):
             lambda pkg: _cached_check_if_pkg_goes_into_tree(pkg, _check_if_pkg_goes_into_tree)
         )
         if len(install_tree) == 0 and not quiet:
-            self.log.info("No packages to install.")
+            extra_info_logger("No packages to install.")
             return True
         if (self.log.getEffectiveLevel() <= 20 or print_tree) and not quiet:
             print("Install tree:")
@@ -120,6 +120,7 @@ class InstallManager(object):
         if len(install_tree) > 0 and install_type == "binary":
             self.log.error("Install method was `binary', but source packages are left over!")
             return False
+        extra_info_logger("Phase 1 complete: All binary dependencies installed.")
         ### Recursively install/update source packages, starting at the leaf nodes
         extra_info_logger("Phase 2: Recursively installing source packages to prefix:")
         for pkg in install_tree.serialize():
@@ -138,5 +139,6 @@ class InstallManager(object):
                     self.log.error("Error installing package {0}. Aborting.".format(pkg))
                     return False
                 self.log.info("Installation successful.")
+        extra_info_logger("Phase 2 complete: All source packages installed.")
         return True
 
