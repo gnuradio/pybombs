@@ -103,8 +103,8 @@ class Rebuild(CommandBase):
                 (self.args.deps and self.is_installed(x))
             )
         )
-        self.log.debug("Install tree:")
-        if self.log.getEffectiveLevel() <= 20 or self.args.print_tree:
+        if self.log.getEffectiveLevel() <= 10 or self.args.print_tree:
+            print("Rebuild tree:")
             rb_tree.pretty_print()
         ### Recursively rebuild, starting at the leaf nodes
         node_cache = []
