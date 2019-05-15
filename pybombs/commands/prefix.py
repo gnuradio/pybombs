@@ -231,7 +231,7 @@ class Prefix(SubCommandBase):
         """
         used by multiple helpers to update the config file with new config data
         """
-        if len(new_config_data):
+        if new_config_data:
             self.cfg.update_cfg_file(new_config_data, self.prefix.cfg_file)
             self.cfg.load(select_prefix=path)
             self.prefix = self.cfg.get_active_prefix()
@@ -250,7 +250,8 @@ class Prefix(SubCommandBase):
             return -1
         try:
             for fname, content in prefix_recipe.files.items():
-                sysutils.write_file_in_subdir(path, fname, prefix_recipe.var_replace_all(content))
+                sysutils.write_file_in_subdir(
+                    path, fname, prefix_recipe.var_replace_all(content))
         except (PBException, OSError, IOError):
             return False
         return True
@@ -375,7 +376,7 @@ class Prefix(SubCommandBase):
             return False
         # Clean up
         files_to_delete = [op.normpath(op.join(src_dir, r.var_replace_all(x))) for x in r.clean]
-        if len(files_to_delete):
+        if files_to_delete:
             self.log.info("Cleaning up files...")
         for ftd in files_to_delete:
             if op.commonprefix((src_dir, ftd)) != src_dir:

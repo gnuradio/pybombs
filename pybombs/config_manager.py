@@ -54,19 +54,20 @@ class PrefixInfo(object):
     inv_file_name = 'inventory.yml'
     setup_env_key = 'setup_env'
     default_config_info = {
-            'prefix_aliases': {},
-            'prefix_config_dir': {},
-            'env': {},
-            'recipes': {},
-            'packages': {'gnuradio': {'forcebuild': True}},
-            'categories': {'common': {'forcebuild': True}},
+        'prefix_aliases': {},
+        'prefix_config_dir': {},
+        'env': {},
+        'recipes': {},
+        'packages': {'gnuradio': {'forcebuild': True}},
+        'categories': {'common': {'forcebuild': True}},
     }
     default_env_unix = { # These envs are non-portable
         'PATH': "{prefix_dir}/bin:$PATH",
         'PYTHONPATH': "{prefix_dir}/python:{prefix_dir}/lib/python2.6/site-packages:{prefix_dir}/lib64/python2.6/site-packages:{prefix_dir}/lib/python2.6/dist-packages:{prefix_dir}/lib64/python2.6/dist-packages:{prefix_dir}/lib/python2.7/site-packages:{prefix_dir}/lib64/python2.7/site-packages:{prefix_dir}/lib/python2.7/dist-packages:{prefix_dir}/lib64/python2.7/dist-packages:{prefix_dir}/python/:{prefix_dir}/lib/python2.6/site-packages:{prefix_dir}/lib64/python2.6/site-packages:{prefix_dir}/lib/python2.6/dist-packages:{prefix_dir}/lib64/python2.6/dist-packages:{prefix_dir}/lib/python2.7/site-packages:{prefix_dir}/lib64/python2.7/site-packages:{prefix_dir}/lib/python2.7/dist-packages:{prefix_dir}/lib64/python2.7/dist-packages:$PYTHONPATH",
         'LD_LIBRARY_PATH': "{prefix_dir}/lib:{prefix_dir}/lib64/:$LD_LIBRARY_PATH",
         'LIBRARY_PATH': "{prefix_dir}/lib:{prefix_dir}/lib64/:$LIBRARY_PATH",
-        'PKG_CONFIG_PATH': "{prefix_dir}/lib/pkgconfig:{prefix_dir}/lib64/pkgconfig:$PKG_CONFIG_PATH",
+        'PKG_CONFIG_PATH':
+            "{prefix_dir}/lib/pkgconfig:{prefix_dir}/lib64/pkgconfig:$PKG_CONFIG_PATH",
         'GRC_BLOCKS_PATH': "{prefix_dir}/share/gnuradio/grc/blocks:$GRC_BLOCKS_PATH",
         'PYBOMBS_PREFIX': "{prefix_dir}",
     }
@@ -96,16 +97,21 @@ class PrefixInfo(object):
         # 2) Find the prefix directory
         self._find_prefix_dir(args)
         if self.prefix_dir is None:
-            self.log.debug("Cannot establish a prefix directory. This may cause issues down the line.")
+            self.log.debug(
+                "Cannot establish a prefix directory. "
+                "This may cause issues down the line.")
             self._set_attrs()
             return
         assert self.prefix_dir is not None
         if self.alias is not None and self.alias in self._cfg_info['prefix_config_dir']:
             self.prefix_cfg_dir = npath(self._cfg_info['prefix_config_dir'][self.alias])
-            self.log.debug("Choosing prefix config dir from alias: {0}".format(self.prefix_cfg_dir))
+            self.log.debug("Choosing prefix config dir from alias: {0}"
+                           .format(self.prefix_cfg_dir))
         elif self.prefix_dir in self._cfg_info['prefix_config_dir']:
             self.prefix_cfg_dir = npath(self._cfg_info['prefix_config_dir'][self.prefix_dir])
-            self.log.debug("Choosing prefix config dir from path lookup in prefix_config_dir: {0}".format(self.prefix_cfg_dir))
+            self.log.debug(
+                "Choosing prefix config dir from path lookup in prefix_config_dir: {0}"
+                .format(self.prefix_cfg_dir))
         else:
             self.prefix_cfg_dir = npath(os.path.join(self.prefix_dir, self.prefix_conf_dir))
             self.log.debug("Choosing default prefix config dir: {0}".format(self.prefix_cfg_dir))
@@ -118,12 +124,15 @@ class PrefixInfo(object):
         self.cfg_file = npath(os.path.join(self.prefix_cfg_dir, ConfigManager.cfg_file_name))
         config_section = {}
         if not os.path.isfile(self.cfg_file):
-            self.log.debug("Prefix configuration file not found: {0}, assuming empty.".format(self.cfg_file))
+            self.log.debug(
+                "Prefix configuration file not found: {0}, assuming empty."
+                .format(self.cfg_file))
         else:
             config_section = PBConfigFile(self.cfg_file).get('config')
             self._cfg_info = self._merge_config_info_from_file(self.cfg_file, self._cfg_info)
         # 4) Find the src dir
-        self.src_dir = npath(config_section.get('srcdir', os.path.join(self.prefix_dir, self.src_dir_name)))
+        self.src_dir = npath(
+            config_section.get('srcdir', os.path.join(self.prefix_dir, self.src_dir_name)))
         self.log.debug("Prefix source dir is: {0}".format(self.src_dir))
         if not os.path.isdir(self.src_dir):
             self.log.debug("Source dir does not exist.")
@@ -135,7 +144,8 @@ class PrefixInfo(object):
         # 6) Prefix-specific recipes. There's two places for these:
         # - A 'recipes/' subdirectory
         # - Anything declared in the config.yml file inside the prefix
-        self.recipe_dir = npath(config_section.get('recipes', os.path.join(self.prefix_cfg_dir, 'recipes')))
+        self.recipe_dir = npath(
+            config_section.get('recipes', os.path.join(self.prefix_cfg_dir, 'recipes')))
         if os.path.isdir(self.recipe_dir):
             self.log.debug("Prefix-local recipe dir is: {0}".format(self.recipe_dir))
         else:
@@ -143,7 +153,9 @@ class PrefixInfo(object):
         # 7) Load environment
         # If there's a setup_env option in the current config file, we use that
         if self.setup_env_key in config_section:
-            self.log.debug('Loading environment from shell script: {0}'.format(config_section[self.setup_env_key]))
+            self.log.debug(
+                'Loading environment from shell script: {0}'
+                .format(config_section[self.setup_env_key]))
             self.env = self._load_environ_from_script(config_section[self.setup_env_key])
         else:
             self.env = self._load_default_env(self.env)
@@ -151,11 +163,11 @@ class PrefixInfo(object):
         self.env[self.env_prefix_var] = self.prefix_dir
         self.env[self.env_srcdir_var] = self.src_dir
         # env: sections are always respected:
-        OLD_ENV = os.environ  # Bit of an ugly hack to allow use of
+        old_env = os.environ  # Bit of an ugly hack to allow use of
         os.environ = self.env # os.path.expandvars() on self.env
         for k, v in iteritems(self._cfg_info['env']):
             self.env[k.upper()] = os.path.expandvars(v.strip())
-        os.environ = OLD_ENV
+        os.environ = old_env
         # 8) Keep relevant config sections as attributes
         self._set_attrs()
 
@@ -205,9 +217,12 @@ class PrefixInfo(object):
         if self.env_prefix_var in os.environ and os.path.isdir(os.environ[self.env_prefix_var]):
             self.prefix_dir = npath(os.environ[self.env_prefix_var])
             self.prefix_src = 'env'
-            self.log.debug('Using environment variable {0} as prefix ({1})'.format(self.env_prefix_var, self.prefix_dir))
+            self.log.debug(
+                'Using environment variable {0} as prefix ({1})'
+                .format(self.env_prefix_var, self.prefix_dir))
             return
-        if os.getcwd() != os.path.expanduser('~') and os.path.isdir(os.path.join('.', self.prefix_conf_dir)):
+        if os.getcwd() != os.path.expanduser('~') and \
+                os.path.isdir(os.path.join('.', self.prefix_conf_dir)):
             self.prefix_dir = os.getcwd()
             self.prefix_src = 'cwd'
             self.log.debug('Using CWD as prefix ({0})'.format(self.prefix_dir))
@@ -318,7 +333,7 @@ class ConfigManager(object):
         ## Get location of module
         self.module_dir = os.path.dirname(pb_logging.__file__)
         self.load(select_prefix)
-        pb_logging.logger.info("PyBOMBS Version " + str(__version__))
+        pb_logging.logger.info("PyBOMBS Version %s", __version__)
         self._config_reference = 'pybombs'
 
     def load(self, select_prefix=None):
@@ -401,7 +416,7 @@ class ConfigManager(object):
             if r_loc:
                 self._recipe_locations.append(npath(r_loc))
         # From environment variable:
-        if len(os.environ.get("PYBOMBS_RECIPE_DIR", "").strip()):
+        if os.environ.get("PYBOMBS_RECIPE_DIR", "").strip():
             self._recipe_locations += [
                 npath(x) \
                 for x in os.environ.get("PYBOMBS_RECIPE_DIR").split(os.pathsep) \
