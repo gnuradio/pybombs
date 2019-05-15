@@ -25,5 +25,9 @@ satisfy:
   cmd: python --version >= 2.7
   pacman: python2 >= 2.7
   port: python27 >= 2.7
+satisfy@python3:
+  deb: (python3 || python3.5) && python3-dev
+  rpm: python3-devel >= 3.4
+  cmd: python3 --version >= 2.7
 vars:
   config_opt: --enable-shared
