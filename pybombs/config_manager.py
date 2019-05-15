@@ -378,7 +378,6 @@ class ConfigManager(object):
         self.module_dir = os.path.dirname(pb_logging.__file__)
         self.load(select_prefix)
         pb_logging.logger.info("PyBOMBS Version %s", __version__)
-        self._config_reference = 'pybombs'
 
     def load(self, select_prefix=None):
         """
@@ -569,7 +568,6 @@ class ConfigManager(object):
         """
         assert ref in ('prefix', 'pybombs')
         self._config_reference = ref
-
 
     def get_active_prefix(self):
         """
