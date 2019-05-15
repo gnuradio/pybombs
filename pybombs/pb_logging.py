@@ -47,7 +47,7 @@ class ColoredConsoleHandler(logging.StreamHandler):
         elif levelno >= 10:  # DEBUG
             color = '\x1b[35m'  # pink
         elif levelno >= 1:  # TRACE
-            color = '\x1b[90m'  # grey
+            color = ''  # grey
         else:  # NOTSET and anything else
             color = '\x1b[0m'  # normal
         myrecord.msg = BOLD + color + str(myrecord.msg) + '\x1b[0m'  # normal

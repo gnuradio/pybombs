@@ -25,6 +25,7 @@ Used as a central cache for all kinds of settings.
 """
 
 import os
+import re
 import argparse
 from collections import OrderedDict
 from six import iteritems
@@ -60,10 +61,11 @@ class PrefixInfo(object):
         'recipes': {},
         'packages': {'gnuradio': {'forcebuild': True}},
         'categories': {'common': {'forcebuild': True}},
+        'python_ver': sysutils.get_interpreter_version(),
     }
     default_env_unix = { # These envs are non-portable
         'PATH': "{prefix_dir}/bin:$PATH",
-        'PYTHONPATH': "{prefix_dir}/python:{prefix_dir}/lib/python2.6/site-packages:{prefix_dir}/lib64/python2.6/site-packages:{prefix_dir}/lib/python2.6/dist-packages:{prefix_dir}/lib64/python2.6/dist-packages:{prefix_dir}/lib/python2.7/site-packages:{prefix_dir}/lib64/python2.7/site-packages:{prefix_dir}/lib/python2.7/dist-packages:{prefix_dir}/lib64/python2.7/dist-packages:{prefix_dir}/python/:{prefix_dir}/lib/python2.6/site-packages:{prefix_dir}/lib64/python2.6/site-packages:{prefix_dir}/lib/python2.6/dist-packages:{prefix_dir}/lib64/python2.6/dist-packages:{prefix_dir}/lib/python2.7/site-packages:{prefix_dir}/lib64/python2.7/site-packages:{prefix_dir}/lib/python2.7/dist-packages:{prefix_dir}/lib64/python2.7/dist-packages:$PYTHONPATH",
+        'PYTHONPATH': "{python_path}:$PYTHONPATH",
         'LD_LIBRARY_PATH': "{prefix_dir}/lib:{prefix_dir}/lib64/:$LD_LIBRARY_PATH",
         'LIBRARY_PATH': "{prefix_dir}/lib:{prefix_dir}/lib64/:$LIBRARY_PATH",
         'PKG_CONFIG_PATH':
@@ -150,7 +152,10 @@ class PrefixInfo(object):
             self.log.debug("Prefix-local recipe dir is: {0}".format(self.recipe_dir))
         else:
             self.recipe_dir = None
-        # 7) Load environment
+        # 7) Detect Python version and library paths
+        self._detect_python_version()
+        self._detect_python_path()
+        # 8) Load environment
         # If there's a setup_env option in the current config file, we use that
         if self.setup_env_key in config_section:
             self.log.debug(
@@ -168,7 +173,7 @@ class PrefixInfo(object):
         for k, v in iteritems(self._cfg_info['env']):
             self.env[k.upper()] = os.path.expandvars(v.strip())
         os.environ = old_env
-        # 8) Keep relevant config sections as attributes
+        # 9) Keep relevant config sections as attributes
         self._set_attrs()
 
     def _set_attrs(self):
@@ -240,6 +245,43 @@ class PrefixInfo(object):
         self.prefix_src = None
         self.prefix_dir = None
 
+    def _detect_python_version(self):
+        """
+        Detect the Python version used in the prefix. Note this is *not*
+        necessarily the version of Python used to execute this script.
+        """
+        if 'python_ver' in self._cfg_info:
+            self.log.debug("Python version set by config file.")
+        else:
+            # Put all the smart stuff here, were we detect the actual Python version
+            # used in the prefix TODO
+            # If there is no indication which Python version is used in the
+            # prefix, we'll assume it's be using the same Python version as
+            # is currently running
+            self.log.debug("Python version derived from current interpreter.")
+            self._cfg_info['python_ver'] = sysutils.get_interpreter_version()
+        self.python_ver = self._cfg_info['python_ver']
+
+    def _detect_python_path(self):
+        """
+        From the Python version, derive the Python paths within the prefix.
+        """
+        py_ver_major_minor = \
+            re.match(r'\d+\.\d+', self._cfg_info.get('python_ver')).group(0)
+        # TODO actually make this something useful
+        conservative_guess = [
+            '{prefix}/lib/python{python_ver}/site-packages',
+            '{prefix}/lib/python{python_ver}/dist-packages',
+            '{prefix}/lib64/python{python_ver}/site-packages',
+            '{prefix}/lib64/python{python_ver}/dist-packages',
+        ]
+        self.python_path = ':'.join([
+            x.format(prefix=self.prefix_dir,
+                     python_ver=py_ver_major_minor)
+            for x in conservative_guess
+        ])
+        self.log.warning(self.python_path)
+
     def _load_environ_from_script(self, setup_env_file):
         """
         Run setup_env_file, return the new env
@@ -278,7 +320,10 @@ class PrefixInfo(object):
         TODO: Make this portable
         """
         for k, v in iteritems(self.default_env_unix):
-            env[k] = os.path.expandvars(v.strip().format(prefix_dir=self.prefix_dir))
+            env[k] = os.path.expandvars(v.strip().format(
+                prefix_dir=self.prefix_dir,
+                python_path=self.python_path,
+            ))
         return env
 
     def get_prefix_cfg_dir_writable(self):
@@ -319,7 +364,6 @@ class ConfigManager(object):
         'keep_builddir': ('', 'When rebuilding, default to keeping the build directory'),
         'elevate_pre_args': (['sudo', '-H'], 'For commands that need elevated privileges, prepend this'),
         'git-cache': (None, 'Path to git reference repository (git cache)'),
-        'python_ver': (None, 'Python version for this prefix'),
     }
     LAYER_DEFAULT = 0
     LAYER_GLOBALS = 1
@@ -444,9 +488,8 @@ class ConfigManager(object):
         # the Python version that is used for executing this script! The
         # prefix could be, for example, a virtualenv with its custom Python
         # version.)
-        self._detect_python_version()
-        self.log.info("Prefix Python version is: {}"
-                      .format(self.get('python_ver')))
+        self.log.info("Prefix Python version is: %s",
+                      self._prefix_info.python_ver)
 
     def _append_cfg_from_file(self, cfg_filename, index=None):
         """
@@ -469,23 +512,6 @@ class ConfigManager(object):
         else:
             self.cfg_cascade[index] = config_items
         return True
-
-    def _detect_python_version(self):
-        """
-        Detect the Python version used in the prefix. Note this is *not*
-        necessarily the version of Python used to execute this script.
-        """
-        if self.get('python_ver'):
-            self.log.debug("Python version set by config file.")
-            return
-        # Put all the smart stuff here, were we detect the actual Python version
-        # used in the prefix TODO
-        else:
-            # If there is no indication which Python version is used in the
-            # prefix, we'll assume it's be using the same Python version as
-            # is currently running
-            self.log.debug("Python version derived from current interpreter.")
-            self.set('python_ver', sysutils.get_interpreter_version())
 
     def get_pybombs_dir(self, prefix_dir=None):
         """
@@ -618,7 +644,7 @@ class ConfigManager(object):
         """
         return {
             'pybombs': sysutils.get_interpreter_version(),
-            'prefix': self.get('python_ver'),
+            'prefix': self.get_active_prefix().python_ver,
         }[self._config_reference]
 
     def get_satisfier_tags(self):

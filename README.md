@@ -260,6 +260,23 @@ config:
 
 In this case, the environment from the calling shell session is *not* inherited.
 
+### Python version
+
+PyBOMBS itself is developed to work with both Python 2 and 3. However, the
+Python version is not a one-dimensional problem: The prefix could be running a
+different version of Python than the system. A common use case for this is when
+the system's default version is Python 3, but a prefix was created to test
+software with Python 2 (or vice versa). In this case, the PyBOMBS executable
+will be executed by a different Python interpreter than will be used to run
+installed scripts.
+
+To define the Python version of the prefix, there are multiple options:
+- If the prefix is also a Python virtualenv, the Python version is autodetected.
+- Use the `python_ver` prefix configuration option.
+
+The Python version of the prefix will default to the interpreter version running
+the PyBOMBS script.
+
 ## Installing packages
 
 When you run a command such as

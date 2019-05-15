@@ -341,6 +341,8 @@ class Recipe(object):
                 return cfg.get_active_prefix().prefix_dir
             if var_name == 'src_dir':
                 return cfg.get_active_prefix().src_dir
+            if var_name == 'python_path':
+                return cfg.get_active_prefix().python_path
             if var_name in var_dict:
                 return var_dict.get(var_name)
             try:
