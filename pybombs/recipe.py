@@ -27,9 +27,9 @@ import os
 import shlex
 from six import iteritems
 try:
-     from collections.abc import Sequence
+    from collections.abc import Sequence
 except ImportError:
-     from collections import Sequence
+    from collections import Sequence
 
 
 from pybombs import pb_logging
@@ -80,7 +80,7 @@ class PBPackageRequirementPair(object):
     def __str__(self, lvl=0):
         a = " "*lvl + "PBPackageRequirementPair: ({0})\n".format(self.combiner)
         a = a + " "*lvl + self.first.__str__(1) + "\n"
-        if(self.second):
+        if self.second:
             a = a + " "*lvl + self.second.__str__(1)
         else:
             a = a + " "*lvl + "None"
@@ -111,11 +111,9 @@ class PBPackageRequirementScanner(object):
     }
 
     def __init__(self, req_string):
-        self.log = pb_logging.logger.getChild("ReqScanner")
         self.preq = None
         self.stack = []
         if not req_string:
-            self.log.trace("Empty requirements string.")
             return
         lexer = shlex.shlex(req_string)
         lexer.wordchars += '-<>=.&|/+'
@@ -125,7 +123,6 @@ class PBPackageRequirementScanner(object):
                 self.end_distro_pkg_expr()
                 break
             self.get_token_functor(token)(self, token)
-        self.log.trace("Done parsing requirements string `{0}`".format(req_string))
 
     def get_token_functor(self, token):
         " Return a functor for a given token or throw "
@@ -141,22 +138,18 @@ class PBPackageRequirementScanner(object):
     def pl_pkg(self, pkg_name):
         " Called in a package requirements list, when a package name is found "
         if self.preq is None:
-            self.log.trace("Adding package with name {0}".format(pkg_name))
             self.preq = PBPackageRequirement(pkg_name)
         elif isinstance(self.preq, PBPackageRequirement):
             if self.preq.compare is None:
                 self.preq.name = " ".join((self.preq.name, pkg_name))
-                self.log.trace("Extending package name {0}".format(self.preq.name))
             else:
                 raise PBException("Parsing Error. Did not expect package name here.")
         elif isinstance(self.preq, PBPackageRequirementPair):
             if self.preq.second is None:
-                self.log.trace("Adding package with name {0}".format(pkg_name))
                 self.preq.second = PBPackageRequirement(pkg_name)
             else:
                 if self.preq.second.compare is None:
                     self.preq.second.name = " ".join((self.preq.second.name, pkg_name))
-                    self.log.trace("Extending package name {0}".format(self.preq.second.name))
                 else:
                     raise PBException("Parsing Error. Did not expect package name here ({0}).".format(self.preq.second))
         else:
@@ -178,7 +171,6 @@ class PBPackageRequirementScanner(object):
 
     def pl_cmp(self, cmpr):
         " Called in a package requirements list, when version comparator is found "
-        self.log.trace("Adding version comparator {0}".format(cmpr))
         if isinstance(self.preq, PBPackageRequirement):
             self.preq.compare = cmpr
         else:
@@ -186,7 +178,6 @@ class PBPackageRequirementScanner(object):
 
     def pl_ver(self, ver):
         " Called in a package requirements list, when version number is found "
-        self.log.trace("Adding version number {0}".format(ver))
         if isinstance(self.preq, PBPackageRequirement):
             self.preq.version = ver
         else:
@@ -194,7 +185,6 @@ class PBPackageRequirementScanner(object):
 
     def pl_cmb(self, cmb):
         " Called in a package requirements list, when a logical combiner (||, &&) is found "
-        self.log.trace("Found package combiner {0}".format(cmb))
         if self.preq is None:
             raise PBException("Parsing Error. Did not expect combiner here.")
         self.preq = PBPackageRequirementPair(self.preq)
@@ -202,13 +192,39 @@ class PBPackageRequirementScanner(object):
 
     def end_distro_pkg_expr(self):
         " Called when a list of package reqs is finished "
-        self.log.trace("End of requirements list")
         self.stack = []
         return "foo"
 
     def get_preq(self):
         " Return result, or None for no requirements. "
         return self.preq
+
+
+def load_recipe_from_file(filename):
+    """
+    Turn a .lwr file into a valid recipe datastructure.
+    """
+    data = PBConfigFile(filename).get()
+    # Make sure dependencies is always a valid list:
+    if 'depends' in data and data['depends'] is not None:
+        if not isinstance(data['depends'], Sequence):
+            data['depends'] = [data['depends'], ]
+        else:
+            data['depends'] = list(data['depends'])  # not every Sequence is a list
+    else:
+        data['depends'] = []
+    return data
+
+
+def normalize_package_data(package_data_dict):
+    """
+    Make sure the package data follows certain rules.
+    """
+    if 'source' in package_data_dict and \
+            not isinstance(package_data_dict['source'], list):
+        package_data_dict['source'] = [package_data_dict['source'],]
+    return package_data_dict
+
 
 class Recipe(object):
     """
@@ -221,27 +237,27 @@ class Recipe(object):
         self._static = False
         # Load original recipe:
         self.log.trace("Loading recipe file: {0}".format(filename))
-        self._data = self._load_recipe_from_file(filename)
+        self._data = load_recipe_from_file(filename)
         # Recursively do the inheritance:
         while self._data.get('inherit', 'empty'):
             inherit_from = self._data.get('inherit', 'empty')
             try:
                 filename = recipe_manager.recipe_manager.get_template_filename(inherit_from)
                 self.log.trace("Loading template file: {0}".format(filename))
-            except PBException as e:
+            except PBException:
                 self.log.warn("Recipe attempting to inherit from unknown template {0}".format(
                     inherit_from
                 ))
                 break
             self.log.trace("Inheriting from file {0}".format(filename))
-            parent_data = self._load_recipe_from_file(filename)
+            parent_data = load_recipe_from_file(filename)
             self._data['depends'] = self._data['depends'] + parent_data['depends']
             self._data = dict_merge(parent_data, self._data)
             self._data['inherit'] = parent_data.get('inherit')
         if self._data.get('target') == 'package':
             self._data = self.get_local_package_data()
         else:
-            self._data = self._normalize_package_data(self._data)
+            self._data = normalize_package_data(self._data)
         # Map all recipe info onto self:
         for k, v in iteritems(self._data):
             if not hasattr(self, k):
@@ -254,35 +270,12 @@ class Recipe(object):
         out += yaml.dump(self._data, default_flow_style=False)
         return out
 
-    def _load_recipe_from_file(self, filename):
-        """
-        Turn a .lwr file into a valid recipe datastructure.
-        """
-        data = PBConfigFile(filename).get()
-        # Make sure dependencies is always a valid list:
-        if 'depends' in data and data['depends'] is not None:
-            if not isinstance(data['depends'], Sequence):
-                data['depends'] = [data['depends'], ]
-            else:
-                data['depends'] = list(data['depends'])  # not every Sequence is a list
-        else:
-            data['depends'] = []
-        return data
-
-    def _normalize_package_data(self, package_data_dict):
-        """
-        Make sure the package data follows certain rules.
-        """
-        if 'source' in package_data_dict and not isinstance(package_data_dict['source'], list):
-            package_data_dict['source'] = [package_data_dict['source'],]
-        return package_data_dict
-
     def get_dict(self):
         """
         Return recipe data as dictionary.
         r.get_dict()['foo'] is the same as r.foo.
         """
-        return self._normalize_package_data(self._data)
+        return normalize_package_data(self._data)
 
     def get_package_reqs(self, pkg_type):
         """
@@ -300,6 +293,7 @@ class Recipe(object):
                 req_string = getattr(self, satisfy_key, {}).get(pkg_type)
         if req_string is True:
             return req_string
+        self.log.trace("Parsing requirements string: {}".format(req_string))
         return PBPackageRequirementScanner(req_string).get_preq()
 
     def set_static(self, static):
@@ -351,7 +345,7 @@ class Recipe(object):
                 return var_dict.get(var_name)
             try:
                 return str(cfg.get(var_name))
-            except PBException as ex:
+            except PBException:
                 raise PBException("Could not expand variable {0}.".format(var_name_dollar))
         ###
         # Starts with a $, unless preceded by \
@@ -374,7 +368,7 @@ class Recipe(object):
         This allows users to override anything in a recipe with whatever's stored
         in the `package:` and `category:` sections of their local config files.
         """
-        return self._normalize_package_data(dict_merge(
+        return normalize_package_data(dict_merge(
             self.get_dict(),
             config_manager.config_manager.get_package_flags(
                 self.id, self.get_dict().get('category')
@@ -382,15 +376,15 @@ class Recipe(object):
         ))
 
 
-recipe_cache = {}
+RECIPE_CACHE = {}
 def get_recipe(pkgname, target='package', fail_easy=False):
     """
     Return a recipe object by its package name.
     """
     cache_key = pkgname
-    if cache_key in recipe_cache:
+    if cache_key in RECIPE_CACHE:
         pb_logging.logger.getChild("get_recipe").trace("Woohoo, this one's already cached ({0})".format(pkgname))
-        return recipe_cache[cache_key]
+        return RECIPE_CACHE[cache_key]
     try:
         r = Recipe(recipe_manager.recipe_manager.get_recipe_filename(pkgname))
     except PBException as ex:
@@ -401,13 +395,14 @@ def get_recipe(pkgname, target='package', fail_easy=False):
                 pkgname, str(ex)
             ))
             raise ex
-    recipe_cache[cache_key] = r
+    RECIPE_CACHE[cache_key] = r
     if target is not None and r.target != target:
         if fail_easy:
             return None
-        pb_logging.logger.getChild("get_recipe").error("Recipe for `{pkg}' found, but does not match request target type `{req}' (is `{actual}').".format(
-            pkg=pkgname, req=target, actual=r.target
-        ))
+        pb_logging.logger.getChild("get_recipe").error(
+            "Recipe for `{pkg}' found, but does not match request target type "
+            "`{req}' (is `{actual}').".format(
+                pkg=pkgname, req=target, actual=r.target))
         raise PBException("Recipe has wrong target type.")
     return r
 
