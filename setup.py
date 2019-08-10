@@ -57,7 +57,7 @@ a cross-compile environment and cross-compile GNU Radio:
     $ pybombs prefix init my_gnuradio --sdk e300
     $ pybombs install gnuradio
 
-For more informations see the `documentation`_.
+For more information see the `documentation`_.
 
 .. _GNU Radio project: http://gnuradio.org/
 .. _documentation: https://www.gnuradio.org/blog/pybombs-the-what-the-how-and-the-why/

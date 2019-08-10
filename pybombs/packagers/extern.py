@@ -221,7 +221,7 @@ class ExternCmdPackagerBase(PackagerBase):
 
     def _package_installed(self, pkg_name, comparator=">=", required_version=None):
         """
-        Queries the current package mananger to see if a package is installed.
+        Queries the current package manager to see if a package is installed.
         Return type same as 'installed()'.
         """
         installed_version = self.packager.get_installed_version(pkg_name)

@@ -53,7 +53,7 @@ class ExternalPort(ExternPackager):
 
     def get_installed_version(self, pkgname):
         """
-        Retrun installed version. Return False if package is not installed
+        Return installed version. Return False if package is not installed
         """
         try:
             out = subproc.check_output(["port", "installed", pkgname]).strip()

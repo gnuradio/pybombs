@@ -32,7 +32,7 @@ class ExternalPythonModule(ExternReadOnlyPackager):
         """
         Use importlib to determine and return the currently installed version.
         If pkgname is not installed, return None.
-        If we can import, but not determine a version, retur True.
+        If we can import, but not determine a version, return True.
         """
         pkgname = pkgname.split('.', 1)
         if len(pkgname) == 2:
