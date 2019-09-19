@@ -134,9 +134,9 @@ class ExternalPip(ExternPackager):
             subproc.monitor_process(command, elevate=True)
             self.load_install_cache()
             return True
-        except Exception as e:
+        except Exception as ex:
             self.log.error("Running pip install failed.")
-            self.log.debug(str(e))
+            self.log.debug(str(ex))
         return None
 
 class Pip(ExternCmdPackagerBase):
@@ -156,4 +156,3 @@ class Pip(ExternCmdPackagerBase):
         Return True if so.
         """
         return detect_pip_exe() is not None
-
