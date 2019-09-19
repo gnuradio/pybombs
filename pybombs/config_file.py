@@ -48,9 +48,7 @@ class AbstractYaml(object):
             self._load = self.yaml.load
             self._dump = self.yaml.dump
         else:
-            self.yaml = yaml
-            self._load = self.yaml.round_trip_load
-            self._dump = self.yaml.round_trip_dump
+            raise AssertionError("Invalid ruamel.yaml version")
 
     def load(self, fd):
         """Load contents of a file descriptor and return a dictionary."""
