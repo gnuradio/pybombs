@@ -143,6 +143,7 @@ def init_arg_parser(show_help_for=None, hide_hidden=True):
         dest='command',
         metavar='<command>',
     )
+    subparsers.required = True
     if hide_hidden:
         parser.error = dummy_error
     # Set up options for each command:
