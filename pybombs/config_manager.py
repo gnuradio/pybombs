@@ -280,7 +280,6 @@ class PrefixInfo(object):
                      python_ver=py_ver_major_minor)
             for x in conservative_guess
         ])
-        self.log.warning(self.python_path)
 
     def _load_environ_from_script(self, setup_env_file):
         """
