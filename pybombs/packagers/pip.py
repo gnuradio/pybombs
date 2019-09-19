@@ -31,9 +31,9 @@ from pybombs.utils import vcompare
 PIP_INSTALLED_CACHE = None
 
 def detect_pip_exe():
-    """TODO: Docstring for detect_pip_exe.
-    :returns: TODO
-
+    """
+    Returns the path to the pip version used. Factors in the available Python
+    version.
     """
     from pybombs.config_manager import config_manager
     if vcompare('>=', config_manager.get_python_version(), '3'):
@@ -53,8 +53,10 @@ class ExternalPip(ExternPackager):
     def __init__(self, logger):
         ExternPackager.__init__(self, logger)
         self.cmd = detect_pip_exe()
-        assert self.cmd
-        self.log.debug("Using pip executable: %s", self.cmd)
+        if self.cmd:
+            self.log.debug("Using pip executable: %s", self.cmd)
+        else:
+            self.log.debug(" pip executable not found.")
 
     def get_available_version(self, pkgname):
         """
