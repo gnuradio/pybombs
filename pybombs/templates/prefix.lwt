@@ -32,6 +32,8 @@ files:
         export LIBRARY_PATH="$prefix/lib:$prefix/lib64/:$LIBRARY_PATH"
         export PKG_CONFIG_PATH="$prefix/lib/pkgconfig:$prefix/lib64/pkgconfig:$PKG_CONFIG_PATH"
         export PYBOMBS_PREFIX="$prefix"
+        export GRC_PREFS_PATH="$prefix/.gnuradio"
+        export GRC_HIER_PATH="$prefix/share/gnuradio/grc/hier_blocks"
         # If we're in a Python virtualenv, activate that
         if [ -r $prefix/bin/activate ]; then
             source $prefix/bin/activate
