@@ -1,9 +1,5 @@
 # PyBOMBS
 
-Website: https://www.gnuradio.org/blog/pybombs-the-what-the-how-and-the-why
-
-Minimum Python version: 2.7
-
 [![Build Status](https://travis-ci.org/gnuradio/pybombs.svg?branch=master)](https://travis-ci.org/gnuradio/pybombs)
 
 ## License
@@ -33,21 +29,29 @@ Boston, MA 02110-1301, USA.
 
 ## Installation of PyBOMBS
 
+Minimum Python version: 2.7
+
+If you don't have 'git', run the following command:
+    
+    sudo apt install git
+
 ### Using pip
 
-You don't have to clone the PyBOMBS repository if you don't plan to contribute to PyBOMBS itself.
+You don't have to clone the PyBOMBS repository if you don't plan to contribute to PyBOMBS yourself.
+
+<b>Note:</b> If you are building UHD-3.14 or previous, you <b>must</b> use Python2.7.
 
 #### Using Python2.7
 
 For Python2.7, run the following command:
     
-    $ sudo pip install --upgrade git+https://github.com/gnuradio/pybombs.git
+    sudo pip install --upgrade git+https://github.com/gnuradio/pybombs.git
     
 #### Migrating from Python2.7 to Python3
 
 If you have previously installed PyBOMBS with Python2, run the following command:
     
-    $ sudo pip remove pybombs
+    sudo pip uninstall pybombs
     
 and then do the command(s) below for Python3.
 
@@ -55,26 +59,28 @@ and then do the command(s) below for Python3.
 
 If you don't already have pip3, run the following command:
     
-    $ sudo apt install python3-pip
+    sudo apt install python3-pip
     
 and then run:
 
-    $ sudo pip3 install --upgrade git+https://github.com/gnuradio/pybombs.git
-
-<hr>
-<b>End of current revisions.</b>
-<hr>
+    sudo pip3 install --upgrade git+https://github.com/gnuradio/pybombs.git
 
 ### From source using Python's setuptools
 
-PyBOMBS can be installed using Python's setuptools. From the top
-level of the source code repository, run
+To clone the PyBOMBS source code, enter:
+<pre>
+cd ~/
+git clone https://github.com/gnuradio/pybombs.git
+cd ~/pybombs
+</pre>
 
-    $ python setup.py build
+then, to build in user's directory, run:
 
-or
+    python setup.py build
 
-    $ sudo python setup.py install
+or, to install in the system directory, run:
+
+    sudo python setup.py install
 
 This will install PyBOMBS and all required dependencies. See
 
@@ -83,11 +89,9 @@ This will install PyBOMBS and all required dependencies. See
 
 for additional settings.
 
-pip also provides a `-e` switch for installing PyBOMBS in 'editable' mode.
-
-### Install it all manually
-
-If you want to install PyBOMBS yourself, you need to make sure the `pybombs` module is in the PYTHONPATH. To run PyBOMBS in this case, execute `main.py`. You can symlink or alias that to `pybombs` (e.g. `ln -s /path/to/pybombs/main.py ~/bin/pybombs`). If you don't know what any of this means, please use one of the methods explained further up.
+<hr>
+<b>End of current revisions. (13 Nov 2019)</b>
+<hr>
 
 ## Quickstart
 
