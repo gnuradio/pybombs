@@ -4,3 +4,5 @@
 PyBOMBS.egg-info/
 dist/
 build/
+._README.md
+README.bak

@@ -27,21 +27,43 @@ along with PyBOMBS; see the file COPYING.  If not, write to
 the Free Software Foundation, Inc., 51 Franklin Street,
 Boston, MA 02110-1301, USA.
 
-## Installation
+<hr>
+<b>This documentation is currently under revision.</b>
+<hr>
 
-### Through pip
+## Installation of PyBOMBS
 
-You don't have to clone this repository if you don't want to contribute to PyBOMBS itself.
-In that case, simply run
+### Using pip
 
-    $ [sudo] pip install PyBOMBS
+You don't have to clone the PyBOMBS repository if you don't plan to contribute to PyBOMBS itself.
 
-and it will download and install PyBOMBS for you. Note that this usually doesn't install the latest HEAD, but only the latest version that was submitted to PyPI, so not every bugfix is automatically always immediately propagated that way.
+#### Using Python2.7
 
-If you do want to install the latest version from git, but still use pip, you
-run the following command:
+For Python2.7, run the following command:
+    
+    $ sudo pip install --upgrade git+https://github.com/gnuradio/pybombs.git
+    
+#### Migrating from Python2.7 to Python3
 
-    $ [sudo] pip install [--upgrade] git+https://github.com/gnuradio/pybombs.git
+If you have previously installed PyBOMBS with Python2, run the following command:
+    
+    $ sudo pip remove pybombs
+    
+and then do the command(s) below for Python3.
+
+#### Using Python3
+
+If you don't already have pip3, run the following command:
+    
+    $ sudo apt install python3-pip
+    
+and then run:
+
+    $ sudo pip3 install --upgrade git+https://github.com/gnuradio/pybombs.git
+
+<hr>
+<b>End of current revisions.</b>
+<hr>
 
 ### From source using Python's setuptools
 
