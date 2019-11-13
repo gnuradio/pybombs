@@ -1,33 +1,10 @@
 # PyBOMBS
 
-[![Build Status](https://travis-ci.org/gnuradio/pybombs.svg?branch=master)](https://travis-ci.org/gnuradio/pybombs)
-
-## License
-
-Copyright 2015 Free Software Foundation, Inc.
-
-This file is part of PyBOMBS
-
-PyBOMBS is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3, or (at your option)
-any later version.
-
-PyBOMBS is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with PyBOMBS; see the file COPYING.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin Street,
-Boston, MA 02110-1301, USA.
-
 <hr>
 <b>This documentation is currently under revision.</b>
 <hr>
 
-## Installation of PyBOMBS
+## Installing PyBOMBS
 
 Minimum Python version: 2.7
 
@@ -84,52 +61,64 @@ or, to install in the system directory, run:
 
 This will install PyBOMBS and all required dependencies. See
 
-    $ python setup.py build --help
-    $ python setup.py install --help
+    python setup.py build --help
+    python setup.py install --help
 
 for additional settings.
 
-<hr>
-<b>End of current revisions. (13 Nov 2019)</b>
-<hr>
+## Executing PyBOMBS
 
-## Quickstart
+### Recipes
 
-For the impatient:
+There are five recipes for building with PyBOMBS, but the main two of interest are:
 
-1. Install PyBOMBS as per the previous section
+* gnuradio-stable
+    builds maint-3.7
+
+* gnuradio-default
+    builds maint-3.8
+
+### Folder/directory (prefix) definition
+
+One of the main advantages of using PyBOMBS is the ability to specify a folder within the user's account to contain all the files associated with the build. That allows the user to delete that one folder/directory and thereby remove everything associated with the build. No system files are affected.
+
+In the following instructions, the notation `<base_folder>` denotes where to put the top level folder/directory. For example <code>~/gr38</code>. See more information in the Prefixes section below.
+
+### To run PyBOMBS:
+
+1. Install PyBOMBS per the previous section.
 2. Apply a configuration:
 
-        $ pybombs auto-config
+        pybombs auto-config
 
 3. Add a list of recipes, e.g., the default recipes:
 
-        $ pybombs recipes add-defaults
+        pybombs recipes add-defaults
 
-4. Install GNU Radio, gr-osmosdr and some other goodies into your home directory `~/prefix`:
+4. Install GNU Radio into your selected directory:
 
-        $ pybombs prefix init ~/prefix -a myprefix -R gnuradio-default
-
-   All commands after this will use `myprefix` as the default prefix. You can change the
-   default prefix later by running `pybombs config default_prefix NEWPREFIX`
+        pybombs prefix init ~/<base_folder> -R gnuradio-default
 
 5. Run GNU Radio Companion from your new prefix:
 
-        $ source ~/prefix/setup_env.sh
-        $ gnuradio-companion
+        source ~/<base_folder>/setup_env.sh
+        gnuradio-companion
 
    or execute it without changing the current environment:
 
-        $ pybombs run gnuradio-companion
+        pybombs run gnuradio-companion
 
 ## Platform-specific instructions
 
-Some platforms have their own idiosyncrasies. Platforms that require special
-attention are listed here:
+Some platforms have their own idiosyncrasies. Platforms that require special attention are listed here:
 
 - [CentOS](centos.md)
 - [Debian](debian.md)
 - [OpenSUSE](opensuse.md)
+
+<hr>
+<b>End of current revisions. (13 Nov 2019 15:00 CST)</b>
+<hr>
 
 ### Testing specific platforms
 
@@ -138,7 +127,7 @@ statement "PyBOMBS is fully functional on platform XYZ", a specific container
 for said platform is run using the test framework. For example, to test
 Fedora 26, the following command can be run:
 
-    $ ./run-tests.sh --skip-pylint --container=fedora26
+    ./run-tests.sh --skip-pylint --container=fedora26
 
 The Dockerfiles are stored in `tests/docker/*`. It is easy to add containers
 to include more distributions, and submitting new Dockerfiles is heavily
@@ -155,12 +144,8 @@ account.
 
 A prefix is a directory into which packages are installed.
 
-The prefix may be `~/prefix` as in the example above, and typically, the
-prefix resides inside your home directory so you can modify or delete prefixes
-easily without admin access. This is the recommended way of running PyBOMBS.
-It can also be `/usr/local/` for system-wide installation of packages.
-Any directory may be a prefix, but it is highly recommended
-to choose a dedicated directory for this purpose.
+The prefix may be `~/prefix`. Typically, the prefix resides inside your home directory so you can modify or delete prefixes
+easily without admin access. This is the recommended way of running PyBOMBS. Any directory may be a prefix, but it is highly recommended to choose a dedicated directory for this purpose.
 
 Many developers have multiple prefixes. Instead if installing to `~/prefix`, a
 common way is to have multiple prefixes, e.g., `~/prefix/default_prefix`,
@@ -182,7 +167,7 @@ platform.
 When running PyBOMBS, you select the desired prefix using the `-p` switch.
 You can set a default prefix with the following command:
 
-    $ pybombs config default_prefix PREFIXNAME
+    pybombs config default_prefix PREFIXNAME
 
 The first time you run `pybombs prefix init`, it will set this value for you.
 
@@ -212,7 +197,7 @@ Any directory can function as a prefix, and PyBOMBS will make sure all the
 required files and directories are created. However, PyBOMBS provides a way
 to initialize a directory to be a full PyBOMBS prefix:
 
-    $ pybombs prefix init /path/to/prefix [-a alias]
+    pybombs prefix init /path/to/prefix [-a alias]
 
 This is similar to `git init`. The optional alias allows you to access the
 prefix with the alias instead of the full path. A typical value for the default
@@ -222,13 +207,13 @@ alongside the default prefix.
 After initializing a prefix, you can start to install to this prefix using the
 install command:
 
-    $ pybombs -p <alias> install <package>
+    pybombs -p <alias> install <package>
 
 PyBOMBS provides a way to not only initialize a raw prefix, but also configure
 it and install packages through a *prefix recipe*. These are selected using
 the `-R` switch on the command line:
 
-    $ pybombs prefix init /path/to/prefix [-a alias] [-R prefix-recipe]
+    pybombs prefix init /path/to/prefix [-a alias] [-R prefix-recipe]
 
 
 ### Configuring a prefix' environment (e.g. for cross-compiling)
@@ -238,8 +223,8 @@ the `-R` switch on the command line:
 For a quick setup of environment variables, you can use the `pybombs config`
 command:
 
-    $ pybombs config --env CC clang
-    $ pybombs prefix env
+    pybombs config --env CC clang
+    pybombs prefix env
     # ...lots of output...
     CC=clang
     # ...lots of output...
@@ -247,7 +232,7 @@ command:
 This will, by default, set an environment variable for *all* prefixes. You
 might want to set it for a specific one, in that case, specify the prefix:
 
-    $ pybombs -p default config --env CC clang
+    pybombs -p default config --env CC clang
 
 You can also edit the config files directly.  In any config file that is read,
 a `env:` section can be added. This will set environment variables for any
@@ -307,7 +292,7 @@ the PyBOMBS script.
 
 When you run a command such as
 
-    $ pybombs install gnuradio
+    pybombs install gnuradio
 
 PyBOMBS will initiate an installation procedure for the package. Since PyBOMBS
 can interact both with the system's package manager (e.g., apt, dnf, brew...)
@@ -405,7 +390,7 @@ specific):
 
 The command
 
-    $ pybombs recipes list-repos
+    pybombs recipes list-repos
 
 will show the recipe locations in the order they're used (it will pick a recipe
 from the top line before it'll pick it from the bottom line).
@@ -420,7 +405,7 @@ Recipe management can be mostly done through the command line using
 the `pybombs recipes` command -- editing configuration files is possible,
 but often not necessary. Run
 
-    $ pybombs help recipes
+    pybombs help recipes
 
 for further information on the `pybombs recipes` command.
 
@@ -524,17 +509,39 @@ reference repository, to locally store objects and hence reduce clone times.
 
 The simplest way to set this up is to run
 
-    $ pybombs git make-ref
+    pybombs git make-ref
 
 It will create the reference repository (which will then be used in subsequent)
 clones, and configure your PyBOMBS accordingly. See
 
-    $ pybombs git make-ref --help
+    pybombs git make-ref --help
 
 for more use cases.
 
 If you already have a reference repository elsewhere, simply point PyBOMBS to
 it:
 
-    $ pybombs config git-cache /path/to/ref
+    pybombs config git-cache /path/to/ref
+
+## License
+
+Copyright 2015 Free Software Foundation, Inc.
+
+This file is part of PyBOMBS
+
+PyBOMBS is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+PyBOMBS is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with PyBOMBS; see the file COPYING.  If not, write to
+the Free Software Foundation, Inc., 51 Franklin Street,
+Boston, MA 02110-1301, USA.
+
 
