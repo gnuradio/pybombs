@@ -1,9 +1,5 @@
 # PyBOMBS
 
-<hr>
-<b>This documentation is currently under revision.</b>
-<hr>
-
 ## Installing PyBOMBS
 
 Minimum Python version: 2.7
@@ -115,10 +111,6 @@ Some platforms have their own idiosyncrasies. Platforms that require special att
 - [CentOS](centos.md)
 - [Debian](debian.md)
 - [OpenSUSE](opensuse.md)
-
-<hr>
-<b>End of current revisions. (13 Nov 2019 15:00 CST)</b>
-<hr>
 
 ### Testing specific platforms
 
