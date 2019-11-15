@@ -1,8 +1,17 @@
 # PyBOMBS
 
+PyBOMBS is good at building GNU Radio, UHD, and various Out of Tree (OOT) modules from source and then installing into a specified user directory rather than in the system files. PyBOMBS detects the user's Operating System and loads all of the prerequisites in the first stage of the build.
+
 ## Installing PyBOMBS
 
-Minimum Python version: 2.7
+Open a terminal window.
+
+The commands given below containing 'apt' are the ones for Debian, Ubuntu, and derivatives. For other operating systems:
+
+* Fedora - use dnf
+* RHEL/CentOS - use yum
+* Archlinux - use pacman
+* Check with your OS documentation for specific syntax.
 
 If you don't have 'git', run the following command:
     
@@ -12,7 +21,9 @@ If you don't have 'git', run the following command:
 
 You don't have to clone the PyBOMBS repository if you don't plan to contribute to PyBOMBS yourself.
 
-<b>Note:</b> If you are building UHD-3.14 or previous, you <b>must</b> use Python2.7.
+<b>Note:</b> If you are building UHD-3.14 or previous, run the following command <b>first</b>:
+    
+    sudo pip install mako requests numpy
 
 #### Using Python2.7
 
@@ -66,7 +77,7 @@ for additional settings.
 
 ### Recipes
 
-There are five recipes for building with PyBOMBS, but the main two of interest are:
+There are five gnuradio recipes for building with PyBOMBS, but the main two of interest are:
 
 * gnuradio-stable
     builds maint-3.7
@@ -74,11 +85,13 @@ There are five recipes for building with PyBOMBS, but the main two of interest a
 * gnuradio-default
     builds maint-3.8
 
+In the following instructions, the notation `{your recipe}` denotes your choice of recipe.
+
 ### Folder/directory (prefix) definition
 
-One of the main advantages of using PyBOMBS is the ability to specify a folder within the user's account to contain all the files associated with the build. That allows the user to delete that one folder/directory and thereby remove everything associated with the build. No system files are affected.
+One of the main advantages of using PyBOMBS is the ability to specify a folder/directory within the user's account to contain all the files associated with the build. That allows the user to delete that one folder/directory and thereby remove everything associated with the build. No system files are affected.
 
-In the following instructions, the notation `<base_folder>` denotes where to put the top level folder/directory. For example <code>~/gr38</code>. See more information in the Prefixes section below.
+In the following instructions, the notation `{base_folder}` denotes where to put the top level folder/directory. For example <code>~/gr38</code>. See more information in the Prefixes section below.
 
 ### To run PyBOMBS:
 
@@ -93,11 +106,13 @@ In the following instructions, the notation `<base_folder>` denotes where to put
 
 4. Install GNU Radio into your selected directory:
 
-        pybombs prefix init ~/<base_folder> -R gnuradio-default
+        pybombs prefix init ~/{base_folder} -R {your recipe}
 
-5. Run GNU Radio Companion from your new prefix:
+    Wait. The terminal will show the progress. 
 
-        source ~/<base_folder>/setup_env.sh
+5. Run GNU Radio Companion from your new folder:
+
+        source ~/{base_folder}/setup_env.sh
         gnuradio-companion
 
    or execute it without changing the current environment:
