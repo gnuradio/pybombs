@@ -6,7 +6,7 @@ PyBOMBS is good at building GNU Radio, UHD, and various Out of Tree (OOT) module
 
 Open a terminal window.
 
-The commands given below containing 'apt' are the ones for Debian, Ubuntu, and derivatives. For other operating systems:
+The commands given below containing 'apt' are ones for Debian, Ubuntu, and derivatives. For other operating systems:
 
 * Fedora - use dnf
 * RHEL/CentOS - use yum
@@ -21,13 +21,14 @@ If you don't have 'git', run the following command:
 
 You don't have to clone the PyBOMBS repository if you don't plan to contribute to PyBOMBS yourself.
 
-<b>Note:</b> If you are building UHD-3.14 or previous, run the following command <b>first</b>:
-    
-    sudo pip install mako requests numpy
-
 #### Using Python2.7
 
-For Python2.7, run the following command:
+If you do not have Python2.7, run the following commands:
+
+    sudo apt install python
+    pip --version
+    
+then run:
     
     sudo pip install --upgrade git+https://github.com/gnuradio/pybombs.git
     
@@ -37,9 +38,13 @@ If you have previously installed PyBOMBS with Python2, run the following command
     
     sudo pip uninstall pybombs
     
-and then do the command(s) below for Python3.
+and then do the commands below for Python3.
 
 #### Using Python3
+
+<b>Note:</b> If you are building UHD-3.14 or previous, run the following command <b>first</b>:
+    
+    sudo pip install mako requests numpy
 
 If you don't already have pip3, run the following command:
     
@@ -79,11 +84,9 @@ for additional settings.
 
 There are five gnuradio recipes for building with PyBOMBS, but the main two of interest are:
 
-* gnuradio-stable
-    builds maint-3.7
+* `gnuradio-stable` builds maint-3.7
 
-* gnuradio-default
-    builds maint-3.8
+* `gnuradio-default` builds maint-3.8
 
 In the following instructions, the notation `{your recipe}` denotes your choice of recipe.
 
