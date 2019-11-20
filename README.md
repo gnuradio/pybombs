@@ -121,7 +121,8 @@ Platforms that require special attention are listed here:
 ### To run PyBOMBS (Quickstart)
 
 1. Install PyBOMBS per the previous section.
-2. Apply a configuration:
+
+2. Apply a default configuration:
 
         pybombs auto-config
 
@@ -212,7 +213,16 @@ the `-R` switch on the command line:
     pybombs prefix init /path/to/prefix [-a alias] [-R prefix-recipe]
 
 
-### Configuring a prefix' environment (e.g. for cross-compiling)
+### Aliases
+
+An alias is an optionally assigned name to provide a short substitute for a prefix path. It can be created in one of two ways:
+
+* in the `pybombs prefix init` command, adding `-a {alias_name}` will equate the `~/{base_folder}` with `{alias_name}`.
+
+* by adding a `[prefix_aliases]` section in a configuration file. The format is `alias=/path/to/prefix`.
+Once an alias is defined, it can be used in a command such as `pybombs -p {alias_name} install <package>` in place of the prefix path.
+
+### Configuring a prefix environment (e.g. for cross-compiling)
 
 #### Setting environment variables directly:
 
