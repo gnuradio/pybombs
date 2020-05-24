@@ -42,7 +42,7 @@ class AbstractYaml(object):
     YAML version.
     """
     def __init__(self):
-        if yaml.version_info[0] >= 0 and yaml.version_info[1] >= 15:
+        if yaml.version_info >= (0, 15):
             self.yaml = yaml.YAML(typ='rt')
             self.yaml.default_flow_style = False
             self._load = self.yaml.load
