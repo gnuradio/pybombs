@@ -266,18 +266,21 @@ class PrefixInfo(object):
         """
         From the Python version, derive the Python paths within the prefix.
         """
-        py_ver_major_minor = \
-            re.match(r'\d+\.\d+', self._cfg_info.get('python_ver')).group(0)
-        # TODO actually make this something useful
+        py_ver_major, py_ver_minor = self._cfg_info.get('python_ver').split('.')[0:2]
         conservative_guess = [
-            '{prefix}/lib/python{python_ver}/site-packages',
-            '{prefix}/lib/python{python_ver}/dist-packages',
-            '{prefix}/lib64/python{python_ver}/site-packages',
-            '{prefix}/lib64/python{python_ver}/dist-packages',
+            '{prefix}/lib/python{major}/site-packages',
+            '{prefix}/lib/python{major}/dist-packages',
+            '{prefix}/lib/python{major}.{minor}/site-packages',
+            '{prefix}/lib/python{major}.{minor}/dist-packages',
+            '{prefix}/lib64/python{major}/site-packages',
+            '{prefix}/lib64/python{major}/dist-packages',
+            '{prefix}/lib64/python{major}.{minor}/site-packages',
+            '{prefix}/lib64/python{major}.{minor}/dist-packages',
         ]
         self.python_path = ':'.join([
             x.format(prefix=self.prefix_dir,
-                     python_ver=py_ver_major_minor)
+                     major=py_ver_major,
+                     minor=py_ver_minor)
             for x in conservative_guess
         ])
 
