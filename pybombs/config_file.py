@@ -56,10 +56,7 @@ class AbstractYaml(object):
 
     def dump(self, data, out):
         """Dump contents of a dictionary"""
-        if yaml.version_info[0] >= 0 and yaml.version_info[1] >= 15:
-            return self._dump(data, out)
-        else:
-            return self._dump(data, out, default_flow_style=False)
+        return self._dump(data, out)
 
 
 
