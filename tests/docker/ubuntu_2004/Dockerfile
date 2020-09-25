@@ -14,10 +14,6 @@ RUN apt-get update -qq -y
 RUN apt-get install -qq -y python3-pip
 RUN apt-get install -qq -y python3-ruamel.yaml
 
-# Some pybombs install steps will fail without pkg-config installed.
-# TODO: should probably go into the deps of respective recipes?
-RUN apt-get install -qq -y pkg-config
-
 # Install PyBOMBS using setuptools
 COPY PyBOMBS*.tar.gz /pybombs
 RUN tar zxf *.tar.gz
