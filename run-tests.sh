@@ -20,4 +20,7 @@ fi
 echo "Building source distribution package (sdist)..."
 python setup.py -q sdist
 
+echo "Running unit tests..."
+python -m unittest discover --start-directory=tests --pattern=qa_*.py
+
 (cd tests && ./run-tests.sh $*)
