@@ -25,7 +25,7 @@ The commands given below containing 'apt' are ones for Debian, Ubuntu, and deriv
 * Check with your OS documentation for specific syntax.
 
 If you don't have 'git', run the following command:
-    
+
     sudo apt install git
 
 ### Using pip
@@ -38,32 +38,32 @@ If you do not have Python2.7, run the following commands:
 
     sudo apt install python
     sudo apt install python-pip
-    
+
 If you have previously installed PyBOMBS with Python3, run the following command:
-    
+
     sudo pip3 uninstall pybombs
-    
+
 and then run:
-    
+
     sudo pip install --upgrade git+https://github.com/gnuradio/pybombs.git
-    
+
 #### Using Python3
 
 If you have previously installed PyBOMBS with Python2, run the following command:
-    
+
     sudo pip uninstall pybombs
-    
+
 <b>Note:</b> If you are building UHD-3.14 or previous, run the following commands:
-    
+
     sudo apt install python
     sudo apt install python-pip
     sudo pip install mako requests numpy
 
 If you don't already have python3, run the following commands:
-    
+
     sudo apt install python3
     sudo apt install python3-pip
-    
+
 and then run:
 
     sudo pip3 install --upgrade git+https://github.com/gnuradio/pybombs.git
@@ -133,7 +133,7 @@ Platforms that require special attention are listed here:
 
         pybombs prefix init ~/{base_folder} -R {your_recipe}
 
-    <b>Wait</b>. The terminal will show the progress. 
+    <b>Wait</b>. The terminal will show the progress.
 
 5. Run GNU Radio Companion from your new folder:
 
@@ -561,5 +561,3 @@ You should have received a copy of the GNU General Public License
 along with PyBOMBS; see the file COPYING.  If not, write to
 the Free Software Foundation, Inc., 51 Franklin Street,
 Boston, MA 02110-1301, USA.
-
-
