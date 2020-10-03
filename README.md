@@ -115,7 +115,6 @@ In the following instructions, the notation `{base_folder}` denotes where to put
 Platforms that require special attention are listed here:
 
 - [CentOS](centos.md)
-- [Debian](debian.md)
 - [OpenSUSE](opensuse.md)
 
 ### To run PyBOMBS (Quickstart)
