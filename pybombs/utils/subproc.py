@@ -240,7 +240,7 @@ def monitor_process(args, **kwargs):
             args=(quit_event, args, kwargs)
         )
         monitor_thread.start()
-        while monitor_thread.isAlive:
+        while monitor_thread.is_alive:
             # Try if it's finished:
             monitor_thread.join(1)
             if quit_event.is_set() or not monitor_thread.is_alive():
