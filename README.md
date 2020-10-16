@@ -2,6 +2,18 @@
 
 PyBOMBS is good at building GNU Radio, UHD, and various Out of Tree (OOT) modules from source and then installing into a specified user directory rather than in the system files. PyBOMBS detects the user's Operating System and loads all of the prerequisites in the first stage of the build.
 
+For those looking to dive right in, the following commands *should* install PyBOMBS and GNU Radio version 3.8 (from source) into a directory called ~/prefix-3.8 and was verified to work under a fresh Ubuntu 18 and 20 install.  
+
+ sudo apt-get install python3-pip
+ sudo pip3 install pybombs
+ pybombs auto-config
+ pybombs recipes add-defaults
+ pybombs prefix init ~/prefix-3.8 -R gnuradio-default
+ source ~/prefix-3.8/setup_env.sh
+ gnuradio-companion
+ 
+Because it's installing GNU Radio from source, the 5th step might take some time, for a quicker install see https://wiki.gnuradio.org/index.php/InstallingGR#Ubuntu_PPA_Installation. 
+
 ## Table of Contents
 
 * [Installing PyBOMBS](#install)
@@ -117,7 +129,7 @@ Platforms that require special attention are listed here:
 - [CentOS](centos.md)
 - [OpenSUSE](opensuse.md)
 
-### To run PyBOMBS (Quickstart)
+### To run PyBOMBS
 
 1. Install PyBOMBS per the previous section.
 
