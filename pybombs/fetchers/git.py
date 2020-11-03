@@ -36,11 +36,12 @@ def parse_git_url(url, args):
     Look for format:
         <URL>@<commit|rev|tag>
 
-    <commit|rev|tag> cannot contain a ':' or whitespace.
+    <commit|rev|tag> cannot contain a ':','/','@' or whitespace.
     """
-    if re.match(r'[a-z]+://[a-z]+@([^@:]+)$', url):
-        return url, args
-    mobj = re.search(r'(.*)@([^:@]+)$', url)
+    mobj = re.match(r"""(.*)@                #The url before the @.
+                        ((?:(?![\/:@\s]).)+$)#If the @ is followed by any of /:@ or whitespace
+                                             #then it's not '@commit', it is 'token@', non-capture.
+                    """, url, re.VERBOSE)
     if mobj:
         url, args['gitrev'] = mobj.groups()
     return url, args
