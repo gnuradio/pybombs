@@ -53,7 +53,7 @@ class File(FetcherBase):
         else:
             self.log.debug("Symlinking file to source dir.")
             os.symlink(url, os.path.join(os.getcwd(), filename))
-        if args.has_key("md5"):
+        if "md5" in args:
             self.log.debug("Calculating MD5 sum for {0}...".format(filename))
             actual_md5 = utils.md5sum(filename)
             if actual_md5 != args["md5"]:
