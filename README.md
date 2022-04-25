@@ -2,17 +2,17 @@
 
 PyBOMBS is good at building GNU Radio, UHD, and various Out of Tree (OOT) modules from source and then installing into a specified user directory rather than in the system files. PyBOMBS detects the user's Operating System and loads all of the prerequisites in the first stage of the build.
 
-For those looking to dive right in, the following commands *should* install PyBOMBS and GNU Radio version 3.8 (from source) into a directory called ~/prefix-3.8 and was verified to work under a fresh Ubuntu 18 and 20 install.  
+For those looking to dive right in, the following commands *should* install PyBOMBS and GNU Radio version 3.10 (from source) into a directory called ~/prefix-3.8 and was verified to work under a fresh Ubuntu 18 and 20 install.  
 
     sudo apt-get install python3-pip
     sudo pip3 install pybombs
     pybombs auto-config
     pybombs recipes add-defaults
-    pybombs prefix init ~/prefix-3.8 -R gnuradio-default
-    source ~/prefix-3.8/setup_env.sh
+    pybombs prefix init ~/prefix-3.10 -R gnuradio-default
+    source ~/prefix-3.10/setup_env.sh
     gnuradio-companion
 
-Because it's installing GNU Radio from source, the 5th step might take some time, for a quicker install see https://wiki.gnuradio.org/index.php/InstallingGR#Ubuntu_PPA_Installation. 
+Because it's installing GNU Radio from source, the 5th step might take some time, for a quicker install see https://wiki.gnuradio.org/index.php/InstallingGR#Ubuntu_PPA_Installation.
 
 ## Table of Contents
 
@@ -108,11 +108,13 @@ for additional settings.
 
 ### Recipes
 
-There are two gnuradio recipes for use with the `pybombs prefix` command:
+There are several gnuradio recipes for use with the `pybombs prefix` command:
 
-* `gnuradio-stable` builds maint-3.7
-
-* `gnuradio-default` builds maint-3.8
+* `gnuradio38` builds GNU Radio 3.8 from the `maint-3.8` branch
+* `gnuradio39` builds GNU Radio 3.9 from the `maint-3.9` branch
+* `gnuradio310` builds GNU Radio 3.10 from the `maint-3.10` branch
+* `gnuradio-default` builds the latest maintenance branch (currently `maint-3.10`)
+* `gnuradio-main` builds GNU Radio's `main` branch
 
 In the following instructions, the notation `{your_recipe}` denotes your choice of recipe.
 
